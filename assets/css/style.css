@@ -31,7 +31,7 @@ body {
 }
 
 /* ==========================================
-   1. CABEÇALHO SUPERIOR (Top Bar - Escala 1.25x)
+   1. CABEÇALHO SUPERIOR 
    ========================================== */
 .top-header {
     height: 76px;
@@ -41,7 +41,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0 32px;
-    gap: 24px;
+    position: relative;
     z-index: 100;
     flex-shrink: 0;
 }
@@ -49,7 +49,8 @@ body {
 .header-left {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
+    max-width: 40%;
 }
 
 .brand-logo {
@@ -60,30 +61,71 @@ body {
     align-items: center;
     gap: 10px;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .arrangement-title-container {
     display: flex;
     align-items: center;
+    gap: 6px;
+    max-width: 260px;
 }
 
 .arrangement-title {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: var(--color-text-main);
-    outline: none;
-    padding: 6px 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+    cursor: pointer;
+    padding: 4px 6px;
     border-radius: 6px;
-    border: 1px solid transparent;
+    transition: background-color 0.15s ease;
 }
 
-.arrangement-title:focus {
-    border-color: var(--color-purple-primary);
-    background-color: var(--color-gray-bg);
+.arrangement-title:hover {
+    background-color: var(--color-gray-hover);
+}
+
+.arrangement-title-input {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    background-color: #ffffff;
+    border: 1.5px solid var(--color-purple-primary);
+    border-radius: 6px;
+    padding: 3px 8px;
+    width: 200px;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-purple-light);
+}
+
+.btn-edit-title {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    padding: 4px 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.btn-edit-title:hover {
+    background-color: var(--color-gray-hover);
+    color: var(--color-purple-primary);
 }
 
 /* Player Centralizado */
 .header-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 14px;
@@ -91,6 +133,7 @@ body {
     padding: 8px 20px;
     border-radius: 40px;
     border: 1px solid var(--color-gray-border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .player-btn {
@@ -164,6 +207,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    margin-left: auto;
 }
 
 .action-btn {
@@ -185,9 +229,38 @@ body {
     background-color: var(--color-gray-hover);
 }
 
-.action-btn.icon-only {
+/* .action-btn.icon-only {
     padding: 10px 14px;
     font-weight: 800;
+} */
+
+/* Botão Flutuante de Ajuda (?) no Canto Inferior Direito */
+.floating-help-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 1px solid var(--color-gray-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    z-index: 90;
+    transition: all 0.15s ease;
+}
+
+.floating-help-btn:hover {
+    color: var(--color-purple-primary);
+    border-color: var(--color-purple-primary);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
 }
 
 /* ==========================================

@@ -403,10 +403,46 @@ function setupHeaderEvents() {
         }
     });
 
-    const titleEl = document.querySelector(".arrangement-title");
-    titleEl.addEventListener("blur", () => {
-        scoreState.title = titleEl.textContent.trim() || "Sem Título";
+    const titleDisplay = document.getElementById("title-display");
+    const titleInput = document.getElementById("title-input");
+    const btnEditTitle = document.getElementById("btn-edit-title");
+
+    function startEditingTitle() {
+        titleInput.value = scoreState.title;
+        titleDisplay.style.display = "none";
+        btnEditTitle.style.display = "none";
+        titleInput.style.display = "inline-block";
+        titleInput.focus();
+        titleInput.select();
+    }
+
+    function saveTitle() {
+        const newTitle = titleInput.value.trim() || "Sem Título";
+        scoreState.title = newTitle;
+        titleDisplay.textContent = newTitle;
+        titleDisplay.style.display = "inline-block";
+        btnEditTitle.style.display = "inline-flex";
+        titleInput.style.display = "none";
+    }
+
+    function cancelTitleEdit() {
+        titleDisplay.style.display = "inline-block";
+        btnEditTitle.style.display = "inline-flex";
+        titleInput.style.display = "none";
+    }
+
+    btnEditTitle.addEventListener("click", startEditingTitle);
+    titleDisplay.addEventListener("dblclick", startEditingTitle);
+
+    titleInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            saveTitle();
+        } else if (e.key === "Escape") {
+            cancelTitleEdit();
+        }
     });
+
+    titleInput.addEventListener("blur", saveTitle);
 }
 
 function setupTransportEvents() {

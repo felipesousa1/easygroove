@@ -17,7 +17,10 @@
                 <span>⚡</span> EasyGroove
             </div>
             <div class="arrangement-title-container">
-                <span class="arrangement-title" contenteditable="true" spellcheck="false">Bossa Nova Principal</span>
+                <span id="title-display" class="arrangement-title" title="Duplo clique para renomear">Arranjo</span>
+                <input type="text" id="title-input" class="arrangement-title-input" maxlength="32"
+                    style="display: none;">
+                <button type="button" id="btn-edit-title" class="btn-edit-title" title="Renomear Arranjo">✏</button>
             </div>
         </div>
 
@@ -37,7 +40,6 @@
         <div class="header-right">
             <button type="button" class="action-btn" title="Exportar Arranjo">Exportar</button>
             <button type="button" class="action-btn" title="Salvar Projeto">Salvar</button>
-            <button type="button" class="action-btn icon-only" title="Ajuda e Legenda">?</button>
         </div>
     </header>
 
@@ -80,6 +82,8 @@
 
         <button type="button" id="btn-redo" class="tool-btn" title="Refazer (Ctrl+Y)">↻</button>
     </div>
+
+    <button type="button" class="floating-help-btn" title="Ajuda e Legenda dos Toques">?</button>
 
     <!-- Menu Dropdown Modular de Compasso -->
     <div id="measure-dropdown" class="measure-dropdown-menu">
