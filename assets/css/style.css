@@ -270,12 +270,14 @@ body {
 /* Playhead */
 .playhead {
   position: absolute;
-  top: -40px;
-  left: 180px; /* Dinâmico via JS */
-  height: calc(100% + 40px);
+  top: -24px;
+  left: 0;
+  height: calc(100% + 24px);
   width: 20px;
   pointer-events: none;
-  z-index: 20;
+  z-index: 30;
+  transform: translateX(0);
+  transition: transform 0.04s linear;
 }
 
 .playhead-head {

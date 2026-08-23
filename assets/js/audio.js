@@ -6,17 +6,12 @@ const audioEngine = {
     isInitialized: false,
     isPlaying: false,
     currentGlobalStep: 0,
-    players: null,
-
-    // 1. Mapeamento de Samples de Teste (Buffers curtos gerados ou URLs locais)
-    // Usaremos samples percussivos sintetizados via Tone.MembraneSynth/NoiseSynth
-    // como fallback caso você ainda não tenha colocado arquivos .wav em assets/samples/
     synths: {},
 
     init() {
         if (this.isInitialized) return;
 
-        // Sintetizadores de teste para cada instrumento
+        // Síntese percussiva básica de teste
         this.synths = {
             surdo1: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" } }).toDestination(),
             caixa: new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.15, sustain: 0 } }).toDestination(),
@@ -24,28 +19,24 @@ const audioEngine = {
             tamborim: new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 8, oscillator: { type: "triangle" } }).toDestination()
         };
 
-        // Configura o BPM inicial e o loop
         Tone.Transport.bpm.value = scoreState.bpm;
 
-        // Agenda o loop de 16 avos (semicolcheias)
+        // Agenda o loop a cada 16 avos (semicolcheia)
         Tone.Transport.scheduleRepeat((time) => {
             this.onStep(time);
         }, "16n");
 
         this.isInitialized = true;
-        console.log("AudioEngine inicializado.");
     },
 
-    // 2. Disparo de cada semicolcheia
     onStep(time) {
         const totalStepsPerMeasure = scoreState.beatsPerMeasure * scoreState.subdivisions; // 8 passos
-        const totalMeasures = scoreState.measuresCount;
-        const totalGlobalSteps = totalMeasures * totalStepsPerMeasure; 
+        const totalGlobalSteps = scoreState.measuresCount * totalStepsPerMeasure;
 
         const currentMeasure = Math.floor(this.currentGlobalStep / totalStepsPerMeasure);
         const currentStepInMeasure = this.currentGlobalStep % totalStepsPerMeasure;
 
-        // Varre os instrumentos e toca quem tiver nota ativa neste passo
+        // 1. Disparo de áudio
         scoreState.instruments.forEach((inst) => {
             if (!inst.pattern[currentMeasure]) return;
 
@@ -55,22 +46,25 @@ const audioEngine = {
             }
         });
 
-        // Incrementa ou reseta o passo global (Loop)
+        // 2. Disparo visual do Playhead no frame exato de animação
+        const stepToAnimate = this.currentGlobalStep;
+        Tone.Draw.schedule(() => {
+            if (window.updatePlayheadPosition) {
+                window.updatePlayheadPosition(stepToAnimate);
+            }
+        }, time);
+
+        // 3. Incremento do passo
         this.currentGlobalStep = (this.currentGlobalStep + 1) % totalGlobalSteps;
     },
 
-    // 3. Lógica de articulação e volume
     triggerStroke(instId, stroke, time) {
         const synth = this.synths[instId];
         if (!synth) return;
 
         switch (instId) {
             case "surdo1":
-                if (stroke === "accent") {
-                    synth.triggerAttackRelease("C2", "8n", time, 1.0);
-                } else {
-                    synth.triggerAttackRelease("C1", "8n", time, 0.7);
-                }
+                synth.triggerAttackRelease(stroke === "accent" ? "C2" : "C1", "8n", time, stroke === "accent" ? 1.0 : 0.7);
                 break;
 
             case "caixa":
@@ -105,5 +99,9 @@ const audioEngine = {
         Tone.Transport.stop();
         this.currentGlobalStep = 0;
         this.isPlaying = false;
+
+        if (window.updatePlayheadPosition) {
+            window.updatePlayheadPosition(0);
+        }
     }
 };

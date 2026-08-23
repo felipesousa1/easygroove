@@ -20,7 +20,7 @@ const scoreState = {
         {
             id: "surdo1",
             name: "Surdo 1ª",
-            icon: "🥁",
+            icon: "🪘",
             volume: 80,
             availableStrokes: ["strong", "accent"],
             // Cada array representa os passos de 1 compasso (2 tempos x 4 = 8 semicolcheias por compasso)
@@ -34,7 +34,7 @@ const scoreState = {
         {
             id: "caixa",
             name: "Caixa",
-            icon: "🪘",
+            icon: "🥁",
             volume: 80,
             availableStrokes: ["strong", "ghost", "accent"],
             pattern: [
@@ -46,7 +46,7 @@ const scoreState = {
         {
             id: "chocalho",
             name: "Chocalho",
-            icon: "🥢",
+            icon: "🪇",
             volume: 80,
             availableStrokes: ["chevron-accent", "chevron-back"],
             pattern: [
@@ -58,7 +58,7 @@ const scoreState = {
         {
             id: "tamborim",
             name: "Tamborim",
-            icon: "🪗",
+            icon: "🥢",
             volume: 80,
             availableStrokes: ["strong", "accent"],
             pattern: [
@@ -205,8 +205,8 @@ function renderScore() {
 
 function setupToolbarEvents() {
     const strokeButtons = document.querySelectorAll(".tool-stroke");
-    const undoBtn = document.querySelector(".floating-editor-bar .tool-btn:first-child");
-    const redoBtn = document.querySelector(".floating-editor-bar .tool-btn:last-child");
+    const btnUndo = document.getElementById("btn-undo");
+    const btnRedo = document.getElementById("btn-redo");
 
     // Mapeamento dos botões para os tipos de toque
     const strokeMap = ["strong", "ghost", "accent"];
@@ -219,6 +219,23 @@ function setupToolbarEvents() {
         });
     });
 
+    // Botões de Desfazer e Refazer
+    if (btnUndo) btnUndo.addEventListener("click", () => historyManager.undo());
+    if (btnRedo) btnRedo.addEventListener("click", () => historyManager.redo());
+
+    // Atalhos de teclado (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z)
+    window.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key === "z" && !e.shiftKey) {
+                e.preventDefault();
+                historyManager.undo();
+            } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
+                e.preventDefault();
+                historyManager.redo();
+            }
+        }
+    });
+
     // Troca rápida de instrumento ativo ao clicar no card da sidebar
     document.getElementById("instruments-sidebar").addEventListener("click", (e) => {
         const card = e.target.closest(".instrument-card");
@@ -228,6 +245,8 @@ function setupToolbarEvents() {
         card.classList.add("active");
         scoreState.activeTool.instrumentId = card.dataset.instrumentId;
     });
+
+    historyManager.updateButtonsState();
 }
 
 // ==========================================
@@ -254,13 +273,17 @@ function setupGridEvents() {
         // Regra: se clicar no mesmo toque, remove (pausa); senão, aplica o novo toque
         const nextStroke = (currentStroke === targetStroke) ? null : targetStroke;
 
-        // 1. Atualiza o Estado
-        instrument.pattern[measure][step] = nextStroke;
+        if (currentStroke !== nextStroke) {
+            historyManager.pushState();
 
-        // 2. Atualiza a DOM do slot pontual (sem redesenhar a grade inteira)
-        const visual = getStrokeVisual(nextStroke);
-        slot.className = `note-slot ${visual.className}`;
-        slot.innerHTML = visual.content;
+            // 1. Atualiza o Estado
+            instrument.pattern[measure][step] = nextStroke;
+
+            // 2. Atualiza a DOM do slot
+            const visual = getStrokeVisual(nextStroke);
+            slot.className = `note-slot ${visual.className}`;
+            slot.innerHTML = visual.content;
+        }
     });
 }
 
@@ -312,6 +335,107 @@ function setupTransportEvents() {
         }
     });
 }
+
+// ==========================================
+// 8. SINCRONIA DO PLAYHEAD VISUAL
+// ==========================================
+
+function updatePlayheadPosition(globalStep) {
+    const playhead = document.getElementById("playhead");
+    if (!playhead) return;
+
+    const totalStepsPerMeasure = scoreState.beatsPerMeasure * scoreState.subdivisions;
+    const measure = Math.floor(globalStep / totalStepsPerMeasure);
+    const stepInMeasure = globalStep % totalStepsPerMeasure;
+
+    // Busca o slot do primeiro instrumento no passo atual como âncora de coordenadas
+    const targetSlot = document.querySelector(`.note-slot[data-inst-index="0"][data-measure="${measure}"][data-step="${stepInMeasure}"]`);
+    const scoreGrid = document.getElementById("score-grid");
+
+    if (targetSlot && scoreGrid) {
+        const gridRect = scoreGrid.getBoundingClientRect();
+        const slotRect = targetSlot.getBoundingClientRect();
+
+        // Centraliza o playhead no meio do slot horizontalmente
+        const offsetLeft = (slotRect.left - gridRect.left) + (slotRect.width / 2) - (playhead.offsetWidth / 2);
+        playhead.style.transform = `translateX(${offsetLeft}px)`;
+    }
+}
+
+// Expõe para o audio.js
+window.updatePlayheadPosition = updatePlayheadPosition;
+
+
+// ==========================================
+// 9. GERENCIAMENTO DE HISTÓRICO (UNDO / REDO)
+// ==========================================
+
+const historyManager = {
+    undoStack: [],
+    redoStack: [],
+    maxHistory: 30,
+
+    // Captura apenas a matriz de notas para manter o snapshot leve
+    getSnapshot() {
+        return scoreState.instruments.map(inst => ({
+            id: inst.id,
+            pattern: JSON.parse(JSON.stringify(inst.pattern))
+        }));
+    },
+
+    // Salva o estado atual na pilha antes de uma modificação
+    pushState() {
+        this.undoStack.push(this.getSnapshot());
+        if (this.undoStack.length > this.maxHistory) {
+            this.undoStack.shift();
+        }
+        // Qualquer nova ação limpa o refazer
+        this.redoStack = [];
+        this.updateButtonsState();
+    },
+
+    undo() {
+        if (this.undoStack.length === 0) return;
+
+        // Guarda o estado atual no redo antes de voltar
+        this.redoStack.push(this.getSnapshot());
+        const previousSnapshot = this.undoStack.pop();
+
+        this.applySnapshot(previousSnapshot);
+        this.updateButtonsState();
+    },
+
+    redo() {
+        if (this.redoStack.length === 0) return;
+
+        // Guarda o estado atual no undo antes de avançar
+        this.undoStack.push(this.getSnapshot());
+        const nextSnapshot = this.redoStack.pop();
+
+        this.applySnapshot(nextSnapshot);
+        this.updateButtonsState();
+    },
+
+    applySnapshot(snapshot) {
+        snapshot.forEach(savedInst => {
+            const targetInst = scoreState.instruments.find(i => i.id === savedInst.id);
+            if (targetInst) {
+                targetInst.pattern = JSON.parse(JSON.stringify(savedInst.pattern));
+            }
+        });
+
+        // Re-renderiza a grade com os novos padrões restaurados
+        renderScore();
+    },
+
+    updateButtonsState() {
+        const btnUndo = document.getElementById("btn-undo");
+        const btnRedo = document.getElementById("btn-redo");
+
+        if (btnUndo) btnUndo.style.opacity = this.undoStack.length > 0 ? "1" : "0.4";
+        if (btnRedo) btnRedo.style.opacity = this.redoStack.length > 0 ? "1" : "0.4";
+    }
+};
 
 // Atualizar o listener de inicialização
 document.addEventListener("DOMContentLoaded", () => {
