@@ -4,317 +4,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyGroove</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Montserrat:wght@400;600&display=swap"
-        rel="stylesheet">
+    <title>EasyGroove — Editor de Arranjos Rítmicos</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 
 <body>
 
-    <div class="app-layout">
-
-        <!-- Topo -->
-        <header class="top-bar">
-            <div class="brand">
-                <button type="button" class="btn-menu" aria-label="Menu Principal">☰</button>
-                <span class="logo-text">EasyGroove</span>
+    <!-- 1. Top Header -->
+    <header class="top-header">
+        <div class="header-left">
+            <div class="brand-logo">
+                <span>⚡</span> EasyGroove
             </div>
-
-            <h1 class="arrangement-title">Arranjo 1</h1>
-
-            <div class="top-actions">
-                <button type="button" class="btn-top" title="Salvar">💾</button>
-                <button type="button" class="btn-top" title="Exportar">📤</button>
+            <div class="arrangement-title-container">
+                <span class="arrangement-title" contenteditable="true" spellcheck="false">Bossa Nova Principal</span>
             </div>
-        </header>
-
-        <!-- Controles de Transporte -->
-        <section class="transport-bar">
-            <div class="bpm-control">
-                <span class="icon">⏱️</span>
-                <input type="number" id="bpm-input" value="130" min="40" max="260">
-                <label for="bpm-input">bpm</label>
-            </div>
-
-            <div class="playback-controls">
-                <button type="button" id="btn-play" class="btn-transport" title="Play">▶</button>
-                <button type="button" id="btn-stop" class="btn-transport" title="Stop">⏹</button>
-                <button type="button" id="btn-loop" class="btn-transport active" title="Alternar Loop">🔁</button>
-            </div>
-
-            <div class="transport-spacer"></div>
-        </section>
-
-        <!-- Área da Partitura -->
-        <main class="score-container">
-
-            <!-- Cabeçalho da Linha do Tempo e Região de Loop -->
-            <div class="timeline-wrapper">
-                <div class="sidebar-spacer"></div>
-                <div class="timeline-track">
-                    <!-- Barra roxa de delimitação de Loop -->
-                    <div class="loop-region" style="width: 66.66%;"></div>
-
-                    <!-- Tags dos Compassos -->
-                    <div class="measures-tags" id="measures-tags">
-                        <div class="measure-tag">Compasso 1 <span class="tag-dots">⋮</span></div>
-                        <div class="measure-tag">Compasso 2 <span class="tag-dots">⋮</span></div>
-                        <div class="measure-tag">Compasso 3 <span class="tag-dots">⋮</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Área de Edição -->
-            <div class="score-workspace">
-
-                <!-- Sidebar de Instrumentos -->
-                <aside class="instruments-sidebar" id="instruments-sidebar">
-
-                    <div class="instrument-card active">
-                        <div class="inst-icon">🪘</div>
-                        <div class="inst-name">Surdo 1ª</div>
-                        <div class="inst-vol">
-                            <span>🔈</span>
-                            <input type="range" class="vol-slider" min="0" max="100" value="80">
-                        </div>
-                    </div>
-
-                    <div class="instrument-card">
-                        <div class="inst-icon">🥁</div>
-                        <div class="inst-name">Caixa</div>
-                        <div class="inst-vol">
-                            <span>🔈</span>
-                            <input type="range" class="vol-slider" min="0" max="100" value="80">
-                        </div>
-                    </div>
-
-                    <div class="instrument-card">
-                        <div class="inst-icon">🪇</div>
-                        <div class="inst-name">Chocalho</div>
-                        <div class="inst-vol">
-                            <span>🔈</span>
-                            <input type="range" class="vol-slider" min="0" max="100" value="80">
-                        </div>
-                    </div>
-
-                    <div class="instrument-card">
-                        <div class="inst-icon">🥢</div>
-                        <div class="inst-name">Tamborim</div>
-                        <div class="inst-vol">
-                            <span>🔈</span>
-                            <input type="range" class="vol-slider" min="0" max="100" value="80">
-                        </div>
-                    </div>
-
-                    <button type="button" class="btn-add-instrument" title="Adicionar Instrumento">+</button>
-                </aside>
-
-                <!-- Grade de Pautas -->
-                <section class="score-grid" id="score-grid">
-
-                    <!-- Playhead Vertical -->
-                    <div class="playhead" id="playhead">
-                        <div class="playhead-head"></div>
-                        <div class="playhead-line"></div>
-                    </div>
-
-                    <!-- Pauta Instrumento 1: Surdo 1ª -->
-                    <div class="score-row">
-                        <!-- Compasso 1 -->
-                        <div class="measure-container">
-                            <!-- Tempo 1 (4 semicolcheias) -->
-                            <div class="beat-group">
-                                <svg class="beat-beams" viewBox="0 0 100 40">
-                                    <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5" />
-                                </svg>
-                                <div class="slots-bar">
-                                    <div class="note-slot filled"></div>
-                                    <div class="note-slot"></div>
-                                    <div class="note-slot"></div>
-                                    <div class="note-slot"></div>
-                                </div>
-                            </div>
-
-                            <!-- Tempo 2 -->
-                            <div class="beat-group">
-                                <svg class="beat-beams" viewBox="0 0 100 40">
-                                    <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5" />
-                                </svg>
-                                <div class="slots-bar">
-                                    <div class="note-slot ring-accent"></div>
-                                    <div class="note-slot"></div>
-                                    <div class="note-slot"></div>
-                                    <div class="note-slot"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pauta Instrumento 2: Caixa -->
-                    <div class="score-row">
-                        <div class="measure-container">
-                            <div class="beat-group">
-                                <svg class="beat-beams" viewBox="0 0 100 40">
-                                    <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5" />
-                                </svg>
-                                <div class="slots-bar">
-                                    <div class="note-slot filled"></div>
-                                    <div class="note-slot small-dot"></div>
-                                    <div class="note-slot small-dot"></div>
-                                    <div class="note-slot small-dot"></div>
-                                </div>
-                            </div>
-
-                            <div class="beat-group">
-                                <svg class="beat-beams" viewBox="0 0 100 40">
-                                    <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5" />
-                                </svg>
-                                <div class="slots-bar">
-                                    <div class="note-slot ring-accent"></div>
-                                    <div class="note-slot small-dot"></div>
-                                    <div class="note-slot small-dot"></div>
-                                    <div class="note-slot small-dot"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pauta Instrumento 3: Chocalho -->
-                    <div class="score-row">
-                        <div class="measure-container">
-                            <div class="beat-group">
-                                <svg class="beat-beams" viewBox="0 0 100 40">
-                                    <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5" />
-                                </svg>
-                                <div class="slots-bar">
-                                    <div class="note-slot chevron-accent">&gt;</div>
-                                    <div class="note-slot chevron-back">&lt;</div>
-                                    <div class="note-slot chevron-accent">&gt;</div>
-                                    <div class="note-slot chevron-back">&lt;</div>
-                                </div>
-                            </div>
-
-                            <div class="beat-group">
-                                <svg class="beat-beams" viewBox="0 0 100 40">
-                                    <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5" />
-                                </svg>
-                                <div class="slots-bar">
-                                    <div class="note-slot chevron-accent">&gt;</div>
-                                    <div class="note-slot chevron-back">&lt;</div>
-                                    <div class="note-slot chevron-accent">&gt;</div>
-                                    <div class="note-slot chevron-back">&lt;</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pauta Instrumento 4: Tamborim -->
-                    <div class="score-row">
-                        <div class="measure-container">
-                            <div class="beat-group">
-                                <svg class="beat-beams" viewBox="0 0 100 40">
-                                    <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5" />
-                                </svg>
-                                <div class="slots-bar">
-                                    <div class="note-slot filled"></div>
-                                    <div class="note-slot"></div>
-                                    <div class="note-slot"></div>
-                                    <div class="note-slot filled"></div>
-                                </div>
-                            </div>
-
-                            <div class="beat-group">
-                                <svg class="beat-beams" viewBox="0 0 100 40">
-                                    <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4" />
-                                    <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5" />
-                                    <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5" />
-                                </svg>
-                                <div class="slots-bar">
-                                    <div class="note-slot"></div>
-                                    <div class="note-slot filled"></div>
-                                    <div class="note-slot"></div>
-                                    <div class="note-slot filled"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </section>
-            </div>
-        </main>
-
-        <!-- Toolbar Flutuante de Edição e Rodapé -->
-        <div class="floating-editor-bar">
-            <button type="button" id="btn-undo" class="tool-btn" title="Desfazer (Ctrl+Z)">↺</button>
-
-            <div class="tool-palette">
-                <!-- Instrumento Selecionado -->
-                <button type="button" class="palette-inst-badge">🪘 ▾</button>
-                <div class="palette-divider"></div>
-                <!-- Opções de Articulação/Toques -->
-                <button type="button" class="tool-stroke active" title="Toque Forte">●</button>
-                <button type="button" class="tool-stroke" title="Toque Fraco / Nota Fantasma">•</button>
-                <button type="button" class="tool-stroke" title="Toque Acentuado">⦿</button>
-            </div>
-
-            <button type="button" id="btn-redo" class="tool-btn" title="Refazer (Ctrl+Y)">↻</button>
         </div>
 
-        <footer class="app-footer">
-            <span class="copyright">© 2026 - EasyGroove</span>
-            <button type="button" class="btn-help" title="Ajuda e Legenda">?</button>
-        </footer>
+        <!-- Player Centralizado -->
+        <div class="header-center">
+            <button type="button" id="btn-loop" class="player-btn" title="Loop Ativo/Inativo">🔁</button>
+            <button type="button" id="btn-play" class="player-btn primary" title="Tocar / Pausar">▶</button>
+            <button type="button" id="btn-stop" class="player-btn" title="Parar e Voltar ao Início">⏹</button>
+            <div class="player-divider"></div>
+            <div class="bpm-control">
+                <span>BPM</span>
+                <input type="number" id="bpm-input" class="bpm-input" value="120" min="40" max="260">
+            </div>
+        </div>
 
+        <!-- Ações e Menu à Direita -->
+        <div class="header-right">
+            <button type="button" class="action-btn" title="Exportar Arranjo">Exportar</button>
+            <button type="button" class="action-btn" title="Salvar Projeto">Salvar</button>
+            <button type="button" class="action-btn icon-only" title="Ajuda e Legenda">?</button>
+        </div>
+    </header>
+
+    <!-- 2. Workspace Principal -->
+    <main class="workspace-container">
+
+        <!-- Sidebar de Instrumentos -->
+        <aside class="instruments-sidebar">
+            <div id="instruments-sidebar-list" class="sidebar-list">
+                <button type="button" class="btn-add-instrument">+ Instrumento</button>
+            </div>
+        </aside>
+
+        <!-- Área de Grade com Scroll Horizontal -->
+        <div class="score-viewport">
+            <div class="score-content">
+                <!-- Faixa de cabeçalhos de compassos -->
+                <div id="measures-track" class="measures-track"></div>
+
+                <!-- Grade de Pautas e Notas -->
+                <div id="score-grid" class="score-grid">
+                    <div id="playhead" class="playhead"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 3. Toolbar Flutuante Inferior -->
+    <div class="floating-editor-bar">
+        <button type="button" id="btn-undo" class="tool-btn" title="Desfazer (Ctrl+Z)">↺</button>
+
+        <div class="tool-palette">
+            <button type="button" class="palette-inst-badge">🪘 <span id="active-tool-name">Caixa</span> ▾</button>
+            <div class="palette-divider"></div>
+            <button type="button" class="tool-stroke active" title="Toque Forte">●</button>
+            <button type="button" class="tool-stroke" title="Toque Fraco / Nota Fantasma">•</button>
+            <button type="button" class="tool-stroke" title="Toque Acentuado">⦿</button>
+        </div>
+
+        <button type="button" id="btn-redo" class="tool-btn" title="Refazer (Ctrl+Y)">↻</button>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
-    <!-- Scripts da Aplicação -->
     <script src="assets/js/audio.js"></script>
     <script src="assets/js/app.js"></script>
-
 </body>
 
 </html>

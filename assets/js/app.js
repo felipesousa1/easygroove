@@ -1,70 +1,67 @@
 // ==========================================
-// 1. MODELAGEM DO ESTADO (scoreState)
+// 1. MODELAGEM DO ESTADO (scoreState 4x4)
 // ==========================================
 
 const scoreState = {
-    title: "Arranjo",
+    title: "Bossa Nova Principal",
     bpm: 120,
     measuresCount: 3,
-    beatsPerMeasure: 2, // 2 tempos por compasso (2/4 padrão de samba)
-    subdivisions: 4,    // 4 semicolcheias por tempo
+    beatsPerMeasure: 4, // 4 tempos por compasso (4/4)
+    subdivisions: 4,    // 4 semicolcheias por tempo = 16 passos por compasso
 
-    // Ferramenta ativa selecionada na Toolbar
     activeTool: {
         instrumentId: "caixa",
-        strokeType: "strong" // 'strong', 'ghost', 'accent', 'chevron-accent', 'chevron-back', etc.
+        strokeType: "strong"
     },
 
-    // Definição dos Instrumentos e suas articulações possíveis
     instruments: [
         {
             id: "surdo1",
             name: "Surdo 1ª",
-            icon: "🪘",
+            icon: "🥁",
             volume: 80,
             availableStrokes: ["strong", "accent"],
-            // Cada array representa os passos de 1 compasso (2 tempos x 4 = 8 semicolcheias por compasso)
-            // null = pausa
             pattern: [
-                ["strong", null, null, null, "accent", null, null, null], // Compasso 1
-                ["strong", null, null, null, "accent", null, null, null], // Compasso 2
-                ["strong", null, null, null, "accent", null, null, null]  // Compasso 3
+                // 16 semicolcheias por compasso (4 traves métricas)
+                ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null],
+                ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null],
+                ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null]
             ]
         },
         {
             id: "caixa",
             name: "Caixa",
-            icon: "🥁",
+            icon: "🪘",
             volume: 80,
             availableStrokes: ["strong", "ghost", "accent"],
             pattern: [
-                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"],
-                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"],
-                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"]
+                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost", "strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"],
+                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost", "strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"],
+                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost", "strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"]
             ]
         },
         {
             id: "chocalho",
             name: "Chocalho",
-            icon: "🪇",
+            icon: "🥢",
             volume: 80,
             availableStrokes: ["chevron-accent", "chevron-back"],
             pattern: [
-                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"],
-                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"],
-                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"]
+                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"],
+                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"],
+                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"]
             ]
         },
         {
             id: "tamborim",
             name: "Tamborim",
-            icon: "🥢",
+            icon: "🪗",
             volume: 80,
             availableStrokes: ["strong", "accent"],
             pattern: [
-                ["strong", null, null, "strong", null, "accent", null, "strong"],
-                ["null", "strong", null, "strong", null, null, "accent", null],
-                ["strong", null, null, "strong", null, "accent", null, "strong"]
+                ["strong", null, null, "strong", null, "accent", null, "strong", null, null, "strong", null, "accent", null, "strong", null],
+                [null, "strong", null, "strong", null, null, "accent", null, "strong", null, "strong", null, null, "accent", null, "strong"],
+                ["strong", null, null, "strong", null, "accent", null, "strong", null, null, "strong", null, "accent", null, "strong", null]
             ]
         }
     ]
@@ -74,21 +71,20 @@ const scoreState = {
 // 2. FUNÇÕES GERADORAS DE TEMPLATE HTML/SVG
 // ==========================================
 
-// SVG das traves métricas por tempo (4 semicolcheias)
+// SVG das 4 semicolcheias por tempo métrico
 function createBeamsSVG() {
     return `
-    <svg class="beat-beams" viewBox="0 0 100 40">
-      <line x1="12" y1="0" x2="88" y2="0" stroke="black" stroke-width="4"/>
-      <line x1="12" y1="8" x2="88" y2="8" stroke="black" stroke-width="4"/>
-      <line x1="12" y1="0" x2="12" y2="40" stroke="black" stroke-width="2.5"/>
-      <line x1="37" y1="0" x2="37" y2="40" stroke="black" stroke-width="2.5"/>
-      <line x1="63" y1="0" x2="63" y2="40" stroke="black" stroke-width="2.5"/>
-      <line x1="88" y1="0" x2="88" y2="40" stroke="black" stroke-width="2.5"/>
+    <svg class="beat-beams" viewBox="0 0 112 32" preserveAspectRatio="none">
+      <line x1="14" y1="2" x2="98" y2="2" stroke="#111827" stroke-width="3.5"/>
+      <line x1="14" y1="9" x2="98" y2="9" stroke="#111827" stroke-width="3.5"/>
+      <line x1="14" y1="2" x2="14" y2="32" stroke="#111827" stroke-width="2"/>
+      <line x1="42" y1="2" x2="42" y2="32" stroke="#111827" stroke-width="2"/>
+      <line x1="70" y1="2" x2="70" y2="32" stroke="#111827" stroke-width="2"/>
+      <line x1="98" y1="2" x2="98" y2="32" stroke="#111827" stroke-width="2"/>
     </svg>
   `;
 }
 
-// Classe CSS e símbolo visual para cada tipo de toque
 function getStrokeVisual(stroke) {
     switch (stroke) {
         case "strong":
@@ -111,45 +107,55 @@ function getStrokeVisual(stroke) {
 // ==========================================
 
 function renderScore() {
-    const measuresTagsContainer = document.getElementById("measures-tags");
-    const sidebarContainer = document.getElementById("instruments-sidebar");
+    const measuresTrack = document.getElementById("measures-track");
+    const sidebarList = document.getElementById("instruments-sidebar-list");
     const scoreGrid = document.getElementById("score-grid");
 
-    // Atualiza título e BPM
-    document.querySelector(".arrangement-title").textContent = scoreState.title;
-    document.getElementById("bpm-input").value = scoreState.bpm;
+    if (!measuresTrack || !sidebarList || !scoreGrid) return;
 
-    // 1. Renderiza as tags de compasso no topo
-    measuresTagsContainer.innerHTML = "";
+    // Atualiza título e BPM
+    const titleEl = document.querySelector(".arrangement-title");
+    const bpmInput = document.getElementById("bpm-input");
+    if (titleEl) titleEl.textContent = scoreState.title;
+    if (bpmInput) bpmInput.value = scoreState.bpm;
+
+    // 1. Renderiza cabeçalhos de cada compasso
+    measuresTrack.innerHTML = "";
     for (let m = 0; m < scoreState.measuresCount; m++) {
-        const tag = document.createElement("div");
-        tag.className = "measure-tag";
-        tag.innerHTML = `Compasso ${m + 1} <span class="tag-dots">⋮</span>`;
-        measuresTagsContainer.appendChild(tag);
+        const header = document.createElement("div");
+        header.className = "measure-header";
+        header.innerHTML = `
+      <span>Compasso ${m + 1}</span>
+      <button type="button" class="measure-menu-btn" title="Opções do Compasso">⋮</button>
+    `;
+        measuresTrack.appendChild(header);
     }
 
-    // 2. Renderiza os cards dos instrumentos na sidebar
-    // Mantém o botão de adicionar no final
-    const btnAddInst = sidebarContainer.querySelector(".btn-add-instrument");
-    sidebarContainer.querySelectorAll(".instrument-card").forEach(el => el.remove());
+    // 2. Renderiza os cards na sidebar
+    sidebarList.querySelectorAll(".instrument-card").forEach(el => el.remove());
+    const btnAdd = sidebarList.querySelector(".btn-add-instrument");
 
     scoreState.instruments.forEach((inst, index) => {
         const card = document.createElement("div");
         card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''}`;
         card.dataset.instrumentId = inst.id;
+        card.dataset.instIndex = index;
         card.innerHTML = `
-      <div class="inst-icon">${inst.icon}</div>
-      <div class="inst-name">${inst.name}</div>
-      <div class="inst-vol">
-        <span>🔈</span>
+      <span class="inst-icon">${inst.icon}</span>
+      <span class="inst-name">${inst.name}</span>
+      <div class="inst-controls">
         <input type="range" class="vol-slider" min="0" max="100" value="${inst.volume}">
       </div>
     `;
-        sidebarContainer.insertBefore(card, btnAddInst);
+
+        if (btnAdd) {
+            sidebarList.insertBefore(card, btnAdd);
+        } else {
+            sidebarList.appendChild(card);
+        }
     });
 
-    // 3. Renderiza as pautas e as notas
-    // Remove linhas anteriores sem apagar o playhead
+    // 3. Renderiza as linhas dos instrumentos
     scoreGrid.querySelectorAll(".score-row").forEach(el => el.remove());
 
     scoreState.instruments.forEach((inst, instIndex) => {
@@ -157,14 +163,13 @@ function renderScore() {
         row.className = "score-row";
         row.dataset.instrumentId = inst.id;
 
-        // Para cada compasso
         for (let m = 0; m < scoreState.measuresCount; m++) {
             const measureContainer = document.createElement("div");
             measureContainer.className = "measure-container";
 
             const measurePattern = inst.pattern[m] || [];
 
-            // Para cada tempo do compasso (ex: 2 tempos)
+            // 4 tempos por compasso
             for (let b = 0; b < scoreState.beatsPerMeasure; b++) {
                 const beatGroup = document.createElement("div");
                 beatGroup.className = "beat-group";
@@ -173,7 +178,7 @@ function renderScore() {
                 const slotsBar = document.createElement("div");
                 slotsBar.className = "slots-bar";
 
-                // Para cada semicolcheia do tempo (4 subdivisões)
+                // 4 semicolcheias por tempo
                 for (let s = 0; s < scoreState.subdivisions; s++) {
                     const stepIndex = (b * scoreState.subdivisions) + s;
                     const stroke = measurePattern[stepIndex] || null;
@@ -199,8 +204,9 @@ function renderScore() {
         scoreGrid.appendChild(row);
     });
 }
+
 // ==========================================
-// 4. SELEÇÃO DA TOOLBAR (Ferramenta Ativa)
+// 4. SELEÇÃO DA TOOLBAR & ATALHOS DE HISTÓRICO
 // ==========================================
 
 function setupToolbarEvents() {
@@ -208,7 +214,6 @@ function setupToolbarEvents() {
     const btnUndo = document.getElementById("btn-undo");
     const btnRedo = document.getElementById("btn-redo");
 
-    // Mapeamento dos botões para os tipos de toque
     const strokeMap = ["strong", "ghost", "accent"];
 
     strokeButtons.forEach((btn, index) => {
@@ -219,11 +224,9 @@ function setupToolbarEvents() {
         });
     });
 
-    // Botões de Desfazer e Refazer
     if (btnUndo) btnUndo.addEventListener("click", () => historyManager.undo());
     if (btnRedo) btnRedo.addEventListener("click", () => historyManager.redo());
 
-    // Atalhos de teclado (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z)
     window.addEventListener("keydown", (e) => {
         if (e.ctrlKey || e.metaKey) {
             if (e.key === "z" && !e.shiftKey) {
@@ -236,21 +239,24 @@ function setupToolbarEvents() {
         }
     });
 
-    // Troca rápida de instrumento ativo ao clicar no card da sidebar
-    document.getElementById("instruments-sidebar").addEventListener("click", (e) => {
+    document.getElementById("instruments-sidebar-list").addEventListener("click", (e) => {
         const card = e.target.closest(".instrument-card");
         if (!card) return;
 
         document.querySelectorAll(".instrument-card").forEach(c => c.classList.remove("active"));
         card.classList.add("active");
         scoreState.activeTool.instrumentId = card.dataset.instrumentId;
+
+        const activeNameEl = document.getElementById("active-tool-name");
+        const inst = scoreState.instruments.find(i => i.id === card.dataset.instrumentId);
+        if (activeNameEl && inst) activeNameEl.textContent = inst.name;
     });
 
     historyManager.updateButtonsState();
 }
 
 // ==========================================
-// 5. INTERATIVIDADE DAS CÉLULAS (Event Delegation)
+// 5. INTERATIVIDADE DAS CÉLULAS COM HISTÓRICO
 // ==========================================
 
 function setupGridEvents() {
@@ -265,21 +271,17 @@ function setupGridEvents() {
         const step = parseInt(slot.dataset.step, 10);
 
         const instrument = scoreState.instruments[instIndex];
-        if (!instrument) return;
+        if (!instrument || !instrument.pattern[measure]) return;
 
         const currentStroke = instrument.pattern[measure][step];
         const targetStroke = scoreState.activeTool.strokeType;
-
-        // Regra: se clicar no mesmo toque, remove (pausa); senão, aplica o novo toque
         const nextStroke = (currentStroke === targetStroke) ? null : targetStroke;
 
         if (currentStroke !== nextStroke) {
             historyManager.pushState();
 
-            // 1. Atualiza o Estado
             instrument.pattern[measure][step] = nextStroke;
 
-            // 2. Atualiza a DOM do slot
             const visual = getStrokeVisual(nextStroke);
             slot.className = `note-slot ${visual.className}`;
             slot.innerHTML = visual.content;
@@ -301,6 +303,11 @@ function setupHeaderEvents() {
             e.target.value = scoreState.bpm;
         }
     });
+
+    const titleEl = document.querySelector(".arrangement-title");
+    titleEl.addEventListener("blur", () => {
+        scoreState.title = titleEl.textContent.trim() || "Sem Título";
+    });
 }
 
 // ==========================================
@@ -316,15 +323,20 @@ function setupTransportEvents() {
         if (!audioEngine.isPlaying) {
             await audioEngine.start();
             btnPlay.classList.add("active");
+            btnPlay.textContent = "⏸";
+        } else {
+            audioEngine.stop();
+            btnPlay.classList.remove("active");
+            btnPlay.textContent = "▶";
         }
     });
 
     btnStop.addEventListener("click", () => {
         audioEngine.stop();
         btnPlay.classList.remove("active");
+        btnPlay.textContent = "▶";
     });
 
-    // Atualiza o BPM no Tone.js em tempo real
     bpmInput.addEventListener("input", (e) => {
         const val = parseInt(e.target.value, 10);
         if (!isNaN(val) && val >= 40 && val <= 260) {
@@ -337,7 +349,15 @@ function setupTransportEvents() {
 }
 
 // ==========================================
-// 8. SINCRONIA DO PLAYHEAD VISUAL
+// 8. SINCRONIA DO PLAYHEAD VISUAL (60 FPS)
+// ==========================================
+
+// ==========================================
+// 8. SINCRONIA DO PLAYHEAD VISUAL (60 FPS Interpolarizada)
+// ==========================================
+
+// ==========================================
+// 8. SINCRONIA DO PLAYHEAD VISUAL (Extensão Completa)
 // ==========================================
 
 let playheadAnimFrameId = null;
@@ -350,16 +370,20 @@ function animatePlayhead() {
 
     if (playhead && firstRow) {
         const firstSlot = firstRow.querySelector(".note-slot");
-        const lastSlot = firstRow.querySelector(".note-slot:last-child");
+        const containers = firstRow.querySelectorAll(".measure-container");
 
-        if (firstSlot && lastSlot) {
-            const startX = firstSlot.offsetLeft + (firstSlot.offsetWidth / 2) - (playhead.offsetWidth / 2);
-            const endX = lastSlot.offsetLeft + (lastSlot.offsetWidth / 2) - (playhead.offsetWidth / 2);
-            const trackWidth = endX - startX;
+        if (firstSlot && containers.length > 0) {
+            // 1. Largura total de todos os compassos somados
+            let totalTrackWidth = 0;
+            containers.forEach(c => {
+                totalTrackWidth += c.offsetWidth;
+            });
 
-            // Progresso atual de 0.0 a 1.0 dentro do loop
-            const progress = Tone.Transport.progress;
-            const currentX = startX + (progress * trackWidth);
+            // 2. Ponto de partida: início do primeiro slot
+            const startX = firstSlot.offsetLeft;
+
+            // 3. Progresso do loop (0.0 a 1.0) mapeado sobre a largura útil inteira
+            const currentX = startX + (Tone.Transport.progress * totalTrackWidth);
 
             playhead.style.transform = `translateX(${currentX}px)`;
         }
@@ -381,9 +405,9 @@ function stopPlayheadAnimation() {
 
     const playhead = document.getElementById("playhead");
     const firstSlot = document.querySelector(".score-row .note-slot");
+
     if (playhead && firstSlot) {
-        const startX = firstSlot.offsetLeft + (firstSlot.offsetWidth / 2) - (playhead.offsetWidth / 2);
-        playhead.style.transform = `translateX(${startX}px)`;
+        playhead.style.transform = `translateX(${firstSlot.offsetLeft}px)`;
     }
 }
 
@@ -399,7 +423,6 @@ const historyManager = {
     redoStack: [],
     maxHistory: 30,
 
-    // Captura apenas a matriz de notas para manter o snapshot leve
     getSnapshot() {
         return scoreState.instruments.map(inst => ({
             id: inst.id,
@@ -407,13 +430,11 @@ const historyManager = {
         }));
     },
 
-    // Salva o estado atual na pilha antes de uma modificação
     pushState() {
         this.undoStack.push(this.getSnapshot());
         if (this.undoStack.length > this.maxHistory) {
             this.undoStack.shift();
         }
-        // Qualquer nova ação limpa o refazer
         this.redoStack = [];
         this.updateButtonsState();
     },
@@ -421,7 +442,6 @@ const historyManager = {
     undo() {
         if (this.undoStack.length === 0) return;
 
-        // Guarda o estado atual no redo antes de voltar
         this.redoStack.push(this.getSnapshot());
         const previousSnapshot = this.undoStack.pop();
 
@@ -432,7 +452,6 @@ const historyManager = {
     redo() {
         if (this.redoStack.length === 0) return;
 
-        // Guarda o estado atual no undo antes de avançar
         this.undoStack.push(this.getSnapshot());
         const nextSnapshot = this.redoStack.pop();
 
@@ -448,7 +467,6 @@ const historyManager = {
             }
         });
 
-        // Re-renderiza a grade com os novos padrões restaurados
         renderScore();
     },
 
@@ -461,7 +479,7 @@ const historyManager = {
     }
 };
 
-// Atualizar o listener de inicialização
+// Inicialização
 document.addEventListener("DOMContentLoaded", () => {
     renderScore();
     setupToolbarEvents();
