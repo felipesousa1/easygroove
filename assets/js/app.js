@@ -340,31 +340,55 @@ function setupTransportEvents() {
 // 8. SINCRONIA DO PLAYHEAD VISUAL
 // ==========================================
 
-function updatePlayheadPosition(globalStep) {
+let playheadAnimFrameId = null;
+
+function animatePlayhead() {
+    if (!audioEngine.isPlaying) return;
+
     const playhead = document.getElementById("playhead");
-    if (!playhead) return;
+    const firstRow = document.querySelector(".score-row");
 
-    const totalStepsPerMeasure = scoreState.beatsPerMeasure * scoreState.subdivisions;
-    const measure = Math.floor(globalStep / totalStepsPerMeasure);
-    const stepInMeasure = globalStep % totalStepsPerMeasure;
+    if (playhead && firstRow) {
+        const firstSlot = firstRow.querySelector(".note-slot");
+        const lastSlot = firstRow.querySelector(".note-slot:last-child");
 
-    // Busca o slot do primeiro instrumento no passo atual como âncora de coordenadas
-    const targetSlot = document.querySelector(`.note-slot[data-inst-index="0"][data-measure="${measure}"][data-step="${stepInMeasure}"]`);
-    const scoreGrid = document.getElementById("score-grid");
+        if (firstSlot && lastSlot) {
+            const startX = firstSlot.offsetLeft + (firstSlot.offsetWidth / 2) - (playhead.offsetWidth / 2);
+            const endX = lastSlot.offsetLeft + (lastSlot.offsetWidth / 2) - (playhead.offsetWidth / 2);
+            const trackWidth = endX - startX;
 
-    if (targetSlot && scoreGrid) {
-        const gridRect = scoreGrid.getBoundingClientRect();
-        const slotRect = targetSlot.getBoundingClientRect();
+            // Progresso atual de 0.0 a 1.0 dentro do loop
+            const progress = Tone.Transport.progress;
+            const currentX = startX + (progress * trackWidth);
 
-        // Centraliza o playhead no meio do slot horizontalmente
-        const offsetLeft = (slotRect.left - gridRect.left) + (slotRect.width / 2) - (playhead.offsetWidth / 2);
-        playhead.style.transform = `translateX(${offsetLeft}px)`;
+            playhead.style.transform = `translateX(${currentX}px)`;
+        }
+    }
+
+    playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
+}
+
+function startPlayheadAnimation() {
+    if (playheadAnimFrameId) cancelAnimationFrame(playheadAnimFrameId);
+    playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
+}
+
+function stopPlayheadAnimation() {
+    if (playheadAnimFrameId) {
+        cancelAnimationFrame(playheadAnimFrameId);
+        playheadAnimFrameId = null;
+    }
+
+    const playhead = document.getElementById("playhead");
+    const firstSlot = document.querySelector(".score-row .note-slot");
+    if (playhead && firstSlot) {
+        const startX = firstSlot.offsetLeft + (firstSlot.offsetWidth / 2) - (playhead.offsetWidth / 2);
+        playhead.style.transform = `translateX(${startX}px)`;
     }
 }
 
-// Expõe para o audio.js
-window.updatePlayheadPosition = updatePlayheadPosition;
-
+window.startPlayheadAnimation = startPlayheadAnimation;
+window.stopPlayheadAnimation = stopPlayheadAnimation;
 
 // ==========================================
 // 9. GERENCIAMENTO DE HISTÓRICO (UNDO / REDO)

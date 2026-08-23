@@ -11,7 +11,7 @@ const audioEngine = {
     init() {
         if (this.isInitialized) return;
 
-        // Síntese percussiva básica de teste
+        // Síntese percussiva básica para pré-escuta
         this.synths = {
             surdo1: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" } }).toDestination(),
             caixa: new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.15, sustain: 0 } }).toDestination(),
@@ -19,14 +19,24 @@ const audioEngine = {
             tamborim: new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 8, oscillator: { type: "triangle" } }).toDestination()
         };
 
-        Tone.Transport.bpm.value = scoreState.bpm;
+        audioEngine.updateTransportSettings(); // <-- Chamada direta pelo objeto
 
-        // Agenda o loop a cada 16 avos (semicolcheia)
+        // Agenda o disparo do áudio em cada semicolcheia (16n)
         Tone.Transport.scheduleRepeat((time) => {
-            this.onStep(time);
+            audioEngine.onStep(time);
         }, "16n");
 
         this.isInitialized = true;
+    },
+
+    updateTransportSettings() {
+        Tone.Transport.bpm.value = scoreState.bpm;
+        Tone.Transport.timeSignature = [scoreState.beatsPerMeasure, 4];
+
+        // Configura o loop do Transport para a quantidade total de compassos (ex: "3m")
+        Tone.Transport.loop = true;
+        Tone.Transport.loopStart = 0;
+        Tone.Transport.loopEnd = `${scoreState.measuresCount}m`;
     },
 
     onStep(time) {
@@ -36,7 +46,7 @@ const audioEngine = {
         const currentMeasure = Math.floor(this.currentGlobalStep / totalStepsPerMeasure);
         const currentStepInMeasure = this.currentGlobalStep % totalStepsPerMeasure;
 
-        // 1. Disparo de áudio
+        // Disparo de áudio
         scoreState.instruments.forEach((inst) => {
             if (!inst.pattern[currentMeasure]) return;
 
@@ -46,15 +56,7 @@ const audioEngine = {
             }
         });
 
-        // 2. Disparo visual do Playhead no frame exato de animação
-        const stepToAnimate = this.currentGlobalStep;
-        Tone.Draw.schedule(() => {
-            if (window.updatePlayheadPosition) {
-                window.updatePlayheadPosition(stepToAnimate);
-            }
-        }, time);
-
-        // 3. Incremento do passo
+        // Incremento do passo
         this.currentGlobalStep = (this.currentGlobalStep + 1) % totalGlobalSteps;
     },
 
@@ -91,17 +93,25 @@ const audioEngine = {
         await Tone.start();
         if (!this.isInitialized) this.init();
 
+        audioEngine.updateTransportSettings();
+        Tone.Transport.position = 0;
+        this.currentGlobalStep = 0;
         Tone.Transport.start();
         this.isPlaying = true;
+
+        if (window.startPlayheadAnimation) {
+            window.startPlayheadAnimation();
+        }
     },
 
     stop() {
         Tone.Transport.stop();
+        Tone.Transport.position = 0;
         this.currentGlobalStep = 0;
         this.isPlaying = false;
 
-        if (window.updatePlayheadPosition) {
-            window.updatePlayheadPosition(0);
+        if (window.stopPlayheadAnimation) {
+            window.stopPlayheadAnimation();
         }
     }
 };

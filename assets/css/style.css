@@ -277,7 +277,6 @@ body {
   pointer-events: none;
   z-index: 30;
   transform: translateX(0);
-  transition: transform 0.04s linear;
 }
 
 .playhead-head {
