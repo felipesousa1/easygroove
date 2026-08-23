@@ -66,7 +66,7 @@
 
     </main>
 
-    <!-- 3. Toolbar Flutuante Inferior -->
+    <!-- Toolbar Flutuante Inferior -->
     <div class="floating-editor-bar">
         <button type="button" id="btn-undo" class="tool-btn" title="Desfazer (Ctrl+Z)">↺</button>
 
@@ -79,6 +79,16 @@
         </div>
 
         <button type="button" id="btn-redo" class="tool-btn" title="Refazer (Ctrl+Y)">↻</button>
+    </div>
+
+    <!-- Menu Dropdown Modular de Compasso -->
+    <div id="measure-dropdown" class="measure-dropdown-menu">
+        <button type="button" class="dropdown-item" data-action="duplicate">📄 Duplicar Compasso</button>
+        <button type="button" class="dropdown-item" data-action="add-before">⬅ Adicionar Antes</button>
+        <button type="button" class="dropdown-item" data-action="add-after">➡ Adicionar Depois</button>
+        <button type="button" class="dropdown-item" data-action="clear">🧹 Limpar Notas</button>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item danger" data-action="delete">🗑 Excluir Compasso</button>
     </div>
 
     <!-- Scripts -->

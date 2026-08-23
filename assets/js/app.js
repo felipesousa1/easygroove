@@ -6,8 +6,8 @@ const scoreState = {
     title: "Bossa Nova Principal",
     bpm: 120,
     measuresCount: 3,
-    beatsPerMeasure: 4, // 4 tempos por compasso (4/4)
-    subdivisions: 4,    // 4 semicolcheias por tempo = 16 passos por compasso
+    beatsPerMeasure: 4,
+    subdivisions: 4,
 
     activeTool: {
         instrumentId: "caixa",
@@ -22,7 +22,6 @@ const scoreState = {
             volume: 80,
             availableStrokes: ["strong", "accent"],
             pattern: [
-                // 16 semicolcheias por compasso (4 traves métricas)
                 ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null],
                 ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null],
                 ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null]
@@ -71,7 +70,6 @@ const scoreState = {
 // 2. FUNÇÕES GERADORAS DE TEMPLATE HTML/SVG
 // ==========================================
 
-// SVG das 4 semicolcheias por tempo métrico
 function createBeamsSVG() {
     return `
     <svg class="beat-beams" viewBox="0 0 112 32" preserveAspectRatio="none">
@@ -102,6 +100,11 @@ function getStrokeVisual(stroke) {
     }
 }
 
+// Cria um compasso vazio de 16 semicolcheias
+function createEmptyMeasure() {
+    return new Array(scoreState.beatsPerMeasure * scoreState.subdivisions).fill(null);
+}
+
 // ==========================================
 // 3. RENDERIZAÇÃO DINÂMICA
 // ==========================================
@@ -113,27 +116,33 @@ function renderScore() {
 
     if (!measuresTrack || !sidebarList || !scoreGrid) return;
 
-    // Atualiza título e BPM
     const titleEl = document.querySelector(".arrangement-title");
     const bpmInput = document.getElementById("bpm-input");
     if (titleEl) titleEl.textContent = scoreState.title;
     if (bpmInput) bpmInput.value = scoreState.bpm;
 
-    // 1. Renderiza cabeçalhos de cada compasso
+    // 1. Renderiza cabeçalhos de cada compasso + Botão + Compasso
     measuresTrack.innerHTML = "";
     for (let m = 0; m < scoreState.measuresCount; m++) {
         const header = document.createElement("div");
         header.className = "measure-header";
         header.innerHTML = `
       <span>Compasso ${m + 1}</span>
-      <button type="button" class="measure-menu-btn" title="Opções do Compasso">⋮</button>
+      <button type="button" class="measure-menu-btn" data-measure-index="${m}" title="Opções do Compasso">⋮</button>
     `;
         measuresTrack.appendChild(header);
     }
 
+    const btnAddTrack = document.createElement("button");
+    btnAddTrack.type = "button";
+    btnAddTrack.className = "btn-add-measure-track";
+    btnAddTrack.innerHTML = "+ Compasso";
+    btnAddTrack.addEventListener("click", () => addMeasureToEnd());
+    measuresTrack.appendChild(btnAddTrack);
+
     // 2. Renderiza os cards na sidebar
     sidebarList.querySelectorAll(".instrument-card").forEach(el => el.remove());
-    const btnAdd = sidebarList.querySelector(".btn-add-instrument");
+    const btnAddInst = sidebarList.querySelector(".btn-add-instrument");
 
     scoreState.instruments.forEach((inst, index) => {
         const card = document.createElement("div");
@@ -148,15 +157,15 @@ function renderScore() {
       </div>
     `;
 
-        if (btnAdd) {
-            sidebarList.insertBefore(card, btnAdd);
+        if (btnAddInst) {
+            sidebarList.insertBefore(card, btnAddInst);
         } else {
             sidebarList.appendChild(card);
         }
     });
 
     // 3. Renderiza as linhas dos instrumentos
-    scoreGrid.querySelectorAll(".score-row").forEach(el => el.remove());
+    scoreGrid.querySelectorAll(".score-row, .add-measure-column").forEach(el => el.remove());
 
     scoreState.instruments.forEach((inst, instIndex) => {
         const row = document.createElement("div");
@@ -167,9 +176,8 @@ function renderScore() {
             const measureContainer = document.createElement("div");
             measureContainer.className = "measure-container";
 
-            const measurePattern = inst.pattern[m] || [];
+            const measurePattern = inst.pattern[m] || createEmptyMeasure();
 
-            // 4 tempos por compasso
             for (let b = 0; b < scoreState.beatsPerMeasure; b++) {
                 const beatGroup = document.createElement("div");
                 beatGroup.className = "beat-group";
@@ -178,7 +186,6 @@ function renderScore() {
                 const slotsBar = document.createElement("div");
                 slotsBar.className = "slots-bar";
 
-                // 4 semicolcheias por tempo
                 for (let s = 0; s < scoreState.subdivisions; s++) {
                     const stepIndex = (b * scoreState.subdivisions) + s;
                     const stroke = measurePattern[stepIndex] || null;
@@ -203,10 +210,110 @@ function renderScore() {
 
         scoreGrid.appendChild(row);
     });
+
+    // Atualiza configurações de áudio para a nova quantidade de compassos
+    if (window.audioEngine && audioEngine.isInitialized) {
+        audioEngine.updateTransportSettings();
+    }
 }
 
 // ==========================================
-// 4. SELEÇÃO DA TOOLBAR & ATALHOS DE HISTÓRICO
+// 4. MANIPULAÇÃO DINÂMICA DE COMPASSOS
+// ==========================================
+
+let activeMeasureMenuIndex = null;
+
+function setupMeasureMenuEvents() {
+    const dropdown = document.getElementById("measure-dropdown");
+
+    // Abrir o menu de opções do compasso
+    document.getElementById("measures-track").addEventListener("click", (e) => {
+        const btn = e.target.closest(".measure-menu-btn");
+        if (!btn) return;
+
+        e.stopPropagation();
+        activeMeasureMenuIndex = parseInt(btn.dataset.measureIndex, 10);
+
+        const rect = btn.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom + window.scrollY + 6}px`;
+        dropdown.style.left = `${rect.left + window.scrollX - 160}px`;
+        dropdown.classList.add("visible");
+    });
+
+    // Ações do Dropdown
+    dropdown.addEventListener("click", (e) => {
+        const item = e.target.closest(".dropdown-item");
+        if (!item || activeMeasureMenuIndex === null) return;
+
+        const action = item.dataset.action;
+        handleMeasureAction(action, activeMeasureMenuIndex);
+        dropdown.classList.remove("visible");
+    });
+
+    // Fecha o dropdown ao clicar fora
+    document.addEventListener("click", () => {
+        dropdown.classList.remove("visible");
+    });
+}
+
+function handleMeasureAction(action, index) {
+    historyManager.pushState();
+
+    switch (action) {
+        case "duplicate":
+            scoreState.instruments.forEach(inst => {
+                const cloned = JSON.parse(JSON.stringify(inst.pattern[index]));
+                inst.pattern.splice(index + 1, 0, cloned);
+            });
+            scoreState.measuresCount++;
+            break;
+
+        case "add-before":
+            scoreState.instruments.forEach(inst => {
+                inst.pattern.splice(index, 0, createEmptyMeasure());
+            });
+            scoreState.measuresCount++;
+            break;
+
+        case "add-after":
+            scoreState.instruments.forEach(inst => {
+                inst.pattern.splice(index + 1, 0, createEmptyMeasure());
+            });
+            scoreState.measuresCount++;
+            break;
+
+        case "clear":
+            scoreState.instruments.forEach(inst => {
+                inst.pattern[index] = createEmptyMeasure();
+            });
+            break;
+
+        case "delete":
+            if (scoreState.measuresCount <= 1) {
+                alert("O arranjo precisa ter no mínimo 1 compasso.");
+                return;
+            }
+            scoreState.instruments.forEach(inst => {
+                inst.pattern.splice(index, 1);
+            });
+            scoreState.measuresCount--;
+            break;
+    }
+
+    renderScore();
+}
+
+function addMeasureToEnd() {
+    historyManager.pushState();
+    scoreState.instruments.forEach(inst => {
+        inst.pattern.push(createEmptyMeasure());
+    });
+    scoreState.measuresCount++;
+    renderScore();
+}
+
+// ==========================================
+// 5. TOOLBAR, CÉLULAS E HEADER
 // ==========================================
 
 function setupToolbarEvents() {
@@ -255,10 +362,6 @@ function setupToolbarEvents() {
     historyManager.updateButtonsState();
 }
 
-// ==========================================
-// 5. INTERATIVIDADE DAS CÉLULAS COM HISTÓRICO
-// ==========================================
-
 function setupGridEvents() {
     const scoreGrid = document.getElementById("score-grid");
 
@@ -289,10 +392,6 @@ function setupGridEvents() {
     });
 }
 
-// ==========================================
-// 6. EVENTOS DE BPM E TÍTULO
-// ==========================================
-
 function setupHeaderEvents() {
     const bpmInput = document.getElementById("bpm-input");
     bpmInput.addEventListener("change", (e) => {
@@ -309,10 +408,6 @@ function setupHeaderEvents() {
         scoreState.title = titleEl.textContent.trim() || "Sem Título";
     });
 }
-
-// ==========================================
-// 7. CONTROLES DE TRANSPORTE (PLAY / STOP)
-// ==========================================
 
 function setupTransportEvents() {
     const btnPlay = document.getElementById("btn-play");
@@ -349,15 +444,7 @@ function setupTransportEvents() {
 }
 
 // ==========================================
-// 8. SINCRONIA DO PLAYHEAD VISUAL (60 FPS)
-// ==========================================
-
-// ==========================================
-// 8. SINCRONIA DO PLAYHEAD VISUAL (60 FPS Interpolarizada)
-// ==========================================
-
-// ==========================================
-// 8. SINCRONIA DO PLAYHEAD VISUAL (Extensão Completa)
+// 8. SINCRONIA DO PLAYHEAD VISUAL
 // ==========================================
 
 let playheadAnimFrameId = null;
@@ -373,18 +460,13 @@ function animatePlayhead() {
         const containers = firstRow.querySelectorAll(".measure-container");
 
         if (firstSlot && containers.length > 0) {
-            // 1. Largura total de todos os compassos somados
             let totalTrackWidth = 0;
             containers.forEach(c => {
                 totalTrackWidth += c.offsetWidth;
             });
 
-            // 2. Ponto de partida: início do primeiro slot
             const startX = firstSlot.offsetLeft;
-
-            // 3. Progresso do loop (0.0 a 1.0) mapeado sobre a largura útil inteira
             const currentX = startX + (Tone.Transport.progress * totalTrackWidth);
-
             playhead.style.transform = `translateX(${currentX}px)`;
         }
     }
@@ -415,7 +497,7 @@ window.startPlayheadAnimation = startPlayheadAnimation;
 window.stopPlayheadAnimation = stopPlayheadAnimation;
 
 // ==========================================
-// 9. GERENCIAMENTO DE HISTÓRICO (UNDO / REDO)
+// 9. HISTÓRICO (UNDO / REDO)
 // ==========================================
 
 const historyManager = {
@@ -424,10 +506,13 @@ const historyManager = {
     maxHistory: 30,
 
     getSnapshot() {
-        return scoreState.instruments.map(inst => ({
-            id: inst.id,
-            pattern: JSON.parse(JSON.stringify(inst.pattern))
-        }));
+        return {
+            measuresCount: scoreState.measuresCount,
+            instruments: scoreState.instruments.map(inst => ({
+                id: inst.id,
+                pattern: JSON.parse(JSON.stringify(inst.pattern))
+            }))
+        };
     },
 
     pushState() {
@@ -460,7 +545,8 @@ const historyManager = {
     },
 
     applySnapshot(snapshot) {
-        snapshot.forEach(savedInst => {
+        scoreState.measuresCount = snapshot.measuresCount;
+        snapshot.instruments.forEach(savedInst => {
             const targetInst = scoreState.instruments.find(i => i.id === savedInst.id);
             if (targetInst) {
                 targetInst.pattern = JSON.parse(JSON.stringify(savedInst.pattern));
@@ -486,4 +572,5 @@ document.addEventListener("DOMContentLoaded", () => {
     setupGridEvents();
     setupHeaderEvents();
     setupTransportEvents();
+    setupMeasureMenuEvents();
 });
