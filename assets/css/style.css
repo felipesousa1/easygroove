@@ -787,6 +787,32 @@ body {
     border-color: var(--color-purple-primary);
 }
 
+/* Botão de Opções do Compasso (3 pontinhos circulares sem borda fixa) */
+.measure-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 0.15s ease;
+}
+
+.measure-menu-btn:hover {
+  background-color: var(--color-gray-hover);
+}
+
+.measure-menu-btn img {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  display: block;
+}
+
 .measure-dropdown-menu {
     position: absolute;
     background-color: #ffffff;
@@ -920,4 +946,108 @@ body {
     height: 16px;
     object-fit: contain;
     pointer-events: none;
+}
+
+/* Playhead Agulha */
+.playhead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 2px;
+  background-color: var(--color-purple-loop);
+  pointer-events: none;
+  z-index: 60;
+  transform: translateX(0);
+  will-change: transform;
+}
+
+.playhead::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -5px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-purple-loop);
+  border-radius: 50%;
+}
+
+/* ==========================================
+   SÍMBOLOS E ARTICULAÇÕES DOS TOQUES
+   ========================================== */
+
+/* 1. Bolinha Grande Preta */
+.note-slot.filled::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--color-black);
+  display: block;
+}
+
+/* 2. Bolinha Pequena Preta */
+.note-slot.small-dot::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-black);
+  display: block;
+}
+
+/* 3. Circunferência Vazia */
+.note-slot.ring-empty::after {
+  content: '';
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--color-black);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background-color: transparent;
+  display: block;
+}
+
+/* 4. Circunferência com Bola Preta Dentro */
+.note-slot.ring-accent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-slot.ring-accent::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-black);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background-color: var(--color-black);
+  box-shadow: 0 0 0 1.5px #ffffff inset;
+  display: block;
+}
+
+/* 5. Chocalho e Tamborim (Glifos de Texto) */
+.note-slot.chevron-accent,
+.note-slot.chevron-back,
+.note-slot.arrow-up,
+.note-slot.arrow-down {
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--color-black);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 6. Imagens SVG de Toques */
+.note-slot img,
+.note-slot svg {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+  display: block;
 }
