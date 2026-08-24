@@ -1,5 +1,42 @@
 // ==========================================
-// 1. MODELAGEM DO ESTADO (scoreState 4x4)
+// 1. DICIONÁRIO DE ARTICULAÇÕES E METADADOS
+// ==========================================
+
+const STROKE_DEFINITIONS = {
+    strong: {
+        label: "Toque Forte / Centro",
+        icon: "●",
+        className: "filled",
+        renderHTML: ""
+    },
+    ghost: {
+        label: "Nota Fantasma / Mão",
+        icon: "•",
+        className: "small-dot",
+        renderHTML: ""
+    },
+    accent: {
+        label: "Acento / Rimshot / Borda",
+        icon: "⦿",
+        className: "ring-accent",
+        renderHTML: ""
+    },
+    "chevron-accent": {
+        label: "Chocalho (Frente)",
+        icon: ">",
+        className: "chevron-accent",
+        renderHTML: "&gt;"
+    },
+    "chevron-back": {
+        label: "Chocalho (Trás)",
+        icon: "<",
+        className: "chevron-back",
+        renderHTML: "&lt;"
+    }
+};
+
+// ==========================================
+// 2. MODELAGEM DO ESTADO (scoreState)
 // ==========================================
 
 const scoreState = {
@@ -10,7 +47,7 @@ const scoreState = {
     subdivisions: 4,
 
     activeTool: {
-        instrumentId: "caixa",
+        instrumentId: "surdo1",
         strokeType: "strong"
     },
 
@@ -18,56 +55,64 @@ const scoreState = {
         {
             id: "surdo1",
             name: "Surdo 1ª",
-            icon: "🥁",
+            iconSvg: "assets/icons/inst-surdo1.svg",
             volume: 80,
             availableStrokes: ["strong", "accent"],
-            pattern: [
-                ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null],
-                ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null],
-                ["strong", null, null, null, null, null, null, null, "accent", null, null, null, null, null, null, null]
-            ]
+            pattern: []
+        },
+        {
+            id: "surdo2",
+            name: "Surdo 2ª",
+            iconSvg: "assets/icons/inst-surdo2.svg",
+            volume: 80,
+            availableStrokes: ["strong", "accent"],
+            pattern: []
+        },
+        {
+            id: "surdo3",
+            name: "Surdo 3ª",
+            iconSvg: "assets/icons/inst-surdo3.svg",
+            volume: 80,
+            availableStrokes: ["strong", "ghost", "accent"],
+            pattern: []
         },
         {
             id: "caixa",
             name: "Caixa",
-            icon: "🪘",
+            iconSvg: "assets/icons/inst-caixa.svg",
             volume: 80,
             availableStrokes: ["strong", "ghost", "accent"],
-            pattern: [
-                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost", "strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"],
-                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost", "strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"],
-                ["strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost", "strong", "ghost", "ghost", "ghost", "accent", "ghost", "ghost", "ghost"]
-            ]
+            pattern: []
+        },
+        {
+            id: "repique",
+            name: "Repique",
+            iconSvg: "assets/icons/inst-repique.svg",
+            volume: 80,
+            availableStrokes: ["strong", "ghost", "accent"],
+            pattern: []
         },
         {
             id: "chocalho",
             name: "Chocalho",
-            icon: "🥢",
+            iconSvg: "assets/icons/inst-chocalho.svg",
             volume: 80,
             availableStrokes: ["chevron-accent", "chevron-back"],
-            pattern: [
-                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"],
-                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"],
-                ["chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back", "chevron-accent", "chevron-back"]
-            ]
+            pattern: []
         },
         {
             id: "tamborim",
             name: "Tamborim",
-            icon: "🪗",
+            iconSvg: "assets/icons/inst-tamborim.svg",
             volume: 80,
             availableStrokes: ["strong", "accent"],
-            pattern: [
-                ["strong", null, null, "strong", null, "accent", null, "strong", null, null, "strong", null, "accent", null, "strong", null],
-                [null, "strong", null, "strong", null, null, "accent", null, "strong", null, "strong", null, null, "accent", null, "strong"],
-                ["strong", null, null, "strong", null, "accent", null, "strong", null, null, "strong", null, "accent", null, "strong", null]
-            ]
+            pattern: []
         }
     ]
 };
 
 // ==========================================
-// 2. FUNÇÕES GERADORAS DE TEMPLATE HTML/SVG
+// 3. TEMPLATES E RENDERIZAÇÃO
 // ==========================================
 
 function createBeamsSVG() {
@@ -84,30 +129,16 @@ function createBeamsSVG() {
 }
 
 function getStrokeVisual(stroke) {
-    switch (stroke) {
-        case "strong":
-            return { className: "filled", content: "" };
-        case "ghost":
-            return { className: "small-dot", content: "" };
-        case "accent":
-            return { className: "ring-accent", content: "" };
-        case "chevron-accent":
-            return { className: "chevron-accent", content: "&gt;" };
-        case "chevron-back":
-            return { className: "chevron-back", content: "&lt;" };
-        default:
-            return { className: "empty", content: "" };
+    if (!stroke || !STROKE_DEFINITIONS[stroke]) {
+        return { className: "empty", content: "" };
     }
+    const def = STROKE_DEFINITIONS[stroke];
+    return { className: def.className, content: def.renderHTML };
 }
 
-// Cria um compasso vazio de 16 semicolcheias
 function createEmptyMeasure() {
     return new Array(scoreState.beatsPerMeasure * scoreState.subdivisions).fill(null);
 }
-
-// ==========================================
-// 3. RENDERIZAÇÃO DINÂMICA
-// ==========================================
 
 function renderScore() {
     const measuresTrack = document.getElementById("measures-track");
@@ -116,19 +147,21 @@ function renderScore() {
 
     if (!measuresTrack || !sidebarList || !scoreGrid) return;
 
-    const titleEl = document.querySelector(".arrangement-title");
+    const titleDisplay = document.getElementById("title-display");
     const bpmInput = document.getElementById("bpm-input");
-    if (titleEl) titleEl.textContent = scoreState.title;
+    if (titleDisplay) titleDisplay.textContent = scoreState.title;
     if (bpmInput) bpmInput.value = scoreState.bpm;
 
-    // 1. Renderiza cabeçalhos de cada compasso + Botão + Compasso
+    // 1. Cabeçalhos dos Compassos + Botão "+ Compasso"
     measuresTrack.innerHTML = "";
     for (let m = 0; m < scoreState.measuresCount; m++) {
         const header = document.createElement("div");
         header.className = "measure-header";
         header.innerHTML = `
       <span>Compasso ${m + 1}</span>
-      <button type="button" class="measure-menu-btn" data-measure-index="${m}" title="Opções do Compasso">⋮</button>
+      <button type="button" class="measure-menu-btn" data-measure-index="${m}" title="Opções do Compasso">
+        <img src="assets/icons/more-vertical.svg" alt="Opções">
+      </button>
     `;
         measuresTrack.appendChild(header);
     }
@@ -140,17 +173,21 @@ function renderScore() {
     btnAddTrack.addEventListener("click", () => addMeasureToEnd());
     measuresTrack.appendChild(btnAddTrack);
 
-    // 2. Renderiza os cards na sidebar
+    // 2. Sidebar dos Instrumentos
     sidebarList.querySelectorAll(".instrument-card").forEach(el => el.remove());
     const btnAddInst = sidebarList.querySelector(".btn-add-instrument");
 
     scoreState.instruments.forEach((inst, index) => {
+        while (inst.pattern.length < scoreState.measuresCount) {
+            inst.pattern.push(createEmptyMeasure());
+        }
+
         const card = document.createElement("div");
         card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''}`;
         card.dataset.instrumentId = inst.id;
         card.dataset.instIndex = index;
         card.innerHTML = `
-      <span class="inst-icon">${inst.icon}</span>
+      <img src="${inst.iconSvg}" class="inst-icon-img" alt="${inst.name}">
       <span class="inst-name">${inst.name}</span>
       <div class="inst-controls">
         <input type="range" class="vol-slider" min="0" max="100" value="${inst.volume}">
@@ -164,8 +201,8 @@ function renderScore() {
         }
     });
 
-    // 3. Renderiza as linhas dos instrumentos
-    scoreGrid.querySelectorAll(".score-row, .add-measure-column").forEach(el => el.remove());
+    // 3. Linhas da Grade
+    scoreGrid.querySelectorAll(".score-row").forEach(el => el.remove());
 
     scoreState.instruments.forEach((inst, instIndex) => {
         const row = document.createElement("div");
@@ -211,23 +248,167 @@ function renderScore() {
         scoreGrid.appendChild(row);
     });
 
-    // Atualiza configurações de áudio para a nova quantidade de compassos
+    updateToolbarPalettes();
+
     if (window.audioEngine && audioEngine.isInitialized) {
         audioEngine.updateTransportSettings();
     }
 }
 
 // ==========================================
-// 4. MANIPULAÇÃO DINÂMICA DE COMPASSOS
+// 4. ATUALIZAÇÃO CONTEXTUAL DA TOOLBAR
 // ==========================================
 
-let activeMeasureMenuIndex = null;
+function updateToolbarPalettes() {
+    const currentInst = scoreState.instruments.find(i => i.id === scoreState.activeTool.instrumentId) || scoreState.instruments[0];
+    if (!currentInst) return;
+
+    const activeIconEl = document.getElementById("active-tool-icon");
+    const activeNameEl = document.getElementById("active-tool-name");
+    if (activeIconEl) activeIconEl.src = currentInst.iconSvg;
+    if (activeNameEl) activeNameEl.textContent = currentInst.name;
+
+    if (!currentInst.availableStrokes.includes(scoreState.activeTool.strokeType)) {
+        scoreState.activeTool.strokeType = currentInst.availableStrokes[0];
+    }
+
+    const paletteContainer = document.getElementById("strokes-palette-container");
+    if (paletteContainer) {
+        paletteContainer.innerHTML = "";
+
+        currentInst.availableStrokes.forEach(strokeKey => {
+            const def = STROKE_DEFINITIONS[strokeKey];
+            if (!def) return;
+
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = `tool-stroke ${scoreState.activeTool.strokeType === strokeKey ? 'active' : ''}`;
+            btn.title = def.label;
+            btn.textContent = def.icon;
+            btn.dataset.strokeKey = strokeKey;
+
+            btn.addEventListener("click", () => {
+                paletteContainer.querySelectorAll(".tool-stroke").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                scoreState.activeTool.strokeType = strokeKey;
+            });
+
+            paletteContainer.appendChild(btn);
+        });
+    }
+
+    const instDropdown = document.getElementById("instrument-dropdown");
+    if (instDropdown) {
+        instDropdown.innerHTML = "";
+        scoreState.instruments.forEach(inst => {
+            const item = document.createElement("button");
+            item.type = "button";
+            item.className = `inst-dropdown-item ${inst.id === currentInst.id ? 'active' : ''}`;
+            item.innerHTML = `<img src="${inst.iconSvg}" class="ui-icon-inst-sm" alt="${inst.name}"> <span>${inst.name}</span>`;
+            item.addEventListener("click", () => {
+                selectActiveInstrument(inst.id);
+                instDropdown.classList.remove("visible");
+            });
+            instDropdown.appendChild(item);
+        });
+    }
+}
+
+function selectActiveInstrument(instId) {
+    scoreState.activeTool.instrumentId = instId;
+
+    document.querySelectorAll(".instrument-card").forEach(card => {
+        card.classList.toggle("active", card.dataset.instrumentId === instId);
+    });
+
+    updateToolbarPalettes();
+}
+
+// ==========================================
+// 5. EVENTOS E INTERATIVIDADE
+// ==========================================
+
+function setupToolbarEvents() {
+    const btnUndo = document.getElementById("btn-undo");
+    const btnRedo = document.getElementById("btn-redo");
+    const btnActiveInst = document.getElementById("btn-active-instrument");
+    const instDropdown = document.getElementById("instrument-dropdown");
+
+    if (btnActiveInst && instDropdown) {
+        btnActiveInst.addEventListener("click", (e) => {
+            e.stopPropagation();
+            instDropdown.classList.toggle("visible");
+        });
+
+        document.addEventListener("click", () => {
+            instDropdown.classList.remove("visible");
+        });
+    }
+
+    if (btnUndo) btnUndo.addEventListener("click", () => historyManager.undo());
+    if (btnRedo) btnRedo.addEventListener("click", () => historyManager.redo());
+
+    window.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey) {
+            if (e.key === "z" && !e.shiftKey) {
+                e.preventDefault();
+                historyManager.undo();
+            } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
+                e.preventDefault();
+                historyManager.redo();
+            }
+        }
+    });
+
+    const sidebarList = document.getElementById("instruments-sidebar-list");
+    if (sidebarList) {
+        sidebarList.addEventListener("click", (e) => {
+            const card = e.target.closest(".instrument-card");
+            if (!card) return;
+            selectActiveInstrument(card.dataset.instrumentId);
+        });
+    }
+
+    historyManager.updateButtonsState();
+}
+
+function setupGridEvents() {
+    const scoreGrid = document.getElementById("score-grid");
+    if (!scoreGrid) return;
+
+    scoreGrid.addEventListener("click", (e) => {
+        const slot = e.target.closest(".note-slot");
+        if (!slot) return;
+
+        const instIndex = parseInt(slot.dataset.instIndex, 10);
+        const measure = parseInt(slot.dataset.measure, 10);
+        const step = parseInt(slot.dataset.step, 10);
+
+        const instrument = scoreState.instruments[instIndex];
+        if (!instrument || !instrument.pattern[measure]) return;
+
+        const currentStroke = instrument.pattern[measure][step];
+        const targetStroke = scoreState.activeTool.strokeType;
+        const nextStroke = (currentStroke === targetStroke) ? null : targetStroke;
+
+        if (currentStroke !== nextStroke) {
+            historyManager.pushState();
+
+            instrument.pattern[measure][step] = nextStroke;
+
+            const visual = getStrokeVisual(nextStroke);
+            slot.className = `note-slot ${visual.className}`;
+            slot.innerHTML = visual.content;
+        }
+    });
+}
 
 function setupMeasureMenuEvents() {
     const dropdown = document.getElementById("measure-dropdown");
+    const measuresTrack = document.getElementById("measures-track");
+    if (!dropdown || !measuresTrack) return;
 
-    // Abrir o menu de opções do compasso
-    document.getElementById("measures-track").addEventListener("click", (e) => {
+    measuresTrack.addEventListener("click", (e) => {
         const btn = e.target.closest(".measure-menu-btn");
         if (!btn) return;
 
@@ -240,7 +421,6 @@ function setupMeasureMenuEvents() {
         dropdown.classList.add("visible");
     });
 
-    // Ações do Dropdown
     dropdown.addEventListener("click", (e) => {
         const item = e.target.closest(".dropdown-item");
         if (!item || activeMeasureMenuIndex === null) return;
@@ -250,11 +430,12 @@ function setupMeasureMenuEvents() {
         dropdown.classList.remove("visible");
     });
 
-    // Fecha o dropdown ao clicar fora
     document.addEventListener("click", () => {
         dropdown.classList.remove("visible");
     });
 }
+
+let activeMeasureMenuIndex = null;
 
 function handleMeasureAction(action, index) {
     historyManager.pushState();
@@ -312,175 +493,104 @@ function addMeasureToEnd() {
     renderScore();
 }
 
-// ==========================================
-// 5. TOOLBAR, CÉLULAS E HEADER
-// ==========================================
-
-function setupToolbarEvents() {
-    const strokeButtons = document.querySelectorAll(".tool-stroke");
-    const btnUndo = document.getElementById("btn-undo");
-    const btnRedo = document.getElementById("btn-redo");
-
-    const strokeMap = ["strong", "ghost", "accent"];
-
-    strokeButtons.forEach((btn, index) => {
-        btn.addEventListener("click", () => {
-            strokeButtons.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            scoreState.activeTool.strokeType = strokeMap[index] || "strong";
-        });
-    });
-
-    if (btnUndo) btnUndo.addEventListener("click", () => historyManager.undo());
-    if (btnRedo) btnRedo.addEventListener("click", () => historyManager.redo());
-
-    window.addEventListener("keydown", (e) => {
-        if (e.ctrlKey || e.metaKey) {
-            if (e.key === "z" && !e.shiftKey) {
-                e.preventDefault();
-                historyManager.undo();
-            } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
-                e.preventDefault();
-                historyManager.redo();
-            }
-        }
-    });
-
-    document.getElementById("instruments-sidebar-list").addEventListener("click", (e) => {
-        const card = e.target.closest(".instrument-card");
-        if (!card) return;
-
-        document.querySelectorAll(".instrument-card").forEach(c => c.classList.remove("active"));
-        card.classList.add("active");
-        scoreState.activeTool.instrumentId = card.dataset.instrumentId;
-
-        const activeNameEl = document.getElementById("active-tool-name");
-        const inst = scoreState.instruments.find(i => i.id === card.dataset.instrumentId);
-        if (activeNameEl && inst) activeNameEl.textContent = inst.name;
-    });
-
-    historyManager.updateButtonsState();
-}
-
-function setupGridEvents() {
-    const scoreGrid = document.getElementById("score-grid");
-
-    scoreGrid.addEventListener("click", (e) => {
-        const slot = e.target.closest(".note-slot");
-        if (!slot) return;
-
-        const instIndex = parseInt(slot.dataset.instIndex, 10);
-        const measure = parseInt(slot.dataset.measure, 10);
-        const step = parseInt(slot.dataset.step, 10);
-
-        const instrument = scoreState.instruments[instIndex];
-        if (!instrument || !instrument.pattern[measure]) return;
-
-        const currentStroke = instrument.pattern[measure][step];
-        const targetStroke = scoreState.activeTool.strokeType;
-        const nextStroke = (currentStroke === targetStroke) ? null : targetStroke;
-
-        if (currentStroke !== nextStroke) {
-            historyManager.pushState();
-
-            instrument.pattern[measure][step] = nextStroke;
-
-            const visual = getStrokeVisual(nextStroke);
-            slot.className = `note-slot ${visual.className}`;
-            slot.innerHTML = visual.content;
-        }
-    });
-}
-
 function setupHeaderEvents() {
     const bpmInput = document.getElementById("bpm-input");
-    bpmInput.addEventListener("change", (e) => {
-        const val = parseInt(e.target.value, 10);
-        if (!isNaN(val) && val >= 40 && val <= 260) {
-            scoreState.bpm = val;
-        } else {
-            e.target.value = scoreState.bpm;
-        }
-    });
+    if (bpmInput) {
+        bpmInput.addEventListener("change", (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 40 && val <= 260) {
+                scoreState.bpm = val;
+            } else {
+                e.target.value = scoreState.bpm;
+            }
+        });
+    }
 
     const titleDisplay = document.getElementById("title-display");
     const titleInput = document.getElementById("title-input");
     const btnEditTitle = document.getElementById("btn-edit-title");
 
-    function startEditingTitle() {
-        titleInput.value = scoreState.title;
-        titleDisplay.style.display = "none";
-        btnEditTitle.style.display = "none";
-        titleInput.style.display = "inline-block";
-        titleInput.focus();
-        titleInput.select();
-    }
-
-    function saveTitle() {
-        const newTitle = titleInput.value.trim() || "Sem Título";
-        scoreState.title = newTitle;
-        titleDisplay.textContent = newTitle;
-        titleDisplay.style.display = "inline-block";
-        btnEditTitle.style.display = "inline-flex";
-        titleInput.style.display = "none";
-    }
-
-    function cancelTitleEdit() {
-        titleDisplay.style.display = "inline-block";
-        btnEditTitle.style.display = "inline-flex";
-        titleInput.style.display = "none";
-    }
-
-    btnEditTitle.addEventListener("click", startEditingTitle);
-    titleDisplay.addEventListener("dblclick", startEditingTitle);
-
-    titleInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            saveTitle();
-        } else if (e.key === "Escape") {
-            cancelTitleEdit();
+    if (titleDisplay && titleInput && btnEditTitle) {
+        function startEditingTitle() {
+            titleInput.value = scoreState.title;
+            titleDisplay.style.display = "none";
+            btnEditTitle.style.display = "none";
+            titleInput.style.display = "inline-block";
+            titleInput.focus();
+            titleInput.select();
         }
-    });
 
-    titleInput.addEventListener("blur", saveTitle);
+        function saveTitle() {
+            const newTitle = titleInput.value.trim() || "Sem Título";
+            scoreState.title = newTitle;
+            titleDisplay.textContent = newTitle;
+            titleDisplay.style.display = "inline-block";
+            btnEditTitle.style.display = "inline-flex";
+            titleInput.style.display = "none";
+        }
+
+        function cancelTitleEdit() {
+            titleDisplay.style.display = "inline-block";
+            btnEditTitle.style.display = "inline-flex";
+            titleInput.style.display = "none";
+        }
+
+        btnEditTitle.addEventListener("click", startEditingTitle);
+        titleDisplay.addEventListener("dblclick", startEditingTitle);
+
+        titleInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                saveTitle();
+            } else if (e.key === "Escape") {
+                cancelTitleEdit();
+            }
+        });
+
+        titleInput.addEventListener("blur", saveTitle);
+    }
 }
 
 function setupTransportEvents() {
     const btnPlay = document.getElementById("btn-play");
     const btnStop = document.getElementById("btn-stop");
     const bpmInput = document.getElementById("bpm-input");
+    const playIconImg = document.getElementById("play-icon-img");
+
+    if (!btnPlay || !btnStop) return;
 
     btnPlay.addEventListener("click", async () => {
         if (!audioEngine.isPlaying) {
             await audioEngine.start();
             btnPlay.classList.add("active");
-            btnPlay.textContent = "⏸";
+            if (playIconImg) playIconImg.src = "assets/icons/pause.svg";
         } else {
             audioEngine.stop();
             btnPlay.classList.remove("active");
-            btnPlay.textContent = "▶";
+            if (playIconImg) playIconImg.src = "assets/icons/play.svg";
         }
     });
 
     btnStop.addEventListener("click", () => {
         audioEngine.stop();
         btnPlay.classList.remove("active");
-        btnPlay.textContent = "▶";
+        if (playIconImg) playIconImg.src = "assets/icons/play.svg";
     });
 
-    bpmInput.addEventListener("input", (e) => {
-        const val = parseInt(e.target.value, 10);
-        if (!isNaN(val) && val >= 40 && val <= 260) {
-            scoreState.bpm = val;
-            if (Tone.Transport) {
-                Tone.Transport.bpm.value = val;
+    if (bpmInput) {
+        bpmInput.addEventListener("input", (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 40 && val <= 260) {
+                scoreState.bpm = val;
+                if (Tone.Transport) {
+                    Tone.Transport.bpm.value = val;
+                }
             }
-        }
-    });
+        });
+    }
 }
 
 // ==========================================
-// 8. SINCRONIA DO PLAYHEAD VISUAL
+// 6. PLAYHEAD E HISTÓRICO
 // ==========================================
 
 let playheadAnimFrameId = null;
@@ -531,10 +641,6 @@ function stopPlayheadAnimation() {
 
 window.startPlayheadAnimation = startPlayheadAnimation;
 window.stopPlayheadAnimation = stopPlayheadAnimation;
-
-// ==========================================
-// 9. HISTÓRICO (UNDO / REDO)
-// ==========================================
 
 const historyManager = {
     undoStack: [],
@@ -601,7 +707,10 @@ const historyManager = {
     }
 };
 
-// Inicialização
+// ==========================================
+// 7. INICIALIZAÇÃO
+// ==========================================
+
 document.addEventListener("DOMContentLoaded", () => {
     renderScore();
     setupToolbarEvents();

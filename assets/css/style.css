@@ -788,3 +788,89 @@ body {
     background-color: var(--color-gray-border);
     margin: 4px 0;
 }
+
+/* ==========================================
+   6. DROPDOWN DE INSTRUMENTOS NA TOOLBAR
+   ========================================== */
+.instrument-selector-wrapper {
+    position: relative;
+}
+
+.instrument-dropdown-menu {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 0;
+    background-color: #ffffff;
+    border: 1px solid var(--color-gray-border);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 6px;
+    min-width: 180px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 110;
+}
+
+.instrument-dropdown-menu.visible {
+    display: flex;
+}
+
+.inst-dropdown-item {
+    background: none;
+    border: none;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.1s ease;
+}
+
+.inst-dropdown-item:hover {
+    background-color: var(--color-gray-hover);
+}
+
+.inst-dropdown-item.active {
+    background-color: #faf5ff;
+    color: var(--color-purple-primary);
+    font-weight: 700;
+}
+
+/* ==========================================
+   7. ÍCONES UI E IMAGENS SVG
+   ========================================== */
+
+.ui-icon-logo {
+  width: 26px;
+  height: 26px;
+}
+
+.player-btn img,
+.tool-btn img,
+.btn-edit-title img {
+  display: block;
+  pointer-events: none;
+}
+
+.player-btn.primary img {
+  filter: brightness(0) invert(1); /* Deixa o ícone de Play/Pause branco no botão roxo */
+}
+
+.ui-icon-inst-sm {
+  width: 22px;
+  height: 22px;
+}
+
+.inst-icon-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  margin-top: 2px;
+}

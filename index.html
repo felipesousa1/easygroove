@@ -14,21 +14,31 @@
     <header class="top-header">
         <div class="header-left">
             <div class="brand-logo">
-                <span>⚡</span> EasyGroove
+                <img src="assets/icons/logo.svg" alt="Logo" class="ui-icon-logo">
+                <span>EasyGroove</span>
             </div>
             <div class="arrangement-title-container">
-                <span id="title-display" class="arrangement-title" title="Duplo clique para renomear">Arranjo</span>
+                <span id="title-display" class="arrangement-title" title="Duplo clique para renomear">Bossa Nova
+                    Principal</span>
                 <input type="text" id="title-input" class="arrangement-title-input" maxlength="32"
                     style="display: none;">
-                <button type="button" id="btn-edit-title" class="btn-edit-title" title="Renomear Arranjo">✏</button>
+                <button type="button" id="btn-edit-title" class="btn-edit-title" title="Renomear Arranjo">
+                    <img src="assets/icons/edit.svg" alt="Editar">
+                </button>
             </div>
         </div>
 
-        <!-- Player Centralizado -->
+        <!-- Player Rigidamente Centralizado -->
         <div class="header-center">
-            <button type="button" id="btn-loop" class="player-btn" title="Loop Ativo/Inativo">🔁</button>
-            <button type="button" id="btn-play" class="player-btn primary" title="Tocar / Pausar">▶</button>
-            <button type="button" id="btn-stop" class="player-btn" title="Parar e Voltar ao Início">⏹</button>
+            <button type="button" id="btn-loop" class="player-btn" title="Loop Ativo/Inativo">
+                <img src="assets/icons/loop.svg" alt="Loop">
+            </button>
+            <button type="button" id="btn-play" class="player-btn primary" title="Tocar / Pausar">
+                <img src="assets/icons/play.svg" id="play-icon-img" alt="Play">
+            </button>
+            <button type="button" id="btn-stop" class="player-btn" title="Parar e Voltar ao Início">
+                <img src="assets/icons/stop.svg" alt="Stop">
+            </button>
             <div class="player-divider"></div>
             <div class="bpm-control">
                 <span>BPM</span>
@@ -36,7 +46,7 @@
             </div>
         </div>
 
-        <!-- Ações e Menu à Direita -->
+        <!-- Ações à Direita -->
         <div class="header-right">
             <button type="button" class="action-btn" title="Exportar Arranjo">Exportar</button>
             <button type="button" class="action-btn" title="Salvar Projeto">Salvar</button>
@@ -56,10 +66,7 @@
         <!-- Área de Grade com Scroll Horizontal -->
         <div class="score-viewport">
             <div class="score-content">
-                <!-- Faixa de cabeçalhos de compassos -->
                 <div id="measures-track" class="measures-track"></div>
-
-                <!-- Grade de Pautas e Notas -->
                 <div id="score-grid" class="score-grid">
                     <div id="playhead" class="playhead"></div>
                 </div>
@@ -68,24 +75,35 @@
 
     </main>
 
-    <!-- Toolbar Flutuante Inferior -->
+    <!-- 3. Toolbar Flutuante Inferior -->
     <div class="floating-editor-bar">
-        <button type="button" id="btn-undo" class="tool-btn" title="Desfazer (Ctrl+Z)">↺</button>
+        <button type="button" id="btn-undo" class="tool-btn" title="Desfazer (Ctrl+Z)">
+            <img src="assets/icons/undo.svg" alt="Undo">
+        </button>
 
         <div class="tool-palette">
-            <button type="button" class="palette-inst-badge">🪘 <span id="active-tool-name">Caixa</span> ▾</button>
+            <div class="instrument-selector-wrapper">
+                <button type="button" id="btn-active-instrument" class="palette-inst-badge">
+                    <img id="active-tool-icon" src="assets/icons/inst-surdo1.svg" class="ui-icon-inst-sm"
+                        alt="Instrumento">
+                    <span id="active-tool-name">Surdo 1ª</span> ▾
+                </button>
+                <div id="instrument-dropdown" class="instrument-dropdown-menu"></div>
+            </div>
+
             <div class="palette-divider"></div>
-            <button type="button" class="tool-stroke active" title="Toque Forte">●</button>
-            <button type="button" class="tool-stroke" title="Toque Fraco / Nota Fantasma">•</button>
-            <button type="button" class="tool-stroke" title="Toque Acentuado">⦿</button>
+            <div id="strokes-palette-container" style="display: flex; align-items: center; gap: 6px;"></div>
         </div>
 
-        <button type="button" id="btn-redo" class="tool-btn" title="Refazer (Ctrl+Y)">↻</button>
+        <button type="button" id="btn-redo" class="tool-btn" title="Refazer (Ctrl+Y)">
+            <img src="assets/icons/redo.svg" alt="Redo">
+        </button>
     </div>
 
+    <!-- Botão Flutuante de Ajuda -->
     <button type="button" class="floating-help-btn" title="Ajuda e Legenda dos Toques">?</button>
 
-    <!-- Menu Dropdown Modular de Compasso -->
+    <!-- Menu Dropdown de Compasso -->
     <div id="measure-dropdown" class="measure-dropdown-menu">
         <button type="button" class="dropdown-item" data-action="duplicate">📄 Duplicar Compasso</button>
         <button type="button" class="dropdown-item" data-action="add-before">⬅ Adicionar Antes</button>
