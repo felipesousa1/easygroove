@@ -1,6 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="#31006f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <ellipse cx="16" cy="8" rx="8" ry="3"/>
-  <path d="M8 8v14c0 1.7 3.6 3 8 3s8-1.3 8-3V8"/>
-  <line x1="12" y1="10.5" x2="12" y2="22.5"/>
-  <line x1="20" y1="10.5" x2="20" y2="22.5"/>
+<svg width="54" height="54" viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="4.33044" y="5.33044" width="45.3391" height="3.0987" fill="black" stroke="black" stroke-width="0.660877"/>
+<rect x="4.33044" y="46.0026" width="45.3391" height="3.0987" fill="black" stroke="black" stroke-width="0.660877"/>
+<rect x="4.33044" y="10.4571" width="10.2735" height="33.5171" fill="black" stroke="black" stroke-width="0.660877"/>
+<rect x="16.019" y="10.4571" width="10.2735" height="33.5171" fill="black" stroke="black" stroke-width="0.660877"/>
+<rect x="27.7075" y="10.4571" width="10.2735" height="33.5171" fill="black" stroke="black" stroke-width="0.660877"/>
+<rect x="39.3958" y="10.4571" width="10.2735" height="33.5171" fill="black" stroke="black" stroke-width="0.660877"/>
+<circle cx="44.6923" cy="40.3845" r="1.76923" fill="white"/>
+<circle cx="44.6923" cy="35.0768" r="1.76923" fill="white"/>
+<circle cx="44.6923" cy="29.7692" r="1.76923" fill="white"/>
 </svg>

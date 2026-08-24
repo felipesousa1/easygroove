@@ -3,38 +3,94 @@
 // ==========================================
 
 const STROKE_DEFINITIONS = {
-    strong: {
-        label: "Toque Forte / Centro",
-        icon: "●",
+    // Surdo / Caixa / Repique - Pele Aberto / Forte
+    "pele-aberto": {
+        label: "Toque Aberto / Pele",
+        iconHTML: `<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#111827;"></span>`,
         className: "filled",
         renderHTML: ""
     },
-    ghost: {
-        label: "Nota Fantasma / Mão",
-        icon: "•",
-        className: "small-dot",
-        renderHTML: ""
-    },
-    accent: {
-        label: "Acento / Rimshot / Borda",
-        icon: "⦿",
+
+    // Surdo - Abafado (Circunferência com bola preta dentro)
+    "surdo-abafado": {
+        label: "Surdo Abafado",
+        iconHTML: `<span style="display:inline-flex; align-items:center; justify-content:center; width:13px; height:13px; border:2px solid #111827; border-radius:50%; box-sizing:border-box;"><span style="width:5px; height:5px; border-radius:50%; background:#111827;"></span></span>`,
         className: "ring-accent",
         renderHTML: ""
     },
-    "chevron-accent": {
-        label: "Chocalho (Frente)",
-        icon: ">",
-        className: "chevron-accent",
-        renderHTML: "&gt;"
+
+    // Caixa - Nota Fantasma
+    "fantasma": {
+        label: "Nota Fantasma / Fraco",
+        iconHTML: `<span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#111827;"></span>`,
+        className: "small-dot",
+        renderHTML: ""
     },
-    "chevron-back": {
+
+    // Caixa / Repique - Aro (Circunferência vazia)
+    "aro": {
+        label: "Toque no Aro",
+        iconHTML: `<span style="display:inline-block; width:12px; height:12px; border:2px solid #111827; border-radius:50%; box-sizing:border-box;"></span>`,
+        className: "ring-empty",
+        renderHTML: ""
+    },
+
+    // Caixa / Repique - Rimshot (Arquivo SVG)
+    "rimshot": {
+        label: "Rimshot",
+        iconHTML: `<img src="assets/icons/stroke-rimshot.svg" alt="Rimshot" class="ui-icon-stroke">`,
+        className: "custom-svg",
+        renderHTML: `<img src="assets/icons/stroke-rimshot.svg" alt="Rimshot">`
+    },
+
+    // Caixa / Repique - Rufada (Arquivo SVG)
+    "rufo": {
+        label: "Rufo",
+        iconHTML: `<img src="assets/icons/stroke-rufo.svg" alt="Rufo" class="ui-icon-stroke">`,
+        className: "custom-svg",
+        renderHTML: `<img src="assets/icons/stroke-rufo.svg" alt="Rufo">`
+    },
+
+    // Repique - Slap (Arquivo SVG)
+    "slap": {
+        label: "Slap / Mão",
+        iconHTML: `<img src="assets/icons/stroke-slap.svg" alt="Slap" class="ui-icon-stroke">`,
+        className: "custom-svg",
+        renderHTML: `<img src="assets/icons/stroke-slap.svg" alt="Slap">`
+    },
+
+    // Chocalho - Frente
+    "chocalho-frente": {
+        label: "Chocalho (Frente)",
+        iconHTML: `&gt;`,
+        className: "chevron-accent",
+        renderHTML: `&gt;`
+    },
+
+    // Chocalho - Trás
+    "chocalho-tras": {
         label: "Chocalho (Trás)",
-        icon: "<",
+        iconHTML: `&lt;`,
         className: "chevron-back",
-        renderHTML: "&lt;"
+        renderHTML: `&lt;`
+    },
+
+    // Tamborim - Em Cima
+    "tamborim-cima": {
+        label: "Tamborim (Em Cima)",
+        iconHTML: `▲`,
+        className: "arrow-up",
+        renderHTML: `▲`
+    },
+
+    // Tamborim - Embaixo
+    "tamborim-baixo": {
+        label: "Tamborim (Embaixo)",
+        iconHTML: `▼`,
+        className: "arrow-down",
+        renderHTML: `▼`
     }
 };
-
 // ==========================================
 // 2. MODELAGEM DO ESTADO (scoreState)
 // ==========================================
@@ -48,7 +104,7 @@ const scoreState = {
 
     activeTool: {
         instrumentId: "surdo1",
-        strokeType: "strong"
+        strokeType: "pele-aberto"
     },
 
     instruments: [
@@ -57,7 +113,7 @@ const scoreState = {
             name: "Surdo 1ª",
             iconSvg: "assets/icons/inst-surdo1.svg",
             volume: 80,
-            availableStrokes: ["strong", "accent"],
+            availableStrokes: ["pele-aberto", "surdo-abafado"],
             pattern: []
         },
         {
@@ -65,7 +121,7 @@ const scoreState = {
             name: "Surdo 2ª",
             iconSvg: "assets/icons/inst-surdo2.svg",
             volume: 80,
-            availableStrokes: ["strong", "accent"],
+            availableStrokes: ["pele-aberto", "surdo-abafado"],
             pattern: []
         },
         {
@@ -73,7 +129,7 @@ const scoreState = {
             name: "Surdo 3ª",
             iconSvg: "assets/icons/inst-surdo3.svg",
             volume: 80,
-            availableStrokes: ["strong", "ghost", "accent"],
+            availableStrokes: ["pele-aberto", "surdo-abafado"],
             pattern: []
         },
         {
@@ -81,7 +137,7 @@ const scoreState = {
             name: "Caixa",
             iconSvg: "assets/icons/inst-caixa.svg",
             volume: 80,
-            availableStrokes: ["strong", "ghost", "accent"],
+            availableStrokes: ["pele-aberto", "fantasma", "aro", "rimshot", "rufo"],
             pattern: []
         },
         {
@@ -89,7 +145,7 @@ const scoreState = {
             name: "Repique",
             iconSvg: "assets/icons/inst-repique.svg",
             volume: 80,
-            availableStrokes: ["strong", "ghost", "accent"],
+            availableStrokes: ["pele-aberto", "rimshot", "aro", "slap", "rufo"],
             pattern: []
         },
         {
@@ -97,7 +153,7 @@ const scoreState = {
             name: "Chocalho",
             iconSvg: "assets/icons/inst-chocalho.svg",
             volume: 80,
-            availableStrokes: ["chevron-accent", "chevron-back"],
+            availableStrokes: ["chocalho-frente", "chocalho-tras"],
             pattern: []
         },
         {
@@ -105,7 +161,7 @@ const scoreState = {
             name: "Tamborim",
             iconSvg: "assets/icons/inst-tamborim.svg",
             volume: 80,
-            availableStrokes: ["strong", "accent"],
+            availableStrokes: ["tamborim-cima", "tamborim-baixo"],
             pattern: []
         }
     ]
@@ -284,7 +340,7 @@ function updateToolbarPalettes() {
             btn.type = "button";
             btn.className = `tool-stroke ${scoreState.activeTool.strokeType === strokeKey ? 'active' : ''}`;
             btn.title = def.label;
-            btn.textContent = def.icon;
+            btn.innerHTML = def.iconHTML;
             btn.dataset.strokeKey = strokeKey;
 
             btn.addEventListener("click", () => {

@@ -522,44 +522,98 @@ body {
     background-color: rgba(0, 0, 0, 0.08);
 }
 
-/* Símbolos das Notas */
-.note-slot.filled::after {
-    content: '';
-    width: 13px;
-    height: 13px;
-    border-radius: 50%;
-    background-color: var(--color-black);
+/* ==========================================
+   SÍMBOLOS E ARTICULAÇÕES DOS TOQUES
+   ========================================== */
+
+/* 1. Bolinha Grande Preta (Surdo Aberto / Caixa Pele / Repique Pele) */
+.note-slot.filled::after,
+.tool-stroke.stroke-filled::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--color-black);
 }
 
-.note-slot.small-dot::after {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--color-black);
+/* 2. Bolinha Pequena Preta (Nota Fantasma) */
+.note-slot.small-dot::after,
+.tool-stroke.stroke-small-dot::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-black);
 }
 
-.note-slot.ring-accent::after {
-    content: '';
-    width: 13px;
-    height: 13px;
-    border: 2.5px solid var(--color-black);
-    border-radius: 50%;
-    box-sizing: border-box;
+/* 3. Circunferência Vazia (Aro) */
+.note-slot.ring-empty::after,
+.tool-stroke.stroke-ring-empty::after {
+  content: '';
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--color-black);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background-color: transparent;
 }
 
-.note-slot.chevron-accent {
-    font-weight: 900;
-    font-size: 16px;
-    color: var(--color-purple-primary);
+/* 4. Circunferência com Bola Preta Dentro (Surdo Abafado) */
+.note-slot.ring-accent,
+.tool-stroke.stroke-ring-accent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.note-slot.chevron-back {
-    font-weight: 900;
-    font-size: 16px;
-    color: var(--color-black);
+.note-slot.ring-accent::after,
+.tool-stroke.stroke-ring-accent::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-black);
+  border-radius: 50%;
+  box-sizing: border-box;
+  background-color: var(--color-black);
+  box-shadow: 0 0 0 1.5px #ffffff inset; /* Cria o anel de respiro entre a borda e o miolo */
 }
 
+/* 5. Chocalho (Frente e Trás) */
+.note-slot.chevron-accent,
+.tool-stroke.stroke-chevron-accent {
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--color-black);
+}
+
+.note-slot.chevron-back,
+.tool-stroke.stroke-chevron-back {
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--color-black);
+}
+
+/* 6. Tamborim (Cima e Baixo) */
+.note-slot.arrow-up,
+.tool-stroke.stroke-arrow-up,
+.note-slot.arrow-down,
+.tool-stroke.stroke-arrow-down {
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--color-black);
+  line-height: 1;
+}
+
+/* 7. Ícones SVG (Rimshot, Rufo, Slap) */
+.note-slot img,
+.note-slot svg,
+.tool-stroke img,
+.tool-stroke svg {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  pointer-events: none;
+}
 /* Playhead Agulha Contínua */
 .playhead {
     position: absolute;
