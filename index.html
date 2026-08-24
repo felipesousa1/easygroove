@@ -55,24 +55,38 @@
 
     <!-- 2. Workspace Principal -->
     <main class="workspace-container">
-
-        <!-- Sidebar de Instrumentos -->
-        <aside class="instruments-sidebar">
-            <div id="instruments-sidebar-list" class="sidebar-list">
-                <button type="button" class="btn-add-instrument">+ Instrumento</button>
-            </div>
-        </aside>
-
-        <!-- Área de Grade com Scroll Horizontal -->
         <div class="score-viewport">
-            <div class="score-content">
-                <div id="measures-track" class="measures-track"></div>
-                <div id="score-grid" class="score-grid">
-                    <div id="playhead" class="playhead"></div>
-                </div>
-            </div>
-        </div>
 
+            <!-- Linha Superior Fixa: Canto Vazio + Faixa de Compassos -->
+            <div class="sticky-top-track">
+                <div class="corner-header-spacer"></div>
+                <div id="measures-track" class="measures-track"></div>
+            </div>
+
+            <!-- Corpo Principal: Sidebar e Grade rolam juntas verticalmente -->
+            <div class="workspace-body">
+
+                <!-- Sidebar de Instrumentos (Sticky no scroll horizontal) -->
+                <aside class="instruments-sidebar">
+                    <div id="instruments-sidebar-list" class="sidebar-list">
+                        <div style="position: relative;">
+                            <button type="button" id="btn-open-add-instrument" class="btn-add-instrument">+
+                                Instrumento</button>
+                            <div id="add-instrument-dropdown" class="add-instrument-menu"></div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Grade de Notas -->
+                <div class="score-content">
+                    <div id="score-grid" class="score-grid">
+                        <div id="playhead" class="playhead"></div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
     </main>
 
     <!-- 3. Toolbar Flutuante Inferior -->
@@ -117,6 +131,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script src="assets/js/audio.js"></script>
     <script src="assets/js/app.js"></script>
+
+    <!-- Menu de Opções do Instrumento -->
+    <div id="instrument-options-dropdown" class="measure-dropdown-menu">
+        <button type="button" class="dropdown-item" data-action="duplicate-inst">📄 Duplicar Linha</button>
+        <button type="button" class="dropdown-item" data-action="clear-inst">🧹 Limpar Notas</button>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item danger" data-action="delete-inst">🗑 Excluir Instrumento</button>
+    </div>
 </body>
 
 </html>
