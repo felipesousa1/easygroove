@@ -1360,3 +1360,523 @@ body {
 .btn-login-submit:active {
   transform: translateY(1px);
 }
+
+/* ==========================================
+   10. TELA DA BIBLIOTECA
+   ========================================== */
+.lib-body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  /* Permite que a página cresça */
+  width: 100vw;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* Habilita o scroll natural da página */
+}
+
+/* Header Roxo */
+.lib-header {
+  height: 76px;
+  background-color: #360566;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  flex-shrink: 0;
+}
+
+.lib-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lib-logo {
+  height: 48px;
+  filter: brightness(0) invert(1);
+  /* Deixa a logo SVG branca */
+}
+
+.lib-brand {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.lib-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #ffffff;
+}
+
+.lib-username {
+  font-size: 1.1rem;
+}
+
+.lib-avatar {
+  width: 44px;
+  height: 44px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lib-avatar svg {
+  width: 24px;
+  height: 24px;
+}
+
+.lib-settings-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lib-settings-btn svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Corpo e Título */
+.lib-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 40px 40px 40px;
+  /* Respiro inferior adicionado */
+  overflow: visible;
+}
+
+.lib-title {
+  font-size: 3rem;
+  /* ~48px */
+  font-weight: 700;
+  color: #360566;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.lib-content {
+  display: flex;
+  flex: 1;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  align-items: flex-start;
+  /* Evita que a sidebar e a área cinza estiquem verticalmente à toa */
+}
+
+/* Sidebar e Coleções */
+.lib-sidebar {
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.lib-sidebar-divider {
+  height: 1.5px;
+  background-color: var(--color-gray-border);
+  margin: 8px 0;
+}
+
+.lib-btn-primary {
+  width: 100%;
+  height: 48px;
+  background-color: transparent;
+  color: #360566;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  padding: 0 16px;
+  transition: all 0.15s ease;
+}
+
+.lib-btn-primary.active {
+  background-color: #360566;
+  color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.lib-subtitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #360566;
+  padding: 0 8px;
+  margin-top: 4px;
+}
+
+.lib-collection-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lib-btn-collection {
+  width: 100%;
+  height: 44px;
+  background-color: transparent;
+  color: var(--color-text-main);
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  transition: background-color 0.15s ease;
+}
+
+.lib-btn-collection:hover {
+  background-color: var(--color-gray-hover);
+}
+
+.lib-btn-collection svg {
+  width: 18px;
+  height: 18px;
+  color: #8B00CE;
+  /* Cor da pasta */
+}
+
+.lib-btn-add-dashed {
+  width: 100%;
+  height: 44px;
+  background-color: #ffffff;
+  border: 1.5px dashed var(--color-gray-border);
+  border-radius: 10px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  transition: all 0.15s ease;
+}
+
+.lib-btn-add-dashed:hover {
+  border-color: var(--color-purple-primary);
+  color: var(--color-purple-primary);
+  background-color: #f5f0ff;
+}
+
+/* Área Workspace e Grid */
+.lib-workspace {
+  flex: 1;
+  background-color: var(--color-gray-bg);
+  border-radius: 20px; /* Borda arredondada por completo */
+  border: 1.5px solid var(--color-gray-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: fit-content; /* A caixa terá apenas a altura do conteúdo interno */
+  min-height: 400px; /* Altura mínima para ficar bonito mesmo sem arranjos */
+}
+
+/* Toolbar superior da grade (Busca + Filtros) */
+.lib-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.lib-search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  border-radius: 40px;
+  padding: 0 16px;
+  height: 44px;
+  flex: 1;
+  max-width: 400px;
+}
+
+.lib-search-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+}
+
+.lib-search-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0 12px;
+  font-size: 1rem;
+  color: var(--color-text-main);
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.lib-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lib-filter-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.lib-sort-select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 40px;
+  border: 1.5px solid var(--color-gray-border);
+  border-radius: 10px;
+  padding: 0 36px 0 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text-main);
+  background-color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  /* Ícone de seta customizado via SVG inline */
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23475569" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: all 0.15s ease;
+}
+
+.lib-sort-select:hover {
+  border-color: #94a3b8;
+}
+
+.lib-sort-select:focus {
+  border-color: #360566;
+  box-shadow: 0 0 0 3px rgba(54, 5, 102, 0.1);
+}
+
+/* Grid de Arranjos */
+.lib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  padding-bottom: 80px; /* Respiro interno para o botão "Criar" não sobrepor os cards */
+  overflow: visible; /* Remove o scroll interno */
+}
+
+.lib-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.lib-grid {
+  scrollbar-width: none;
+}
+
+/* Cartão do Arranjo */
+.lib-card {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  border-radius: 12px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.lib-card:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.lib-card-img-placeholder {
+  width: 60px;
+  height: 60px;
+  background-color: #f5f0ff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  flex-shrink: 0;
+  color: #8B00CE;
+}
+
+.lib-card-img-placeholder svg {
+  width: 28px;
+  height: 28px;
+}
+
+.lib-card-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.lib-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-bottom: 4px;
+}
+
+.lib-card-date {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* Menu Dropdown do Cartão */
+.lib-card-menu-wrapper {
+  position: relative;
+}
+
+.lib-card-menu {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+}
+
+.lib-card-menu:hover {
+  background-color: var(--color-gray-hover);
+  color: var(--color-text-main);
+}
+
+.lib-card-menu svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lib-card-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  padding: 6px;
+  width: 160px;
+  z-index: 50;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Exibe o menu no hover ou quando focado */
+.lib-card-menu-wrapper:hover .lib-card-dropdown,
+.lib-card-menu-wrapper:focus-within .lib-card-dropdown {
+  display: flex;
+}
+
+.lib-card-dropdown button {
+  background: none;
+  border: none;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.lib-card-dropdown button:hover {
+  background-color: var(--color-gray-hover);
+}
+
+.lib-card-dropdown button.danger {
+  color: #dc2626;
+}
+
+.lib-card-dropdown button.danger:hover {
+  background-color: #fef2f2;
+}
+
+.lib-dropdown-divider {
+  height: 1px;
+  background-color: var(--color-gray-border);
+  margin: 4px 0;
+}
+
+/* Botão Flutuante (FAB) Criar */
+.lib-fab {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  background-color: #360566;
+  color: #ffffff;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 28px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(54, 5, 102, 0.25);
+  transition: transform 0.1s ease, background-color 0.15s ease;
+}
+
+.lib-fab svg {
+  width: 24px;
+  height: 24px;
+}
+
+.lib-fab:hover {
+  background-color: #4f0a91;
+}
+
+.lib-fab:active {
+  transform: translateY(2px);
+}
+
+/* Footer Roxo */
+.lib-footer {
+  width: 100%;
+  height: 34px;
+  background-color: #360566;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: auto; /* Empurra o rodapé para o final da página */
+}

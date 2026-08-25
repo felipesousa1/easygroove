@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyGroove — Biblioteca</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body class="lib-body">
+
+    <!-- Cabeçalho -->
+    <header class="lib-header">
+        <div class="lib-header-left">
+            <img src="assets/icons/logo.svg" alt="EasyGroove Logo" class="lib-logo">
+            <span class="lib-brand">EasyGroove</span>
+        </div>
+        <div class="lib-header-right">
+            <span class="lib-username">@ritmista</span>
+            <div class="lib-avatar">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+            </div>
+            <button class="lib-settings-btn" title="Configurações">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="lib-main">
+        <h1 class="lib-title">Biblioteca</h1>
+
+        <div class="lib-content">
+
+            <!-- Barra Lateral (Coleções) -->
+            <aside class="lib-sidebar">
+                <button class="lib-btn-primary active">Todos os arranjos</button>
+
+                <div class="lib-sidebar-divider"></div>
+
+                <h2 class="lib-subtitle">Coleções</h2>
+                <ul class="lib-collection-list">
+                    <li>
+                        <!-- Coleção como pasta -->
+                        <button class="lib-btn-collection">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                </path>
+                            </svg>
+                            Ensaios 2026
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Botão Tracejado coerente com "+ Instrumento" -->
+                <button type="button" class="lib-btn-add-dashed">+ Nova coleção</button>
+            </aside>
+
+            <!-- Área Principal (Grade de Arranjos) -->
+            <section class="lib-workspace">
+
+                <!-- Toolbar Interna (Preenche o espaço vazio e adiciona funcionalidade) -->
+                <div class="lib-toolbar">
+                    <div class="lib-search-bar">
+                        <svg class="lib-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" placeholder="Buscar arranjo...">
+                    </div>
+
+                    <div class="lib-filters">
+                        <span class="lib-filter-label">Ordenar por:</span>
+                        <select class="lib-sort-select">
+                            <option>A-Z (Ordem Alfabética)</option>
+                            <option>Mais recentes</option>
+                            <option>Mais antigos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="lib-grid">
+
+                    <!-- Exemplo 1 -->
+                    <div class="lib-card" onclick="window.location.href='index.html'">
+                        <div class="lib-card-img-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18V5l12-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="18" cy="16" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="lib-card-info">
+                            <span class="lib-card-title">Bossa Nova Principal</span>
+                            <span class="lib-card-date">24/08/2026</span>
+                        </div>
+
+                        <div class="lib-card-menu-wrapper" onclick="event.stopPropagation()">
+                            <button class="lib-card-menu">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="5" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="19" r="2"></circle>
+                                </svg>
+                            </button>
+                            <div class="lib-card-dropdown">
+                                <button>Editar Arranjo</button>
+                                <button>Renomear</button>
+                                <div class="lib-dropdown-divider"></div>
+                                <button class="danger">Excluir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exemplo 2 -->
+                    <div class="lib-card" onclick="window.location.href='index.html'">
+                        <div class="lib-card-img-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18V5l12-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="18" cy="16" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="lib-card-info">
+                            <span class="lib-card-title">Samba Enredo 2026</span>
+                            <span class="lib-card-date">12/04/2026</span>
+                        </div>
+
+                        <div class="lib-card-menu-wrapper" onclick="event.stopPropagation()">
+                            <button class="lib-card-menu">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="5" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="19" r="2"></circle>
+                                </svg>
+                            </button>
+                            <div class="lib-card-dropdown">
+                                <button>Editar Arranjo</button>
+                                <button>Renomear</button>
+                                <div class="lib-dropdown-divider"></div>
+                                <button class="danger">Excluir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exemplo 3 -->
+                    <div class="lib-card" onclick="window.location.href='index.html'">
+                        <div class="lib-card-img-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18V5l12-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="18" cy="16" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="lib-card-info">
+                            <span class="lib-card-title">Ijexá Base</span>
+                            <span class="lib-card-date">28/03/2026</span>
+                        </div>
+                        <div class="lib-card-menu-wrapper" onclick="event.stopPropagation()">
+                            <button class="lib-card-menu"><svg viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="5" r="2"></circle>
+                                    <circle cx="12" cy="19" r="2"></circle>
+                                </svg></button>
+                            <div class="lib-card-dropdown"><button>Editar Arranjo</button><button>Renomear</button>
+                                <div class="lib-dropdown-divider"></div><button class="danger">Excluir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exemplo 4 -->
+                    <div class="lib-card" onclick="window.location.href='index.html'">
+                        <div class="lib-card-img-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18V5l12-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="18" cy="16" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="lib-card-info">
+                            <span class="lib-card-title">Maracatu Virada 1</span>
+                            <span class="lib-card-date">15/03/2026</span>
+                        </div>
+                        <div class="lib-card-menu-wrapper" onclick="event.stopPropagation()">
+                            <button class="lib-card-menu"><svg viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="5" r="2"></circle>
+                                    <circle cx="12" cy="19" r="2"></circle>
+                                </svg></button>
+                            <div class="lib-card-dropdown"><button>Editar Arranjo</button><button>Renomear</button>
+                                <div class="lib-dropdown-divider"></div><button class="danger">Excluir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exemplo 5 -->
+                    <div class="lib-card" onclick="window.location.href='index.html'">
+                        <div class="lib-card-img-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18V5l12-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="18" cy="16" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="lib-card-info">
+                            <span class="lib-card-title">Funk Groove 100bpm</span>
+                            <span class="lib-card-date">10/02/2026</span>
+                        </div>
+                        <div class="lib-card-menu-wrapper" onclick="event.stopPropagation()">
+                            <button class="lib-card-menu"><svg viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="5" r="2"></circle>
+                                    <circle cx="12" cy="19" r="2"></circle>
+                                </svg></button>
+                            <div class="lib-card-dropdown"><button>Editar Arranjo</button><button>Renomear</button>
+                                <div class="lib-dropdown-divider"></div><button class="danger">Excluir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Botão Criar envia para o Editor (index.html) -->
+                <button class="lib-fab" onclick="window.location.href='index.html'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14"></path>
+                    </svg>
+                    Criar
+                </button>
+            </section>
+        </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="lib-footer">
+        &copy; 2026 - EasyGroove
+    </footer>
+
+</body>
+
+</html>
