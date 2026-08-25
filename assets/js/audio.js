@@ -234,25 +234,33 @@ const audioEngine = {
             Tone.Transport.clear(this.loopEventId);
         }
 
-        const totalSteps = scoreState.measuresCount * scoreState.beatsPerMeasure * scoreState.subdivisions;
-        const loopDuration = `${scoreState.measuresCount}m`;
-
-        Tone.Transport.loop = true;
-        Tone.Transport.loopStart = "0:0:0";
-        Tone.Transport.loopEnd = loopDuration;
-
-        // Agenda a leitura de cada subdivisão (16n)
+        // Usar "16n" agenda perfeitamente o disparo a cada semicolcheia
         this.loopEventId = Tone.Transport.scheduleRepeat((time) => {
-            const currentSeconds = Tone.Transport.seconds % Tone.Time(loopDuration).toSeconds();
-            const progress = currentSeconds / Tone.Time(loopDuration).toSeconds();
-            const currentGlobalStep = Math.floor(progress * totalSteps);
 
-            const measureIndex = Math.floor(currentGlobalStep / (scoreState.beatsPerMeasure * scoreState.subdivisions));
-            const stepIndex = currentGlobalStep % (scoreState.beatsPerMeasure * scoreState.subdivisions);
+            // Tone.Transport.position formato -> "Compassos:Tempos:Semicolcheias" (Ex: "0:3:2")
+            const timeStr = Tone.Transport.position.split('.')[0];
+            const parts = timeStr.split(':');
+            const measure = parseInt(parts[0], 10);
+            const beat = parseInt(parts[1], 10);
+            const sixteenth = parseInt(parts[2], 10);
+
+            const stepIndex = (beat * scoreState.subdivisions) + sixteenth;
+
+            // Desliga o áudio automaticamente se passar do último compasso e o loop estiver desligado
+            if (!scoreState.loopState.active && measure >= scoreState.measuresCount) {
+                Tone.Draw.schedule(() => {
+                    this.stop();
+                    const btnPlay = document.getElementById("btn-play");
+                    const playIconImg = document.getElementById("play-icon-img");
+                    if (btnPlay) btnPlay.classList.remove("active");
+                    if (playIconImg) playIconImg.src = "assets/icons/play.svg";
+                }, time);
+                return;
+            }
 
             scoreState.instruments.forEach(inst => {
-                if (inst.pattern[measureIndex]) {
-                    const stroke = inst.pattern[measureIndex][stepIndex];
+                if (inst.pattern[measure]) {
+                    const stroke = inst.pattern[measure][stepIndex];
                     if (stroke) {
                         this.triggerStroke(inst, stroke, time);
                     }
@@ -264,6 +272,16 @@ const audioEngine = {
     updateTransportSettings() {
         if (!this.isInitialized) return;
         Tone.Transport.bpm.value = scoreState.bpm;
+
+        // Sincroniza o Tone.Transport com o visual magnético
+        if (scoreState.loopState.active) {
+            Tone.Transport.loop = true;
+            Tone.Transport.loopStart = `${scoreState.loopState.startMeasure}m`;
+            Tone.Transport.loopEnd = `${scoreState.loopState.endMeasure}m`;
+        } else {
+            Tone.Transport.loop = false;
+        }
+
         this.schedulePlaybackLoop();
     },
 

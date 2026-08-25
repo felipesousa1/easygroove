@@ -1051,3 +1051,63 @@ body {
   pointer-events: none;
   display: block;
 }
+
+/* ==========================================
+   8. BARRA DE SELEÇÃO DE LOOP
+   ========================================== */
+
+.measures-track {
+  position: relative; /* Essencial para ancorar a barra de loop */
+}
+
+.loop-bar-container {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background-color: var(--color-purple-light);
+  border-top: 3px solid var(--color-purple-loop);
+  border-bottom: 3px solid var(--color-purple-loop);
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  box-sizing: border-box;
+}
+
+.loop-bar-container.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.loop-handle {
+  width: 10px;
+  height: 100%;
+  background-color: var(--color-purple-loop);
+  cursor: ew-resize;
+  pointer-events: auto;
+  position: relative;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loop-handle::after {
+  content: '';
+  width: 2px;
+  height: 12px;
+  background-color: #ffffff;
+  border-radius: 2px;
+}
+
+.loop-handle.left {
+  border-radius: 4px 0 0 4px;
+  transform: translateX(-50%);
+}
+
+.loop-handle.right {
+  border-radius: 0 4px 4px 0;
+  transform: translateX(50%);
+}

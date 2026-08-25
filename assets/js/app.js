@@ -98,6 +98,13 @@ const scoreState = {
     beatsPerMeasure: 4,
     subdivisions: 4,
 
+    // Novo estado de loop magnético
+    loopState: {
+        active: false,
+        startMeasure: 0,
+        endMeasure: 1 // Inclusivo no início, exclusivo no final (1 compasso de duração)
+    },
+
     activeTool: {
         instrumentId: "surdo1",
         strokeType: "pele-aberto"
@@ -224,6 +231,17 @@ function renderScore() {
     btnAddTrack.innerHTML = "+ Compasso";
     btnAddTrack.addEventListener("click", () => addMeasureToEnd());
     measuresTrack.appendChild(btnAddTrack);
+
+    // Injeção da Barra de Loop
+    const loopBar = document.createElement("div");
+    loopBar.id = "loop-bar";
+    loopBar.className = `loop-bar-container ${scoreState.loopState.active ? 'active' : ''}`;
+    loopBar.innerHTML = `
+    <div class="loop-handle left" data-handle="left"></div>
+    <div class="loop-handle right" data-handle="right"></div>
+  `;
+    measuresTrack.appendChild(loopBar);
+    updateLoopBarVisuals();
 
     // 2. Sidebar dos Instrumentos
     sidebarList.querySelectorAll(".instrument-card").forEach(el => el.remove());
@@ -863,28 +881,20 @@ function addNewInstrument(typeKey) {
 let playheadAnimFrameId = null;
 
 function animatePlayhead() {
-    if (!audioEngine.isPlaying) return;
+  if (!audioEngine.isPlaying) return;
 
-    const playhead = document.getElementById("playhead");
-    const firstRow = document.querySelector(".score-row");
+  const playhead = document.getElementById("playhead");
+  if (playhead) {
+    // 1 semínima = Tone.Transport.PPQ (default 192). 4 semínimas = 768 ticks por compasso.
+    const ticksPerMeasure = scoreState.beatsPerMeasure * Tone.Transport.PPQ;
+    const measureWidth = 448;
+    
+    // Converte os ticks nativos e contínuos para pixels
+    const currentX = (Tone.Transport.ticks / ticksPerMeasure) * measureWidth;
+    playhead.style.transform = `translateX(${currentX}px)`;
+  }
 
-    if (playhead && firstRow) {
-        const firstSlot = firstRow.querySelector(".note-slot");
-        const containers = firstRow.querySelectorAll(".measure-container");
-
-        if (firstSlot && containers.length > 0) {
-            let totalTrackWidth = 0;
-            containers.forEach(c => {
-                totalTrackWidth += c.offsetWidth;
-            });
-
-            const startX = firstSlot.offsetLeft;
-            const currentX = startX + (Tone.Transport.progress * totalTrackWidth);
-            playhead.style.transform = `translateX(${currentX}px)`;
-        }
-    }
-
-    playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
+  playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
 }
 
 function startPlayheadAnimation() {
@@ -975,6 +985,88 @@ const historyManager = {
 };
 
 // ==========================================
+// 8. CONTROLE DE LOOP E ARRASTE MAGNÉTICO
+// ==========================================
+
+function updateLoopBarVisuals() {
+    const loopBar = document.getElementById("loop-bar");
+    if (!loopBar) return;
+
+    // Garante que os limites não extrapolem o tamanho do arranjo
+    if (scoreState.loopState.endMeasure > scoreState.measuresCount) {
+        scoreState.loopState.endMeasure = scoreState.measuresCount;
+    }
+    if (scoreState.loopState.startMeasure >= scoreState.loopState.endMeasure) {
+        scoreState.loopState.startMeasure = Math.max(0, scoreState.loopState.endMeasure - 1);
+    }
+
+    const measureWidth = 448; // Largura exata de 1 bloco de compasso
+    loopBar.style.left = `${scoreState.loopState.startMeasure * measureWidth}px`;
+    loopBar.style.width = `${(scoreState.loopState.endMeasure - scoreState.loopState.startMeasure) * measureWidth}px`;
+
+    if (scoreState.loopState.active) {
+        loopBar.classList.add("active");
+    } else {
+        loopBar.classList.remove("active");
+    }
+}
+
+function setupLoopEvents() {
+    const btnLoop = document.getElementById("btn-loop");
+    const measuresTrack = document.getElementById("measures-track");
+    let draggingHandle = null;
+
+    if (btnLoop) {
+        btnLoop.addEventListener("click", () => {
+            scoreState.loopState.active = !scoreState.loopState.active;
+            btnLoop.classList.toggle("active", scoreState.loopState.active);
+            updateLoopBarVisuals();
+            if (window.audioEngine) audioEngine.updateTransportSettings();
+        });
+    }
+
+    // Lógica magnética de drag-and-drop
+    document.addEventListener("mousedown", (e) => {
+        if (e.target.classList.contains("loop-handle")) {
+            draggingHandle = e.target.dataset.handle;
+            document.body.style.cursor = "ew-resize";
+        }
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!draggingHandle || !measuresTrack) return;
+
+        const rect = measuresTrack.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+
+        const measureWidth = 448;
+        let targetMeasure = Math.round(x / measureWidth);
+        targetMeasure = Math.max(0, Math.min(scoreState.measuresCount, targetMeasure));
+
+        if (draggingHandle === "left") {
+            if (targetMeasure < scoreState.loopState.endMeasure) {
+                scoreState.loopState.startMeasure = targetMeasure;
+            }
+        } else if (draggingHandle === "right") {
+            if (targetMeasure > scoreState.loopState.startMeasure) {
+                scoreState.loopState.endMeasure = targetMeasure;
+            }
+        }
+
+        updateLoopBarVisuals();
+    });
+
+    document.addEventListener("mouseup", () => {
+        if (draggingHandle) {
+            draggingHandle = null;
+            document.body.style.cursor = "default";
+            if (window.audioEngine) audioEngine.updateTransportSettings();
+        }
+    });
+}
+
+
+// ==========================================
 // 7. INICIALIZAÇÃO
 // ==========================================
 
@@ -986,4 +1078,5 @@ document.addEventListener("DOMContentLoaded", () => {
     setupTransportEvents();
     setupMeasureMenuEvents();
     setupInstrumentControlEvents();
+    setupLoopEvents();
 });
