@@ -9,4 +9,9 @@ Thumbs.db
 *.swo
 
 # Dependências
-node_modules/
+node_modules/venv/
+__pycache__/
+*.pyc
+*.sqlite3
+*.db
+.env
