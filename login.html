@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyGroove — Login</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<main class="login-split-layout">
+
+    <!-- Lado Esquerdo (Roxo) -->
+    <section class="login-left">
+        <div class="login-left-content">
+            <h1 class="login-heading">Bem-vindo<br>Groover! <span class="drum-emoji">🥁</span></h1>
+            <p class="login-subtitle">
+                O <strong>EasyGroove</strong> é uma plataforma para notação rítmica. Escreva, salve e organize seus
+                arranjos em uma interface intuitiva.
+            </p>
+        </div>
+        <footer class="login-footer">
+            2026 - EasyGroove
+        </footer>
+    </section>
+
+    <!-- Lado Direito (Branco) -->
+    <section class="login-right">
+        <div class="login-form-container">
+
+            <div class="login-logo-wrapper">
+                <img src="assets/icons/logo.svg" alt="EasyGroove Logo" class="login-logo">
+                <h2 class="login-brand-text">EasyGroove</h2>
+            </div>
+
+            <!-- <h3 class="login-form-title">Login</h3> -->
+
+            <form class="login-form" action="index.html">
+
+                <div class="input-group">
+                    <span class="input-icon">
+                        <!-- Ícone de Usuário SVG -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </span>
+                    <input type="text" placeholder="Usuário" required>
+                </div>
+
+                <div class="input-group">
+                    <span class="input-icon">
+                        <!-- Ícone de Cadeado SVG -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </span>
+                    <input type="password" placeholder="senha" required>
+                </div>
+
+                <div class="forgot-password-link">
+                    <a href="#">esqueci minha senha</a>
+                </div>
+
+                <button type="submit" class="btn-login-submit">Entrar</button>
+
+                <div class="signup-link">
+                    Não tem uma conta? <a href="#">Criar nova conta</a>
+                </div>
+
+            </form>
+
+        </div>
+    </section>
+
+</main>
+
+</html>
