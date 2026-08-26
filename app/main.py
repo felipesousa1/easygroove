@@ -6,6 +6,7 @@ from sqlmodel import SQLModel
 
 from app.database import engine
 from app.models.domain import User, Collection, Arrangement  # noqa: F401
+from app.routers import arrangements
 
 
 @asynccontextmanager
@@ -20,6 +21,7 @@ app = FastAPI(title="EasyGroove", lifespan=lifespan)
 app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
 templates = Jinja2Templates(directory="app/templates")
 
+app.include_router(arrangements.router)
 
 @app.get("/")
 async def get_editor(request: Request):
