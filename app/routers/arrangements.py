@@ -1,14 +1,23 @@
+import re
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Response
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlmodel import Session, select, func
 
+from app.auth.dependencies import get_current_user
 from app.database import get_session
 from app.models.domain import Arrangement, User
-from app.models.schemas import ArrangementCreate, ArrangementRead, ArrangementUpdate
-from app.auth.dependencies import get_current_user
-
+from app.models.schemas import (
+    ArrangementCreate,
+    ArrangementRead,
+    ArrangementUpdate,
+)
 
 router = APIRouter(prefix="/api/arrangements", tags=["arrangements"])
+
+
+def normalize_name(name: str) -> str:
+    """Remove múltiplos espaços internos e nas extremidades."""
+    return re.sub(r"\s+", " ", name).strip()
 
 
 @router.post(
@@ -18,21 +27,34 @@ router = APIRouter(prefix="/api/arrangements", tags=["arrangements"])
 )
 def create_arrangement(
     arrangement_in: ArrangementCreate,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    # Mock provisório enquanto não integramos auth
-    user = session.exec(select(User)).first()
-    if not user:
+    clean_name = normalize_name(arrangement_in.name)
+    if not clean_name:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nenhum usuário encontrado no banco para associar o arranjo.",
+            detail="O nome do arranjo não pode ser vazio.",
+        )
+
+    # Checa duplicidade case-insensitive para o mesmo usuário
+    existing = session.exec(
+        select(Arrangement).where(
+            Arrangement.user_id == current_user.id,
+            func.lower(Arrangement.name) == clean_name.lower(),
+        )
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Você já possui um arranjo chamado "{clean_name}".',
         )
 
     db_arrangement = Arrangement(
-        name=arrangement_in.name,
+        name=clean_name,
         score_data=arrangement_in.score_data,
         collection_id=arrangement_in.collection_id,
-        user_id=user.id,
+        user_id=current_user.id,
     )
     session.add(db_arrangement)
     session.commit()
@@ -43,10 +65,11 @@ def create_arrangement(
 @router.get("/{arrangement_id}", response_model=ArrangementRead)
 def get_arrangement(
     arrangement_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     arrangement = session.get(Arrangement, arrangement_id)
-    if not arrangement:
+    if not arrangement or arrangement.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Arranjo não encontrado.",
@@ -59,26 +82,54 @@ def list_arrangements(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    # Retorna exclusivamente os arranjos pertencentes ao usuário logado
-    statement = select(Arrangement).where(Arrangement.user_id == current_user.id)
+    statement = (
+        select(Arrangement)
+        .where(Arrangement.user_id == current_user.id)
+        .order_by(Arrangement.created_at.desc())
+    )
     arrangements = session.exec(statement).all()
     return arrangements
+
 
 @router.put("/{arrangement_id}", response_model=ArrangementRead)
 def update_arrangement(
     arrangement_id: int,
     arrangement_in: ArrangementUpdate,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     arrangement = session.get(Arrangement, arrangement_id)
-    if not arrangement:
+    if not arrangement or arrangement.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Arranjo não encontrado.",
         )
 
-    # Atualiza apenas os campos enviados no payload
     update_data = arrangement_in.model_dump(exclude_unset=True)
+
+    if "name" in update_data and update_data["name"] is not None:
+        clean_name = normalize_name(update_data["name"])
+        if not clean_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="O nome do arranjo não pode ser vazio.",
+            )
+
+        # Checa duplicidade ignorando o próprio ID do registro
+        existing = session.exec(
+            select(Arrangement).where(
+                Arrangement.user_id == current_user.id,
+                Arrangement.id != arrangement_id,
+                func.lower(Arrangement.name) == clean_name.lower(),
+            )
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f'Você já possui um arranjo chamado "{clean_name}".',
+            )
+        update_data["name"] = clean_name
+
     for key, value in update_data.items():
         setattr(arrangement, key, value)
 
@@ -87,13 +138,15 @@ def update_arrangement(
     session.refresh(arrangement)
     return arrangement
 
+
 @router.delete("/{arrangement_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_arrangement(
     arrangement_id: int,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     arrangement = session.get(Arrangement, arrangement_id)
-    if not arrangement:
+    if not arrangement or arrangement.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Arranjo não encontrado.",

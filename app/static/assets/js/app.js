@@ -883,20 +883,20 @@ function addNewInstrument(typeKey) {
 let playheadAnimFrameId = null;
 
 function animatePlayhead() {
-  if (!audioEngine.isPlaying) return;
+    if (!audioEngine.isPlaying) return;
 
-  const playhead = document.getElementById("playhead");
-  if (playhead) {
-    // 1 semínima = Tone.Transport.PPQ (default 192). 4 semínimas = 768 ticks por compasso.
-    const ticksPerMeasure = scoreState.beatsPerMeasure * Tone.Transport.PPQ;
-    const measureWidth = 448;
-    
-    // Converte os ticks nativos e contínuos para pixels
-    const currentX = (Tone.Transport.ticks / ticksPerMeasure) * measureWidth;
-    playhead.style.transform = `translateX(${currentX}px)`;
-  }
+    const playhead = document.getElementById("playhead");
+    if (playhead) {
+        // 1 semínima = Tone.Transport.PPQ (default 192). 4 semínimas = 768 ticks por compasso.
+        const ticksPerMeasure = scoreState.beatsPerMeasure * Tone.Transport.PPQ;
+        const measureWidth = 448;
 
-  playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
+        // Converte os ticks nativos e contínuos para pixels
+        const currentX = (Tone.Transport.ticks / ticksPerMeasure) * measureWidth;
+        playhead.style.transform = `translateX(${currentX}px)`;
+    }
+
+    playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
 }
 
 function startPlayheadAnimation() {
@@ -1088,7 +1088,7 @@ function showToast(message, isError = false) {
         toast.style.transition = "opacity 0.3s ease";
         document.body.appendChild(toast);
     }
-    
+
     toast.style.backgroundColor = isError ? "#dc2626" : "#16a34a";
     toast.textContent = message;
     toast.style.opacity = "1";
@@ -1106,8 +1106,8 @@ async function saveCurrentArrangement() {
     };
 
     const isUpdating = currentArrangementId !== null;
-    const url = isUpdating 
-        ? `/api/arrangements/${currentArrangementId}` 
+    const url = isUpdating
+        ? `/api/arrangements/${currentArrangementId}`
         : "/api/arrangements";
     const method = isUpdating ? "PUT" : "POST";
 
@@ -1117,15 +1117,27 @@ async function saveCurrentArrangement() {
             headers: {
                 "Content-Type": "application/json"
             },
+            credentials: "same-origin",
             body: JSON.stringify(payload)
         });
 
+        if (response.status === 401) {
+            showToast("Você precisa estar logado para salvar.", true);
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 1500);
+            return;
+        }
+
         if (!response.ok) {
-            throw new Error(`Erro de rede: ${response.statusText}`);
+            const errData = await response.json().catch(() => ({}));
+            const message = errData.detail || `Erro ao salvar: ${response.statusText}`;
+            showToast(message, true);
+            return;
         }
 
         const data = await response.json();
-        
+
         if (!currentArrangementId) {
             currentArrangementId = data.id;
             window.history.replaceState(null, "", `/?id=${data.id}`);
@@ -1133,8 +1145,8 @@ async function saveCurrentArrangement() {
 
         showToast("Arranjo salvo com sucesso!");
     } catch (error) {
-        console.error("Erro ao salvar arranjo:", error);
-        showToast("Falha ao salvar o arranjo.", true);
+        console.error("Erro de conexão ao salvar:", error);
+        showToast("Falha de conexão com o servidor.", true);
     }
 }
 
@@ -1153,29 +1165,36 @@ async function loadArrangementFromURL() {
     if (!arrangementId) return;
 
     try {
-        const response = await fetch(`/api/arrangements/${arrangementId}`);
+        const response = await fetch(`/api/arrangements/${arrangementId}`, {
+            credentials: "same-origin"
+        });
+
+        if (response.status === 401) {
+            showToast("Faça login para abrir este arranjo.", true);
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 1500);
+            return;
+        }
+
         if (!response.ok) {
             throw new Error(`Arranjo #${arrangementId} não encontrado.`);
         }
 
         const arrangement = await response.json();
-        
+
         if (arrangement && arrangement.score_data) {
             currentArrangementId = arrangement.id;
-            
-            // Sobrescreve as propriedades de scoreState mantendo a referência
+
             Object.assign(scoreState, arrangement.score_data);
 
-            // Reinicializa os canais de áudio com os instrumentos carregados
             if (window.audioEngine && audioEngine.isInitialized) {
                 audioEngine.initInstruments();
             }
 
-            // Redesenha a grade e os controles na tela
             renderScore();
             updateLoopBarVisuals();
 
-            // Limpa o histórico de undo/redo para o novo arranjo carregado
             historyManager.undoStack = [];
             historyManager.redoStack = [];
             historyManager.updateButtonsState();
