@@ -1,3 +1,5 @@
+let currentArrangementId = null;
+
 // ==========================================
 // 1. DICIONÁRIO DE ARTICULAÇÕES E METADADOS
 // ==========================================
@@ -1065,6 +1067,84 @@ function setupLoopEvents() {
     });
 }
 
+// ==========================================
+// 9. PERSISTÊNCIA (API FETCH)
+// ==========================================
+
+function showToast(message, isError = false) {
+    let toast = document.getElementById("toast-notification");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "toast-notification";
+        toast.style.position = "fixed";
+        toast.style.bottom = "24px";
+        toast.style.right = "80px"; // Respiro para não sobrepor o botão de ajuda
+        toast.style.padding = "10px 18px";
+        toast.style.borderRadius = "8px";
+        toast.style.color = "#fff";
+        toast.style.fontSize = "0.9rem";
+        toast.style.fontWeight = "600";
+        toast.style.zIndex = "9999";
+        toast.style.transition = "opacity 0.3s ease";
+        document.body.appendChild(toast);
+    }
+    
+    toast.style.backgroundColor = isError ? "#dc2626" : "#16a34a";
+    toast.textContent = message;
+    toast.style.opacity = "1";
+
+    setTimeout(() => {
+        toast.style.opacity = "0";
+    }, 2500);
+}
+
+async function saveCurrentArrangement() {
+    const payload = {
+        name: scoreState.title || "Sem Título",
+        score_data: scoreState,
+        collection_id: null
+    };
+
+    const isUpdating = currentArrangementId !== null;
+    const url = isUpdating 
+        ? `/api/arrangements/${currentArrangementId}` 
+        : "/api/arrangements";
+    const method = isUpdating ? "PUT" : "POST";
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro de rede: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (!currentArrangementId) {
+            currentArrangementId = data.id;
+            window.history.replaceState(null, "", `/?id=${data.id}`);
+        }
+
+        showToast("Arranjo salvo com sucesso!");
+    } catch (error) {
+        console.error("Erro ao salvar arranjo:", error);
+        showToast("Falha ao salvar o arranjo.", true);
+    }
+}
+
+function setupPersistenceEvents() {
+    // Localiza o botão salvar pelo atributo title
+    const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
+    if (saveBtn) {
+        saveBtn.addEventListener("click", saveCurrentArrangement);
+    }
+}
 
 // ==========================================
 // 7. INICIALIZAÇÃO
@@ -1079,4 +1159,5 @@ document.addEventListener("DOMContentLoaded", () => {
     setupMeasureMenuEvents();
     setupInstrumentControlEvents();
     setupLoopEvents();
+    setupPersistenceEvents();
 });
