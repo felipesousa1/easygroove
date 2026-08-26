@@ -11,6 +11,11 @@ from app.models.domain import User, Collection, Arrangement  # noqa: F401
 from app.routers import arrangements, auth
 from app.auth.security import decode_access_token
 
+from typing import Optional
+from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Request, status
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlmodel import col, desc, func, select
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -85,4 +90,46 @@ async def get_biblioteca(
             "arrangements": user_arrangements,
             "collections": user_collections,
         },
+    )
+
+@app.get("/biblioteca/search", response_class=HTMLResponse)
+async def search_arrangements(
+    request: Request,
+    q: Optional[str] = Query(default=""),
+    sort_by: Optional[str] = Query(default="az"),
+    collection_id: Optional[int] = Query(default=None),
+    current_user: Optional[User] = Depends(get_user_from_cookie),
+    session: Session = Depends(get_session),
+):
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Não autenticado",
+        )
+
+    statement = select(Arrangement).where(Arrangement.user_id == current_user.id)
+
+    # Filtro por texto na busca
+    if q and q.strip():
+        term = f"%{q.strip()}%"
+        statement = statement.where(col(Arrangement.name).ilike(term))
+
+    # Filtro por coleção
+    if collection_id is not None:
+        statement = statement.where(Arrangement.collection_id == collection_id)
+
+    # Ordenação
+    if sort_by == "az":
+        statement = statement.order_by(func.lower(Arrangement.name).asc())
+    elif sort_by == "recent":
+        statement = statement.order_by(desc(Arrangement.created_at))
+    elif sort_by == "old":
+        statement = statement.order_by(Arrangement.created_at.asc())
+
+    arrangements = session.exec(statement).all()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/arrangements_grid.html",
+        context={"arrangements": arrangements},
     )

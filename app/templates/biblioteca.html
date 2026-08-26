@@ -83,19 +83,22 @@
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" id="lib-search-input" placeholder="Buscar arranjo...">
+                        <input type="text" name="q" id="lib-search-input" placeholder="Buscar arranjo..."
+                            hx-get="/biblioteca/search" hx-trigger="keyup changed delay:300ms, search"
+                            hx-target="#arrangements-grid" hx-include="#lib-sort-select">
                     </div>
 
                     <div class="lib-filters">
                         <span class="lib-filter-label">Ordenar por:</span>
-                        <select class="lib-sort-select" id="lib-sort-select">
+                        <select class="lib-sort-select" name="sort_by" id="lib-sort-select" hx-get="/biblioteca/search"
+                            hx-trigger="change" hx-target="#arrangements-grid" hx-include="#lib-search-input">
                             <option value="az">A-Z (Ordem Alfabética)</option>
                             <option value="recent">Mais recentes</option>
                             <option value="old">Mais antigos</option>
                         </select>
                     </div>
                 </div>
-
+                
                 <div class="lib-grid" id="arrangements-grid">
                     {% for arr in arrangements %}
                     <div class="lib-card" onclick="window.location.href='/?id={{ arr.id }}'">
