@@ -5,6 +5,8 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models.domain import Arrangement, User
 from app.models.schemas import ArrangementCreate, ArrangementRead, ArrangementUpdate
+from app.auth.dependencies import get_current_user
+
 
 router = APIRouter(prefix="/api/arrangements", tags=["arrangements"])
 
@@ -53,8 +55,13 @@ def get_arrangement(
 
 
 @router.get("", response_model=List[ArrangementRead])
-def list_arrangements(session: Session = Depends(get_session)):
-    arrangements = session.exec(select(Arrangement)).all()
+def list_arrangements(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    # Retorna exclusivamente os arranjos pertencentes ao usuário logado
+    statement = select(Arrangement).where(Arrangement.user_id == current_user.id)
+    arrangements = session.exec(statement).all()
     return arrangements
 
 @router.put("/{arrangement_id}", response_model=ArrangementRead)
