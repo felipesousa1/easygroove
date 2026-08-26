@@ -1146,6 +1146,48 @@ function setupPersistenceEvents() {
     }
 }
 
+async function loadArrangementFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const arrangementId = urlParams.get("id");
+
+    if (!arrangementId) return;
+
+    try {
+        const response = await fetch(`/api/arrangements/${arrangementId}`);
+        if (!response.ok) {
+            throw new Error(`Arranjo #${arrangementId} não encontrado.`);
+        }
+
+        const arrangement = await response.json();
+        
+        if (arrangement && arrangement.score_data) {
+            currentArrangementId = arrangement.id;
+            
+            // Sobrescreve as propriedades de scoreState mantendo a referência
+            Object.assign(scoreState, arrangement.score_data);
+
+            // Reinicializa os canais de áudio com os instrumentos carregados
+            if (window.audioEngine && audioEngine.isInitialized) {
+                audioEngine.initInstruments();
+            }
+
+            // Redesenha a grade e os controles na tela
+            renderScore();
+            updateLoopBarVisuals();
+
+            // Limpa o histórico de undo/redo para o novo arranjo carregado
+            historyManager.undoStack = [];
+            historyManager.redoStack = [];
+            historyManager.updateButtonsState();
+
+            showToast(`Arranjo "${arrangement.name}" carregado!`);
+        }
+    } catch (error) {
+        console.error("Erro ao carregar arranjo:", error);
+        showToast("Não foi possível carregar o arranjo especificado.", true);
+    }
+}
+
 // ==========================================
 // 7. INICIALIZAÇÃO
 // ==========================================
@@ -1160,4 +1202,5 @@ document.addEventListener("DOMContentLoaded", () => {
     setupInstrumentControlEvents();
     setupLoopEvents();
     setupPersistenceEvents();
+    loadArrangementFromURL();
 });
