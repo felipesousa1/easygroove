@@ -6,7 +6,7 @@ from sqlmodel import SQLModel
 
 from app.database import engine
 from app.models.domain import User, Collection, Arrangement  # noqa: F401
-from app.routers import arrangements
+from app.routers import arrangements, auth
 
 
 @asynccontextmanager
@@ -22,6 +22,7 @@ app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
 templates = Jinja2Templates(directory="app/templates")
 
 app.include_router(arrangements.router)
+app.include_router(auth.router)
 
 @app.get("/")
 async def get_editor(request: Request):
