@@ -8,10 +8,21 @@ Thumbs.db
 *.swp
 *.swo
 
-# Dependências
-node_modules/venv/
+# Dependências e Ambientes
+node_modules/
+venv/
+.venv/
+env/
+
+# Python Cache e Builds
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Banco de Dados
 *.sqlite3
 *.db
+
+# Variáveis de Ambiente
 .env
