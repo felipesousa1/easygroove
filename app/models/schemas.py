@@ -7,7 +7,11 @@ class ArrangementCreate(BaseModel):
     name: str
     score_data: Dict[str, Any]
     collection_id: Optional[int] = None
-
+    
+class ArrangementUpdate(BaseModel):
+    name: Optional[str] = None
+    score_data: Optional[Dict[str, Any]] = None
+    collection_id: Optional[int] = None
 
 class ArrangementRead(BaseModel):
     id: int
