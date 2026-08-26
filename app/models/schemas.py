@@ -42,3 +42,15 @@ class UserRead(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class CollectionCreate(BaseModel):
+    name: str
+
+
+class CollectionRead(BaseModel):
+    id: int
+    name: str
+    user_id: int
+
+    class Config:
+        from_attributes = True

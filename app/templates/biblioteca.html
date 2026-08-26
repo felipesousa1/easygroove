@@ -47,27 +47,17 @@
 
             <!-- Barra Lateral (Coleções) -->
             <aside class="lib-sidebar">
-                <button class="lib-btn-primary active" id="btn-all-arrangements">Todos os arranjos</button>
+                <button type="button" class="lib-btn-primary active" id="btn-all-arrangements"
+                    hx-get="/biblioteca/search" hx-target="#arrangements-grid"
+                    hx-include="#lib-search-input, #lib-sort-select">
+                    Todos os arranjos
+                </button>
 
                 <div class="lib-sidebar-divider"></div>
 
                 <h2 class="lib-subtitle">Coleções</h2>
                 <ul class="lib-collection-list" id="collection-list-container">
-                    {% for col in collections %}
-                    <li>
-                        <button class="lib-btn-collection" data-collection-id="{{ col.id }}">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
-                                </path>
-                            </svg>
-                            {{ col.name }}
-                        </button>
-                    </li>
-                    {% else %}
-                    <li style="font-size: 0.85rem; color: var(--color-text-muted); padding: 4px 12px;">Nenhuma coleção
-                        criada</li>
-                    {% endfor %}
+                    {% include "partials/collections_list.html" %}
                 </ul>
 
                 <button type="button" class="lib-btn-add-dashed" id="btn-add-collection">+ Nova coleção</button>
@@ -98,7 +88,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="lib-grid" id="arrangements-grid">
                     {% for arr in arrangements %}
                     <div class="lib-card" onclick="window.location.href='/?id={{ arr.id }}'">
@@ -215,6 +205,162 @@
                     return;
                 }
             });
+        });
+
+
+        // Criação de Nova Coleção
+        const collectionListContainer = document.getElementById("collection-list-container");
+        const btnAddCollection = document.getElementById("btn-add-collection");
+
+        // Criação Inline de Coleção
+        if (btnAddCollection && collectionListContainer) {
+            btnAddCollection.addEventListener("click", () => {
+                // Evita criar outro input se já houver um aberto
+                if (document.getElementById("new-collection-input")) {
+                    document.getElementById("new-collection-input").focus();
+                    return;
+                }
+
+                const emptyMsg = collectionListContainer.querySelector(".empty-col-msg");
+                if (emptyMsg) emptyMsg.remove();
+
+                const li = document.createElement("li");
+                li.innerHTML = `
+                <div class="lib-btn-collection active" style="cursor: default;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <input type="text" id="new-collection-input" value="Nova Coleção" style="background: transparent; border: 1px solid var(--color-primary, #6366f1); border-radius: 4px; padding: 2px 6px; font-size: 0.9rem; color: inherit; width: 100%; outline: none;">
+                </div>
+            `;
+                collectionListContainer.appendChild(li);
+
+                const input = document.getElementById("new-collection-input");
+                input.focus();
+                input.select();
+
+                let isSaving = false;
+
+                const saveNew = async () => {
+                    if (isSaving) return;
+                    isSaving = true;
+                    const name = input.value.trim();
+                    if (!name) {
+                        li.remove();
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch("/api/collections", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name })
+                        });
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            alert(err.detail || "Erro ao criar coleção.");
+                            li.remove();
+                        } else {
+                            window.location.reload();
+                        }
+                    } catch (e) {
+                        li.remove();
+                    }
+                };
+
+                input.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        saveNew();
+                    } else if (e.key === "Escape") {
+                        li.remove();
+                    }
+                });
+
+                input.addEventListener("blur", saveNew);
+            });
+        }
+
+        // Edição por Duplo Clique
+        if (collectionListContainer) {
+            collectionListContainer.addEventListener("dblclick", (e) => {
+                const btn = e.target.closest(".lib-btn-collection");
+                if (!btn || btn.querySelector("input")) return;
+
+                const colId = btn.dataset.collectionId;
+                const textSpan = btn.querySelector(".col-name-text");
+                if (!textSpan || !colId) return;
+
+                const currentName = textSpan.textContent.trim();
+                const input = document.createElement("input");
+                input.type = "text";
+                input.value = currentName;
+                input.style.cssText = "background: transparent; border: 1px solid var(--color-primary, #6366f1); border-radius: 4px; padding: 2px 6px; font-size: 0.9rem; color: inherit; width: 100%; outline: none;";
+
+                textSpan.style.display = "none";
+                btn.appendChild(input);
+                input.focus();
+                input.select();
+
+                let isSaving = false;
+
+                const saveEdit = async () => {
+                    if (isSaving) return;
+                    isSaving = true;
+                    const newName = input.value.trim();
+
+                    if (!newName || newName === currentName) {
+                        input.remove();
+                        textSpan.style.display = "";
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch(`/api/collections/${colId}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ name: newName })
+                        });
+
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            alert(err.detail || "Erro ao renomear coleção.");
+                            input.remove();
+                            textSpan.style.display = "";
+                        } else {
+                            textSpan.textContent = newName;
+                            input.remove();
+                            textSpan.style.display = "";
+                        }
+                    } catch (e) {
+                        input.remove();
+                        textSpan.style.display = "";
+                    }
+                };
+
+                input.addEventListener("keydown", (evt) => {
+                    if (evt.key === "Enter") {
+                        evt.preventDefault();
+                        saveEdit();
+                    } else if (evt.key === "Escape") {
+                        input.remove();
+                        textSpan.style.display = "";
+                    }
+                });
+
+                input.addEventListener("blur", saveEdit);
+            });
+        }
+
+        // Gerenciamento de classes ativas na barra lateral
+        document.addEventListener("click", (e) => {
+            const colBtn = e.target.closest(".lib-btn-collection, #btn-all-arrangements");
+            if (colBtn) {
+                document.querySelectorAll(".lib-btn-collection, #btn-all-arrangements").forEach(b => {
+                    b.classList.remove("active");
+                });
+                colBtn.classList.add("active");
+            }
         });
     </script>
 </body>

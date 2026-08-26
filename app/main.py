@@ -8,7 +8,7 @@ from sqlmodel import Session, SQLModel, select
 
 from app.database import engine, get_session
 from app.models.domain import User, Collection, Arrangement  # noqa: F401
-from app.routers import arrangements, auth
+from app.routers import arrangements, auth, collections
 from app.auth.security import decode_access_token
 
 from typing import Optional
@@ -31,6 +31,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 app.include_router(arrangements.router)
 app.include_router(auth.router)
+app.include_router(collections.router)
 
 def get_user_from_cookie(
     access_token: Optional[str] = Cookie(default=None),
