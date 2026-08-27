@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, SQLModel, select
 
 from app.database import engine, get_session
-from app.models.domain import User, Collection, Arrangement  # noqa: F401
+from app.models.domain import User, Collection, Arrangement, ArrangementCollectionLink  # noqa: F401
 from app.routers import arrangements, auth, collections
 from app.auth.security import decode_access_token
 
@@ -148,9 +148,11 @@ async def search_arrangements(
         term = f"%{q.strip()}%"
         statement = statement.where(col(Arrangement.name).ilike(term))
 
-    # Filtro por coleção
+    # Filtro por coleção (N:M)
     if collection_id is not None:
-        statement = statement.where(Arrangement.collection_id == collection_id)
+        statement = statement.join(ArrangementCollectionLink).where(
+            ArrangementCollectionLink.collection_id == collection_id
+        )
 
     # Ordenação
     if sort_by == "recent":
@@ -165,5 +167,8 @@ async def search_arrangements(
     return templates.TemplateResponse(
         request=request,
         name="partials/arrangements_grid.html",
-        context={"arrangements": arrangements},
+        context={
+            "arrangements": arrangements,
+            "current_collection_id": collection_id
+        },
     )

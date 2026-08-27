@@ -2,16 +2,17 @@ import re
 from datetime import datetime, timezone
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Response, status, UploadFile, File
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, text
 
 from app.auth.dependencies import get_current_user
 from app.database import get_session
-from app.models.domain import Arrangement, User
+from app.models.domain import Arrangement, User, ArrangementCollectionLink, Collection
 from app.models.schemas import (
     ArrangementCreate,
     ArrangementRead,
     ArrangementUpdate,
 )
+from pydantic import BaseModel
 
 import os
 import shutil
@@ -211,3 +212,76 @@ def upload_arrangement_cover(
     session.commit()
     session.refresh(arrangement)
     return arrangement
+
+class CollectionSyncRequest(BaseModel):
+    collection_ids: List[int]
+
+@router.put("/{arrangement_id}/collections", status_code=status.HTTP_200_OK)
+def sync_arrangement_collections(
+    arrangement_id: int,
+    req: CollectionSyncRequest,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Sincroniza as coleções de um arranjo (Modal de checkboxes)"""
+    arr = session.get(Arrangement, arrangement_id)
+    if not arr or arr.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Arranjo não encontrado.")
+
+    # Remove vínculos atuais
+    session.exec(
+        text("DELETE FROM arrangementcollectionlink WHERE arrangement_id = :arr_id"),
+        params={"arr_id": arrangement_id}
+    )
+    
+    # Adiciona novos vínculos
+    for col_id in req.collection_ids:
+        # Verifica se a coleção pertence ao usuário
+        col = session.get(Collection, col_id)
+        if col and col.user_id == current_user.id:
+            link = ArrangementCollectionLink(arrangement_id=arrangement_id, collection_id=col_id)
+            session.add(link)
+            
+    session.commit()
+    return {"status": "ok"}
+
+
+@router.post("/{arrangement_id}/collections/{collection_id}", status_code=status.HTTP_201_CREATED)
+def link_arrangement_to_collection(
+    arrangement_id: int,
+    collection_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Adiciona um arranjo a uma coleção específica (Drag & Drop)"""
+    arr = session.get(Arrangement, arrangement_id)
+    col = session.get(Collection, collection_id)
+    
+    if not arr or arr.user_id != current_user.id or not col or col.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Recurso não encontrado.")
+        
+    existing = session.get(ArrangementCollectionLink, (arrangement_id, collection_id))
+    if not existing:
+        link = ArrangementCollectionLink(arrangement_id=arrangement_id, collection_id=collection_id)
+        session.add(link)
+        session.commit()
+        
+    return {"status": "ok"}
+
+@router.delete("/{arrangement_id}/collections/{collection_id}", status_code=status.HTTP_204_NO_CONTENT)
+def unlink_arrangement_collection(
+    arrangement_id: int,
+    collection_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Remove um arranjo de uma coleção específica (Desvincular)"""
+    link = session.get(ArrangementCollectionLink, (arrangement_id, collection_id))
+    if link:
+        # Verifica posse do arranjo
+        arr = session.get(Arrangement, arrangement_id)
+        if arr and arr.user_id == current_user.id:
+            session.delete(link)
+            session.commit()
+            
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

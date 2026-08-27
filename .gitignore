@@ -21,6 +21,7 @@ __pycache__/
 *.pyd
 
 # Banco de Dados
+app/static/uploads/
 *.sqlite3
 *.db
 

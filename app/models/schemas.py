@@ -6,7 +6,6 @@ from pydantic import BaseModel
 class ArrangementCreate(BaseModel):
     name: str
     score_data: Dict[str, Any]
-    collection_id: Optional[int] = None
     
 class ArrangementRead(BaseModel):
     id: int
@@ -15,7 +14,6 @@ class ArrangementRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     cover_url: Optional[str] = None
-    collection_id: Optional[int] = None
     user_id: int
 
     class Config:
@@ -25,7 +23,6 @@ class ArrangementRead(BaseModel):
 class ArrangementUpdate(BaseModel):
     name: Optional[str] = None
     score_data: Optional[Dict[str, Any]] = None
-    collection_id: Optional[int] = None
     cover_url: Optional[str] = None
        
  

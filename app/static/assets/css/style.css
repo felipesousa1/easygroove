@@ -1589,14 +1589,17 @@ body {
 .lib-workspace {
   flex: 1;
   background-color: var(--color-gray-bg);
-  border-radius: 20px; /* Borda arredondada por completo */
+  border-radius: 20px;
+  /* Borda arredondada por completo */
   border: 1.5px solid var(--color-gray-border);
   padding: 24px;
   display: flex;
   flex-direction: column;
   position: relative;
-  height: fit-content; /* A caixa terá apenas a altura do conteúdo interno */
-  min-height: 400px; /* Altura mínima para ficar bonito mesmo sem arranjos */
+  height: fit-content;
+  /* A caixa terá apenas a altura do conteúdo interno */
+  min-height: 400px;
+  /* Altura mínima para ficar bonito mesmo sem arranjos */
 }
 
 /* Toolbar superior da grade (Busca + Filtros) */
@@ -1684,8 +1687,10 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
-  padding-bottom: 80px; /* Respiro interno para o botão "Criar" não sobrepor os cards */
-  overflow: visible; /* Remove o scroll interno */
+  padding-bottom: 80px;
+  /* Respiro interno para o botão "Criar" não sobrepor os cards */
+  overflow: visible;
+  /* Remove o scroll interno */
 }
 
 .lib-grid::-webkit-scrollbar {
@@ -1733,10 +1738,10 @@ body {
 }
 
 .lib-card-cover-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 6px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .lib-card-info {
@@ -1788,22 +1793,22 @@ body {
 }
 
 .lib-card-dropdown {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: calc(100% + 4px);
-    background: #ffffff;
-    border: 1px solid var(--color-border, #e2e8f0);
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    min-width: 150px;
-    z-index: 60;
-    overflow: hidden;
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: #ffffff;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 150px;
+  z-index: 60;
+  overflow: hidden;
 }
 
 .lib-card-dropdown.active {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .lib-card-dropdown button {
@@ -1834,15 +1839,15 @@ body {
 
 /* Input inline do card */
 .lib-card-title-input {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text, #1e293b);
-    border: 1px solid var(--color-primary, #6366f1);
-    border-radius: 4px;
-    padding: 2px 4px;
-    width: 100%;
-    outline: none;
-    background: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text, #1e293b);
+  border: 1px solid var(--color-primary, #6366f1);
+  border-radius: 4px;
+  padding: 2px 4px;
+  width: 100%;
+  outline: none;
+  background: #ffffff;
 }
 
 .lib-dropdown-divider {
@@ -1851,41 +1856,172 @@ body {
   margin: 4px 0;
 }
 
+/* Modal de Coleções */
+.lib-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.lib-modal-overlay.active {
+  display: flex;
+}
+
+.lib-modal-content {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.lib-modal-title {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  color: var(--color-primary, #3b0764);
+}
+
+.lib-modal-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.col-checkbox-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.col-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* Exclusão de Coleção (Ícone da lixeira aparece no hover) */
+.lib-btn-collection {
+  position: relative;
+}
+
+.btn-delete-collection {
+  display: none;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.lib-btn-collection:hover .btn-delete-collection {
+  display: block;
+}
+
+.btn-delete-collection:hover {
+  background: #fee2e2;
+}
+
+/* Estilo para a coleção selecionada (fundo roxo e texto branco) */
+.lib-btn-collection.active {
+  background-color: var(--color-primary, #3b0764);
+  color: #ffffff;
+  border-radius: 6px;
+  /* Ajuste se seus botões tiverem outro arredondamento */
+}
+
+/* Deixa o ícone de pasta branco também */
+.lib-btn-collection.active svg {
+  stroke: #ffffff;
+}
+
+/* Deixa a lixeira com contraste melhor quando o fundo estiver roxo */
+.lib-btn-collection.active .btn-delete-collection {
+  color: #fca5a5;
+}
+
+.lib-btn-collection.active .btn-delete-collection:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Garante que o botão "Todos os arranjos" perca a cor roxa quando não estiver ativo */
+#btn-all-arrangements:not(.active) {
+  background-color: transparent;
+  color: var(--color-text, #1e293b);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+/* Efeitos de Drag & Drop */
+.lib-card[draggable="true"] {
+  cursor: grab;
+}
+
+.lib-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.lib-btn-collection.drag-over {
+  background-color: var(--color-primary, #3b0764);
+  color: #fff;
+}
+
 /* Mantém o alinhamento horizontal dentro da caixa e trava no fundo da viewport */
 .lib-fab-wrapper {
-    position: sticky;
-    bottom: 24px;
-    align-self: flex-end;
-    margin-top: 16px;
-    margin-right: 8px;
-    z-index: 40;
-    pointer-events: none; /* Deixa passar cliques nas áreas transparentes ao redor */
+  position: sticky;
+  bottom: 24px;
+  align-self: flex-end;
+  margin-top: 16px;
+  margin-right: 8px;
+  z-index: 40;
+  pointer-events: none;
+  /* Deixa passar cliques nas áreas transparentes ao redor */
 }
 
 .lib-fab {
-    pointer-events: auto; /* Restaura o clique no botão */
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background-color: var(--color-primary, #3b0764);
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 1rem;
-    border: none;
-    border-radius: 9999px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  pointer-events: auto;
+  /* Restaura o clique no botão */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--color-primary, #3b0764);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .lib-fab:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
 .lib-fab:active {
-    transform: translateY(0);
+  transform: translateY(0);
 }
 
 .lib-fab svg {
@@ -1905,5 +2041,6 @@ body {
   font-family: 'Montserrat', sans-serif;
   font-size: 1rem;
   flex-shrink: 0;
-  margin-top: auto; /* Empurra o rodapé para o final da página */
+  margin-top: auto;
+  /* Empurra o rodapé para o final da página */
 }
