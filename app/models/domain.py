@@ -24,7 +24,8 @@ class Arrangement(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+   
     # Armazena o JSON puro do editor
     score_data: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
     

@@ -123,53 +123,144 @@
                 });
             }
 
-            // Ações do Dropdown dos Cards
-            document.addEventListener("click", async (e) => {
-                const editBtn = e.target.closest(".btn-action-edit");
-                if (editBtn) {
-                    e.stopPropagation();
-                    window.location.href = `/?id=${editBtn.dataset.id}`;
-                    return;
-                }
+// Função auxiliar para ativar o modo de edição inline de título do card
+    function startInlineRename(card) {
+        const titleSpan = card.querySelector(".lib-card-title");
+        if (!titleSpan || card.querySelector(".lib-card-title-input")) return;
 
-                const renameBtn = e.target.closest(".btn-action-rename");
-                if (renameBtn) {
-                    e.stopPropagation();
-                    const id = renameBtn.dataset.id;
-                    const currentName = renameBtn.dataset.name;
-                    const newName = prompt("Novo nome do arranjo:", currentName);
+        const currentName = titleSpan.textContent.trim();
+        const arrId = card.dataset.cardId;
 
-                    if (newName && newName.trim() && newName !== currentName) {
-                        const res = await fetch(`/api/arrangements/${id}`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ name: newName.trim() })
-                        });
-                        if (res.ok) {
-                            window.location.reload();
-                        } else {
-                            alert("Erro ao renomear arranjo.");
-                        }
-                    }
-                    return;
-                }
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "lib-card-title-input";
+        input.value = currentName;
 
-                const deleteBtn = e.target.closest(".btn-action-delete");
-                if (deleteBtn) {
-                    e.stopPropagation();
-                    const id = deleteBtn.dataset.id;
-                    if (confirm("Tem certeza que deseja excluir este arranjo?")) {
-                        const res = await fetch(`/api/arrangements/${id}`, { method: "DELETE" });
-                        if (res.ok) {
-                            window.location.reload();
-                        } else {
-                            alert("Erro ao excluir arranjo.");
-                        }
-                    }
-                    return;
+        titleSpan.style.display = "none";
+        titleSpan.parentNode.insertBefore(input, titleSpan.nextSibling);
+
+        input.focus();
+        input.select();
+
+        let isSaving = false;
+
+        const saveCardRename = async () => {
+            if (isSaving) return;
+            isSaving = true;
+            const newName = input.value.trim();
+
+            if (!newName || newName === currentName) {
+                input.remove();
+                titleSpan.style.display = "";
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/arrangements/${arrId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: newName })
+                });
+
+                if (res.ok) {
+                    titleSpan.textContent = newName;
+                    input.remove();
+                    titleSpan.style.display = "";
+                    htmx.trigger("#lib-search-input", "search");
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    alert(err.detail || "Erro ao renomear arranjo.");
+                    input.remove();
+                    titleSpan.style.display = "";
                 }
-            });
+            } catch (e) {
+                input.remove();
+                titleSpan.style.display = "";
+            }
+        };
+
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                saveCardRename();
+            } else if (e.key === "Escape") {
+                input.remove();
+                titleSpan.style.display = "";
+            }
         });
+
+        input.addEventListener("blur", saveCardRename);
+    }
+
+    // Eventos de clique e duplo clique
+    document.addEventListener("click", async (e) => {
+        // Toggle Dropdown (somente no clique dos 3 pontinhos)
+        const toggleBtn = e.target.closest(".btn-toggle-card-menu");
+        if (toggleBtn) {
+            e.stopPropagation();
+            const wrapper = toggleBtn.closest(".lib-card-menu-wrapper");
+            const dropdown = wrapper.querySelector(".lib-card-dropdown");
+            
+            document.querySelectorAll(".lib-card-dropdown.active").forEach(d => {
+                if (d !== dropdown) d.classList.remove("active");
+            });
+            dropdown.classList.toggle("active");
+            return;
+        }
+
+        if (!e.target.closest(".lib-card-dropdown")) {
+            document.querySelectorAll(".lib-card-dropdown.active").forEach(d => {
+                d.classList.remove("active");
+            });
+        }
+
+        // Opção Renomear do menu
+        const renameOpt = e.target.closest(".btn-action-rename-card");
+        if (renameOpt) {
+            e.stopPropagation();
+            const card = renameOpt.closest(".lib-card");
+            document.querySelectorAll(".lib-card-dropdown.active").forEach(d => d.classList.remove("active"));
+            startInlineRename(card);
+            return;
+        }
+
+        // Opção Editar do menu
+        const editBtn = e.target.closest(".btn-action-edit");
+        if (editBtn) {
+            e.stopPropagation();
+            window.location.href = `/?id=${editBtn.dataset.id}`;
+            return;
+        }
+
+        // Opção Excluir do menu
+        const deleteBtn = e.target.closest(".btn-action-delete");
+        if (deleteBtn) {
+            e.stopPropagation();
+            if (confirm("Tem certeza que deseja excluir este arranjo?")) {
+                const res = await fetch(`/api/arrangements/${deleteBtn.dataset.id}`, { method: "DELETE" });
+                if (res.ok) {
+                    htmx.trigger("#lib-search-input", "search");
+                }
+            }
+            return;
+        }
+
+        // Clique no corpo do card (ignora se estiver editando input)
+        const card = e.target.closest(".lib-card");
+        if (card && !e.target.closest(".lib-card-menu-wrapper") && !e.target.closest(".lib-card-title-input")) {
+            window.location.href = `/?id=${card.dataset.cardId}`;
+        }
+    });
+
+    // Duplo clique no nome do arranjo para renomear
+    document.addEventListener("dblclick", (e) => {
+        const titleSpan = e.target.closest(".lib-card-title");
+        if (titleSpan) {
+            e.stopPropagation();
+            const card = titleSpan.closest(".lib-card");
+            startInlineRename(card);
+        }
+    });
 
 
         // Criação de Nova Coleção
@@ -326,6 +417,7 @@
                 colBtn.classList.add("active");
             }
         });
+    });
     </script>
 </body>
 

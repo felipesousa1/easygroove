@@ -1,5 +1,5 @@
 {% for arr in arrangements %}
-<div class="lib-card" onclick="window.location.href='/?id={{ arr.id }}'">
+<div class="lib-card" data-card-id="{{ arr.id }}">
     <div class="lib-card-img-placeholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 18V5l12-2v13"></path>
@@ -8,12 +8,12 @@
         </svg>
     </div>
     <div class="lib-card-info">
-        <span class="lib-card-title">{{ arr.name }}</span>
-        <span class="lib-card-date">{{ arr.created_at.strftime('%d/%m/%Y') }}</span>
+        <span class="lib-card-title" data-arrangement-id="{{ arr.id }}">{{ arr.name }}</span>
+        <span class="lib-card-date">{{ arr.updated_at | relative_time }}</span>
     </div>
 
-    <div class="lib-card-menu-wrapper" onclick="event.stopPropagation()">
-        <button class="lib-card-menu">
+    <div class="lib-card-menu-wrapper">
+        <button type="button" class="lib-card-menu btn-toggle-card-menu" aria-label="Opções">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="12" cy="5" r="2"></circle>
                 <circle cx="12" cy="12" r="2"></circle>
@@ -22,7 +22,7 @@
         </button>
         <div class="lib-card-dropdown">
             <button type="button" class="btn-action-edit" data-id="{{ arr.id }}">Editar Arranjo</button>
-            <button type="button" class="btn-action-rename" data-id="{{ arr.id }}" data-name="{{ arr.name }}">Renomear</button>
+            <button type="button" class="btn-action-rename-card" data-id="{{ arr.id }}">Renomear</button>
             <div class="lib-dropdown-divider"></div>
             <button type="button" class="danger btn-action-delete" data-id="{{ arr.id }}">Excluir</button>
         </div>
@@ -31,6 +31,5 @@
 {% else %}
 <div style="grid-column: 1 / -1; text-align: center; color: var(--color-text-muted); padding: 40px 0;">
     <p style="font-size: 1.1rem; font-weight: 600;">Nenhum arranjo encontrado.</p>
-    <p style="font-size: 0.9rem; margin-top: 4px;">Tente ajustar os termos da busca.</p>
 </div>
 {% endfor %}

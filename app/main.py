@@ -15,7 +15,7 @@ from typing import Optional
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import col, desc, func, select
-
+from datetime import datetime, timezone
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -65,6 +65,38 @@ async def get_login(
         return RedirectResponse(url="/biblioteca", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse(request=request, name="login.html")
 
+def format_relative_time(dt: datetime) -> str:
+    """Formata data relativa baseada no horário UTC atual."""
+    now = datetime.now(timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    
+    diff = now - dt
+    seconds = int(diff.total_seconds())
+
+    if seconds < 0:
+        return "agora"
+    
+    # Mesmo dia
+    if now.date() == dt.date():
+        minutes = seconds // 60
+        if minutes < 1:
+            return "agora há pouco"
+        if minutes < 60:
+            return f"editado há {minutes} min"
+        hours = minutes // 60
+        return f"editado há {hours}h"
+    
+    # Dia anterior
+    days = (now.date() - dt.date()).days
+    if days == 1:
+        return "ontem"
+    
+    # Mais de 1 dia
+    return dt.strftime('%d/%m/%Y')
+
+# Injeta a função nos templates Jinja2
+templates.env.filters["relative_time"] = format_relative_time
 
 @app.get("/biblioteca")
 async def get_biblioteca(
@@ -97,7 +129,7 @@ async def get_biblioteca(
 async def search_arrangements(
     request: Request,
     q: Optional[str] = Query(default=""),
-    sort_by: Optional[str] = Query(default="az"),
+    sort_by: Optional[str] = Query(default="recent"),
     collection_id: Optional[int] = Query(default=None),
     current_user: Optional[User] = Depends(get_user_from_cookie),
     session: Session = Depends(get_session),
@@ -120,10 +152,10 @@ async def search_arrangements(
         statement = statement.where(Arrangement.collection_id == collection_id)
 
     # Ordenação
-    if sort_by == "az":
+    if sort_by == "recent":
+        statement = statement.order_by(desc(Arrangement.updated_at))
+    elif sort_by == "az":
         statement = statement.order_by(func.lower(Arrangement.name).asc())
-    elif sort_by == "recent":
-        statement = statement.order_by(desc(Arrangement.created_at))
     elif sort_by == "old":
         statement = statement.order_by(Arrangement.created_at.asc())
 

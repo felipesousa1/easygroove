@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlmodel import Session, select, func
@@ -132,6 +133,8 @@ def update_arrangement(
 
     for key, value in update_data.items():
         setattr(arrangement, key, value)
+        
+    arrangement.updated_at = datetime.now(timezone.utc)
 
     session.add(arrangement)
     session.commit()
