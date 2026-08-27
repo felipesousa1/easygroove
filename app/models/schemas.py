@@ -8,22 +8,27 @@ class ArrangementCreate(BaseModel):
     score_data: Dict[str, Any]
     collection_id: Optional[int] = None
     
-class ArrangementUpdate(BaseModel):
-    name: Optional[str] = None
-    score_data: Optional[Dict[str, Any]] = None
-    collection_id: Optional[int] = None
-
 class ArrangementRead(BaseModel):
     id: int
     name: str
     score_data: Dict[str, Any]
-    user_id: int
-    collection_id: Optional[int] = None
     created_at: datetime
+    updated_at: datetime
+    cover_url: Optional[str] = None
+    collection_id: Optional[int] = None
+    user_id: int
 
     class Config:
         from_attributes = True
-        
+
+
+class ArrangementUpdate(BaseModel):
+    name: Optional[str] = None
+    score_data: Optional[Dict[str, Any]] = None
+    collection_id: Optional[int] = None
+    cover_url: Optional[str] = None
+       
+ 
 class UserCreate(BaseModel):
     username: str
     email: str

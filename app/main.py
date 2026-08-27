@@ -27,6 +27,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="EasyGroove", lifespan=lifespan)
 
 app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
 app.include_router(arrangements.router)

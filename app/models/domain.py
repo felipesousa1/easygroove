@@ -29,6 +29,8 @@ class Arrangement(SQLModel, table=True):
     # Armazena o JSON puro do editor
     score_data: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
     
+    cover_url: Optional[str] = Field(default=None)
+    
     user_id: int = Field(foreign_key="user.id")
     user: User = Relationship(back_populates="arrangements")
     
