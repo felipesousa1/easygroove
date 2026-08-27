@@ -1833,37 +1833,46 @@ body {
   margin: 4px 0;
 }
 
-/* Botão Flutuante (FAB) Criar */
+/* Mantém o alinhamento horizontal dentro da caixa e trava no fundo da viewport */
+.lib-fab-wrapper {
+    position: sticky;
+    bottom: 24px;
+    align-self: flex-end;
+    margin-top: 16px;
+    margin-right: 8px;
+    z-index: 40;
+    pointer-events: none; /* Deixa passar cliques nas áreas transparentes ao redor */
+}
+
 .lib-fab {
-  position: absolute;
-  bottom: 32px;
-  right: 32px;
-  background-color: #360566;
-  color: #ffffff;
-  border: none;
-  border-radius: 16px;
-  padding: 14px 28px;
-  font-size: 1.2rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  box-shadow: 0 6px 12px rgba(54, 5, 102, 0.25);
-  transition: transform 0.1s ease, background-color 0.15s ease;
+    pointer-events: auto; /* Restaura o clique no botão */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: var(--color-primary, #3b0764);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1rem;
+    border: none;
+    border-radius: 9999px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lib-fab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.lib-fab:active {
+    transform: translateY(0);
 }
 
 .lib-fab svg {
   width: 24px;
   height: 24px;
-}
-
-.lib-fab:hover {
-  background-color: #4f0a91;
-}
-
-.lib-fab:active {
-  transform: translateY(2px);
 }
 
 /* Footer Roxo */
