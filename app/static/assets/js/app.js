@@ -104,7 +104,7 @@ const scoreState = {
     loopState: {
         active: false,
         startMeasure: 0,
-        endMeasure: 1 // Inclusivo no início, exclusivo no final (1 compasso de duração)
+        endMeasure: 3
     },
 
     activeTool: {
@@ -178,13 +178,15 @@ const scoreState = {
 
 function createBeamsSVG() {
     return `
-    <svg class="beat-beams" viewBox="0 0 112 32" preserveAspectRatio="none">
-      <line x1="14" y1="2" x2="98" y2="2" stroke="#0f172a" stroke-width="3.5"/>
-      <line x1="14" y1="9" x2="98" y2="9" stroke="#0f172a" stroke-width="3.5"/>
-      <line x1="14" y1="2" x2="14" y2="32" stroke="#0f172a" stroke-width="2"/>
-      <line x1="42" y1="2" x2="42" y2="32" stroke="#0f172a" stroke-width="2"/>
-      <line x1="70" y1="2" x2="70" y2="32" stroke="#0f172a" stroke-width="2"/>
-      <line x1="98" y1="2" x2="98" y2="32" stroke="#0f172a" stroke-width="2"/>
+    <svg class="beat-beams" viewBox="0 0 112 28" preserveAspectRatio="none">
+      <!-- Barras duplas superiores de semicolcheia -->
+      <line x1="14" y1="3" x2="98" y2="3" stroke="#0f172a" stroke-width="2.5"/>
+      <line x1="14" y1="8.5" x2="98" y2="8.5" stroke="#0f172a" stroke-width="2.5"/>
+      <!-- 4 Hastes verticais conectando aos slots -->
+      <line x1="14" y1="3" x2="14" y2="28" stroke="#0f172a" stroke-width="1.8"/>
+      <line x1="42" y1="3" x2="42" y2="28" stroke="#0f172a" stroke-width="1.8"/>
+      <line x1="70" y1="3" x2="70" y2="28" stroke="#0f172a" stroke-width="1.8"/>
+      <line x1="98" y1="3" x2="98" y2="28" stroke="#0f172a" stroke-width="1.8"/>
     </svg>
   `;
 }
@@ -1085,7 +1087,10 @@ function updateLoopBarVisuals() {
 function setupLoopEvents() {
     const btnLoop = document.getElementById("btn-loop");
     const measuresTrack = document.getElementById("measures-track");
-    let draggingHandle = null;
+    let draggingMode = null; // 'left' | 'right' | 'body'
+    let dragStartX = 0;
+    let initialStart = 0;
+    let initialEnd = 0;
 
     if (btnLoop) {
         btnLoop.addEventListener("click", () => {
@@ -1098,27 +1103,66 @@ function setupLoopEvents() {
 
     // Lógica magnética de drag-and-drop
     document.addEventListener("mousedown", (e) => {
+        // Se o clique foi no botão de opções ou dentro do dropdown, não inicia arraste de loop
+        if (e.target.closest(".measure-menu-btn") || e.target.closest(".measure-dropdown-menu")) {
+            return;
+        }
+        
+        const loopBar = document.getElementById("loop-bar");
+        if (!loopBar || !scoreState.loopState.active) return;
+
         if (e.target.classList.contains("loop-handle")) {
-            draggingHandle = e.target.dataset.handle;
+            draggingMode = e.target.dataset.handle;
             document.body.style.cursor = "ew-resize";
+        } else if (e.target === loopBar) {
+            // Clicou no meio da barra para transladar
+            draggingMode = "body";
+            dragStartX = e.clientX;
+            initialStart = scoreState.loopState.startMeasure;
+            initialEnd = scoreState.loopState.endMeasure;
+            loopBar.classList.add("dragging-body");
+            document.body.style.cursor = "grabbing";
         }
     });
 
     document.addEventListener("mousemove", (e) => {
-        if (!draggingHandle || !measuresTrack) return;
+        if (!draggingMode || !measuresTrack) return;
 
         const rect = measuresTrack.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-
         const measureWidth = 448;
+
+        if (draggingMode === "body") {
+            const deltaX = e.clientX - dragStartX;
+            const measureShift = Math.round(deltaX / measureWidth);
+            const loopLength = initialEnd - initialStart;
+
+            let newStart = initialStart + measureShift;
+            let newEnd = initialEnd + measureShift;
+
+            // Clamping com preservação de tamanho
+            if (newStart < 0) {
+                newStart = 0;
+                newEnd = Math.min(scoreState.measuresCount, loopLength);
+            } else if (newEnd > scoreState.measuresCount) {
+                newEnd = scoreState.measuresCount;
+                newStart = Math.max(0, scoreState.measuresCount - loopLength);
+            }
+
+            scoreState.loopState.startMeasure = newStart;
+            scoreState.loopState.endMeasure = newEnd;
+            updateLoopBarVisuals();
+            return;
+        }
+
+        const x = e.clientX - rect.left;
         let targetMeasure = Math.round(x / measureWidth);
         targetMeasure = Math.max(0, Math.min(scoreState.measuresCount, targetMeasure));
 
-        if (draggingHandle === "left") {
+        if (draggingMode === "left") {
             if (targetMeasure < scoreState.loopState.endMeasure) {
                 scoreState.loopState.startMeasure = targetMeasure;
             }
-        } else if (draggingHandle === "right") {
+        } else if (draggingMode === "right") {
             if (targetMeasure > scoreState.loopState.startMeasure) {
                 scoreState.loopState.endMeasure = targetMeasure;
             }
@@ -1128,8 +1172,11 @@ function setupLoopEvents() {
     });
 
     document.addEventListener("mouseup", () => {
-        if (draggingHandle) {
-            draggingHandle = null;
+        if (draggingMode) {
+            const loopBar = document.getElementById("loop-bar");
+            if (loopBar) loopBar.classList.remove("dragging-body");
+
+            draggingMode = null;
             document.body.style.cursor = "default";
             if (window.audioEngine) audioEngine.updateTransportSettings();
         }
@@ -1263,7 +1310,7 @@ async function loadArrangementFromURL() {
             scoreState.loopState = {
                 active: false,
                 startMeasure: 0,
-                endMeasure: 1
+                endMeasure: scoreState.measuresCount
             };
 
             const btnLoop = document.getElementById("btn-loop");
