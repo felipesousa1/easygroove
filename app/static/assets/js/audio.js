@@ -4,6 +4,7 @@
 
 const audioEngine = {
     isPlaying: false,
+    isPaused: false,
     isInitialized: false,
     loopEventId: null,
 
@@ -232,6 +233,7 @@ const audioEngine = {
     schedulePlaybackLoop() {
         if (this.loopEventId !== null) {
             Tone.Transport.clear(this.loopEventId);
+            this.loopEventId = null;
         }
 
         // Usar "16n" agenda perfeitamente o disparo a cada semicolcheia
@@ -276,28 +278,58 @@ const audioEngine = {
         // Sincroniza o Tone.Transport com o visual magnético
         if (scoreState.loopState.active) {
             Tone.Transport.loop = true;
-            Tone.Transport.loopStart = `${scoreState.loopState.startMeasure}m`;
-            Tone.Transport.loopEnd = `${scoreState.loopState.endMeasure}m`;
+            Tone.Transport.setLoopPoints(
+                `${scoreState.loopState.startMeasure}m`,
+                `${scoreState.loopState.endMeasure}m`
+            );
+
+            // Se o cursor estiver fora dos limites do loop durante o playback/ajuste, reposiciona para o início do loop
+            const currentMeasure = parseInt(Tone.Transport.position.split(':')[0], 10);
+            if (currentMeasure < scoreState.loopState.startMeasure || currentMeasure >= scoreState.loopState.endMeasure) {
+                Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
+                if (window.updatePlayheadPosition) window.updatePlayheadPosition();
+            }
         } else {
             Tone.Transport.loop = false;
         }
-
-        this.schedulePlaybackLoop();
     },
 
     async start() {
         if (!this.isInitialized) this.init();
         await Tone.start();
         this.updateTransportSettings();
+
+        // Se estava parado (não pausado) e há loop ativo, começa do início da região de loop
+        if (!this.isPaused && scoreState.loopState.active) {
+            Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
+        }
+
         Tone.Transport.start();
         this.isPlaying = true;
+        this.isPaused = false;
         if (window.startPlayheadAnimation) window.startPlayheadAnimation();
+    },
+
+    pause() {
+        if (!this.isPlaying) return;
+        Tone.Transport.pause();
+        this.isPlaying = false;
+        this.isPaused = true;
+        if (window.pausePlayheadAnimation) window.pausePlayheadAnimation();
     },
 
     stop() {
         Tone.Transport.stop();
-        Tone.Transport.seconds = 0;
         this.isPlaying = false;
+        this.isPaused = false;
+
+        // Ao parar, reseta para o início do loop (se ativo) ou para 0:0:0
+        if (scoreState.loopState.active) {
+            Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
+        } else {
+            Tone.Transport.position = "0:0:0";
+        }
+
         if (window.stopPlayheadAnimation) window.stopPlayheadAnimation();
     }
 };

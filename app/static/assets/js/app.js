@@ -544,6 +544,14 @@ function handleMeasureAction(action, index) {
                 inst.pattern.splice(index + 1, 0, cloned);
             });
             scoreState.measuresCount++;
+
+            // Se inseriu antes ou no meio do loop, desloca os limites
+            if (index < scoreState.loopState.startMeasure) {
+                scoreState.loopState.startMeasure++;
+                scoreState.loopState.endMeasure++;
+            } else if (index < scoreState.loopState.endMeasure) {
+                scoreState.loopState.endMeasure++;
+            }
             break;
 
         case "add-before":
@@ -551,6 +559,14 @@ function handleMeasureAction(action, index) {
                 inst.pattern.splice(index, 0, createEmptyMeasure());
             });
             scoreState.measuresCount++;
+
+            // Se adicionou antes ou no próprio início do loop, empurra o loop para a direita
+            if (index <= scoreState.loopState.startMeasure) {
+                scoreState.loopState.startMeasure++;
+                scoreState.loopState.endMeasure++;
+            } else if (index < scoreState.loopState.endMeasure) {
+                scoreState.loopState.endMeasure++;
+            }
             break;
 
         case "add-after":
@@ -558,6 +574,14 @@ function handleMeasureAction(action, index) {
                 inst.pattern.splice(index + 1, 0, createEmptyMeasure());
             });
             scoreState.measuresCount++;
+
+            // Se adicionou antes do início do loop
+            if (index < scoreState.loopState.startMeasure) {
+                scoreState.loopState.startMeasure++;
+                scoreState.loopState.endMeasure++;
+            } else if (index < scoreState.loopState.endMeasure) {
+                scoreState.loopState.endMeasure++;
+            }
             break;
 
         case "clear":
@@ -575,10 +599,35 @@ function handleMeasureAction(action, index) {
                 inst.pattern.splice(index, 1);
             });
             scoreState.measuresCount--;
+
+            // Ajusta os limites do loop ao excluir
+            if (index < scoreState.loopState.startMeasure) {
+                scoreState.loopState.startMeasure--;
+                scoreState.loopState.endMeasure--;
+            } else if (index >= scoreState.loopState.startMeasure && index < scoreState.loopState.endMeasure) {
+                scoreState.loopState.endMeasure--;
+                // Se o loop ficou vazio (start >= end)
+                if (scoreState.loopState.startMeasure >= scoreState.loopState.endMeasure) {
+                    scoreState.loopState.startMeasure = Math.max(0, scoreState.loopState.endMeasure - 1);
+                }
+            }
+
+            // Garante limites válidos dentro do novo measuresCount
+            if (scoreState.loopState.endMeasure > scoreState.measuresCount) {
+                scoreState.loopState.endMeasure = scoreState.measuresCount;
+            }
+            if (scoreState.loopState.startMeasure >= scoreState.loopState.endMeasure) {
+                scoreState.loopState.startMeasure = Math.max(0, scoreState.loopState.endMeasure - 1);
+            }
             break;
     }
 
     renderScore();
+
+    // Sincroniza o áudio se estiver rodando
+    if (window.audioEngine && audioEngine.isInitialized) {
+        audioEngine.updateTransportSettings();
+    }
 }
 
 function addMeasureToEnd() {
@@ -661,7 +710,7 @@ function setupTransportEvents() {
             btnPlay.classList.add("active");
             if (playIconImg) playIconImg.src = "assets/icons/pause.svg";
         } else {
-            audioEngine.stop();
+            audioEngine.pause();
             btnPlay.classList.remove("active");
             if (playIconImg) playIconImg.src = "assets/icons/play.svg";
         }
@@ -877,25 +926,25 @@ function addNewInstrument(typeKey) {
 }
 
 // ==========================================
-// 6. PLAYHEAD E HISTÓRICO
+// 6. PLAYHEAD
 // ==========================================
 
 let playheadAnimFrameId = null;
 
+function updatePlayheadPosition() {
+    const playhead = document.getElementById("playhead");
+    if (!playhead) return;
+
+    const ticksPerMeasure = scoreState.beatsPerMeasure * Tone.Transport.PPQ;
+    const measureWidth = 448;
+
+    const currentX = (Tone.Transport.ticks / ticksPerMeasure) * measureWidth;
+    playhead.style.transform = `translateX(${currentX}px)`;
+}
+
 function animatePlayhead() {
     if (!audioEngine.isPlaying) return;
-
-    const playhead = document.getElementById("playhead");
-    if (playhead) {
-        // 1 semínima = Tone.Transport.PPQ (default 192). 4 semínimas = 768 ticks por compasso.
-        const ticksPerMeasure = scoreState.beatsPerMeasure * Tone.Transport.PPQ;
-        const measureWidth = 448;
-
-        // Converte os ticks nativos e contínuos para pixels
-        const currentX = (Tone.Transport.ticks / ticksPerMeasure) * measureWidth;
-        playhead.style.transform = `translateX(${currentX}px)`;
-    }
-
+    updatePlayheadPosition();
     playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
 }
 
@@ -904,22 +953,32 @@ function startPlayheadAnimation() {
     playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
 }
 
+function pausePlayheadAnimation() {
+    if (playheadAnimFrameId) {
+        cancelAnimationFrame(playheadAnimFrameId);
+        playheadAnimFrameId = null;
+    }
+    // Mantém a posição visual exata onde pausou
+    updatePlayheadPosition();
+}
+
 function stopPlayheadAnimation() {
     if (playheadAnimFrameId) {
         cancelAnimationFrame(playheadAnimFrameId);
         playheadAnimFrameId = null;
     }
-
-    const playhead = document.getElementById("playhead");
-    const firstSlot = document.querySelector(".score-row .note-slot");
-
-    if (playhead && firstSlot) {
-        playhead.style.transform = `translateX(${firstSlot.offsetLeft}px)`;
-    }
+    // Atualiza a posição para o ponto de reset (0 ou início do loop)
+    updatePlayheadPosition();
 }
 
 window.startPlayheadAnimation = startPlayheadAnimation;
+window.pausePlayheadAnimation = pausePlayheadAnimation;
 window.stopPlayheadAnimation = stopPlayheadAnimation;
+window.updatePlayheadPosition = updatePlayheadPosition;
+
+// ==========================================
+// 7. HISTÓRICO
+// ==========================================
 
 const historyManager = {
     undoStack: [],
@@ -1099,9 +1158,12 @@ function showToast(message, isError = false) {
 }
 
 async function saveCurrentArrangement() {
+
+    const { loopState, ...scoreDataToSave } = scoreState;
+
     const payload = {
         name: scoreState.title || "Sem Título",
-        score_data: scoreState,
+        score_data: scoreDataToSave,
         collection_id: null
     };
 
@@ -1186,7 +1248,16 @@ async function loadArrangementFromURL() {
         if (arrangement && arrangement.score_data) {
             currentArrangementId = arrangement.id;
 
+            // Carrega os dados e força o loopState zerado/desativado
             Object.assign(scoreState, arrangement.score_data);
+            scoreState.loopState = {
+                active: false,
+                startMeasure: 0,
+                endMeasure: 1
+            };
+
+            const btnLoop = document.getElementById("btn-loop");
+            if (btnLoop) btnLoop.classList.remove("active");
 
             if (window.audioEngine && audioEngine.isInitialized) {
                 audioEngine.initInstruments();
@@ -1199,7 +1270,7 @@ async function loadArrangementFromURL() {
             historyManager.redoStack = [];
             historyManager.updateButtonsState();
 
-            showToast(`Arranjo "${arrangement.name}" carregado!`);
+            // showToast(`Arranjo "${arrangement.name}" carregado!`);
         }
     } catch (error) {
         console.error("Erro ao carregar arranjo:", error);
@@ -1208,7 +1279,7 @@ async function loadArrangementFromURL() {
 }
 
 // ==========================================
-// 7. INICIALIZAÇÃO
+// INICIALIZAÇÃO
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", () => {
