@@ -32,7 +32,7 @@ def normalize_name(name: str) -> str:
 
 
 @router.post(
-    "",
+    "", 
     response_model=ArrangementRead,
     status_code=status.HTTP_201_CREATED,
 )
@@ -64,7 +64,7 @@ def create_arrangement(
     db_arrangement = Arrangement(
         name=clean_name,
         score_data=arrangement_in.score_data,
-        collection_id=arrangement_in.collection_id,
+        # collection_id=arrangement_in.collection_id,
         user_id=current_user.id,
     )
     session.add(db_arrangement)
