@@ -380,6 +380,11 @@ function updateToolbarPalettes() {
                 paletteContainer.querySelectorAll(".tool-stroke").forEach(b => b.classList.remove("active"));
                 btn.classList.add("active");
                 scoreState.activeTool.strokeType = strokeKey;
+
+                // Preview sonoro ao selecionar a ferramenta
+                if (window.audioEngine) {
+                    audioEngine.previewStroke(currentInst.id, strokeKey);
+                }
             });
 
             paletteContainer.appendChild(btn);
@@ -452,6 +457,11 @@ function setupGridEvents() {
             const visual = getStrokeVisual(nextStroke);
             slot.className = `note-slot ${visual.className}`;
             slot.innerHTML = visual.content;
+
+            // Preview sonoro instantâneo ao adicionar/alternar a nota
+            if (nextStroke && window.audioEngine) {
+                audioEngine.previewStroke(instrument.id, nextStroke);
+            }
         }
     });
 }

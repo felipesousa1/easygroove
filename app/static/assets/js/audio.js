@@ -1,6 +1,4 @@
-// ==========================================
-// MOTOR DE ÁUDIO (TONE.JS)
-// ==========================================
+// audio.js - MOTOR DE ÁUDIO (TONE.JS)
 
 const audioEngine = {
     isPlaying: false,
@@ -8,21 +6,17 @@ const audioEngine = {
     isInitialized: false,
     loopEventId: null,
 
-    channels: {}, // Controle de Volume / Ganho individual por instrumento
-    synths: {},   // Sintetizadores por tipo de instrumento
+    channels: {}, // Tone.Volume por instrumento
+    synths: {},   // Sintetizadores compartilhados
 
     init() {
         if (this.isInitialized) return;
 
-        // 1. Inicializa os canais de áudio de cada instrumento presente na partitura
         scoreState.instruments.forEach(inst => {
             this.initInstrumentChannel(inst);
         });
 
-        // 2. Cria os sintetizadores dedicados para cada família de timbre
         this.createSynthesizers();
-
-        // 3. Configura o agendamento em loop no Transport do Tone.js
         this.schedulePlaybackLoop();
 
         Tone.Transport.bpm.value = scoreState.bpm;
@@ -31,23 +25,26 @@ const audioEngine = {
 
     calculateDb(volume) {
         if (volume <= 0) return -Infinity;
-        return (volume / 100) * 40 - 36; // Converte 1-100 para -36dB a +4dB
+        return (volume / 100) * 40 - 36; // 1 a 100 mapeado para -36dB a +4dB
     },
 
     initInstrumentChannel(inst) {
         if (!this.channels[inst.id]) {
             this.channels[inst.id] = new Tone.Volume(this.calculateDb(inst.volume)).toDestination();
+        } else {
+            this.setInstrumentVolume(inst.id, inst.volume);
         }
     },
 
     setInstrumentVolume(instId, volume) {
         if (this.channels[instId]) {
-            this.channels[instId].volume.value = this.calculateDb(volume);
+            const db = this.calculateDb(volume);
+            this.channels[instId].volume.rampTo(db, 0.03); // Transição suave sem estalo
         }
     },
 
     createSynthesizers() {
-        // 1. Surdos (Membranas com ressonância profunda)
+        // Surdos
         this.synths.surdo = new Tone.MembraneSynth({
             pitchDecay: 0.05,
             octaves: 4,
@@ -55,7 +52,7 @@ const audioEngine = {
             envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.5 }
         });
 
-        // 2. Caixa - Pele e Fantasma (Corpo tonal + esteira com ruído)
+        // Caixa
         this.synths.caixaPele = new Tone.MembraneSynth({
             pitchDecay: 0.02,
             octaves: 3,
@@ -68,7 +65,7 @@ const audioEngine = {
             envelope: { attack: 0.001, decay: 0.14, sustain: 0 }
         });
 
-        // 3. Repique (Agudo, estalado e seco)
+        // Repique
         this.synths.repique = new Tone.MembraneSynth({
             pitchDecay: 0.03,
             octaves: 5,
@@ -76,7 +73,7 @@ const audioEngine = {
             envelope: { attack: 0.001, decay: 0.18, sustain: 0.01, release: 0.2 }
         });
 
-        // 4. Aro / Rimshot / Slap (Ataques metálicos e transientes secos)
+        // Aro / Rimshot / Slap
         this.synths.rimshot = new Tone.MetalSynth({
             frequency: 320,
             envelope: { attack: 0.001, decay: 0.06, release: 0.05 },
@@ -93,14 +90,14 @@ const audioEngine = {
             envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.04 }
         });
 
-        // 5. Chocalho (Filtrado para dar o 'shk-shk' característico)
+        // Chocalho
         this.chocalhoFilter = new Tone.Filter(3500, "highpass").toDestination();
         this.synths.chocalho = new Tone.NoiseSynth({
             noise: { type: "pink" },
             envelope: { attack: 0.008, decay: 0.05, sustain: 0 }
         }).connect(this.chocalhoFilter);
 
-        // 6. Tamborim (Ataque agudíssimo e estalado)
+        // Tamborim
         this.synths.tamborim = new Tone.MembraneSynth({
             pitchDecay: 0.04,
             octaves: 4,
@@ -109,47 +106,41 @@ const audioEngine = {
         });
     },
 
-    // Roteamento e execução dos toques por instrumento
     triggerStroke(inst, stroke, time) {
         if (!stroke || inst.volume <= 0) return;
 
+        const execTime = time || Tone.now();
         const channel = this.channels[inst.id] || Tone.Destination;
-        const baseType = inst.id.split("_")[0]; // Identifica o tipo base (surdo1, caixa, etc.)
+        const baseType = inst.id.split("_")[0];
 
         switch (baseType) {
-            // -------------------------------------------------------------
-            // SURDOS (1ª: Mais grave/ressonante, 2ª: Médio, 3ª: Agudo/curto)
-            // -------------------------------------------------------------
             case "surdo1":
                 this.synths.surdo.disconnect().connect(channel);
                 if (stroke === "pele-aberto") {
-                    this.synths.surdo.triggerAttackRelease("C1", "4n", time, 1.0);
+                    this.synths.surdo.triggerAttackRelease("C1", "4n", execTime, 1.0);
                 } else if (stroke === "surdo-abafado") {
-                    this.synths.surdo.triggerAttackRelease("D1", "16n", time, 0.5);
+                    this.synths.surdo.triggerAttackRelease("D1", "16n", execTime, 0.5);
                 }
                 break;
 
             case "surdo2":
                 this.synths.surdo.disconnect().connect(channel);
                 if (stroke === "pele-aberto") {
-                    this.synths.surdo.triggerAttackRelease("G1", "4n", time, 0.95);
+                    this.synths.surdo.triggerAttackRelease("G1", "4n", execTime, 0.95);
                 } else if (stroke === "surdo-abafado") {
-                    this.synths.surdo.triggerAttackRelease("A1", "16n", time, 0.5);
+                    this.synths.surdo.triggerAttackRelease("A1", "16n", execTime, 0.5);
                 }
                 break;
 
             case "surdo3":
                 this.synths.surdo.disconnect().connect(channel);
                 if (stroke === "pele-aberto") {
-                    this.synths.surdo.triggerAttackRelease("C2", "8n", time, 0.9);
+                    this.synths.surdo.triggerAttackRelease("C2", "8n", execTime, 0.9);
                 } else if (stroke === "surdo-abafado") {
-                    this.synths.surdo.triggerAttackRelease("D2", "16n", time, 0.45);
+                    this.synths.surdo.triggerAttackRelease("D2", "16n", execTime, 0.45);
                 }
                 break;
 
-            // -------------------------------------------------------------
-            // CAIXA
-            // -------------------------------------------------------------
             case "caixa":
                 this.synths.caixaPele.disconnect().connect(channel);
                 this.synths.caixaEsteira.disconnect().connect(channel);
@@ -157,77 +148,86 @@ const audioEngine = {
                 this.synths.rimshot.disconnect().connect(channel);
 
                 if (stroke === "pele-aberto") {
-                    this.synths.caixaPele.triggerAttackRelease("F2", "16n", time, 0.9);
-                    this.synths.caixaEsteira.triggerAttackRelease("16n", time, 0.6);
+                    this.synths.caixaPele.triggerAttackRelease("F2", "16n", execTime, 0.9);
+                    this.synths.caixaEsteira.triggerAttackRelease("16n", execTime, 0.6);
                 } else if (stroke === "fantasma") {
-                    this.synths.caixaPele.triggerAttackRelease("E2", "32n", time, 0.3);
-                    this.synths.caixaEsteira.triggerAttackRelease("32n", time, 0.15);
+                    this.synths.caixaPele.triggerAttackRelease("E2", "32n", execTime, 0.3);
+                    this.synths.caixaEsteira.triggerAttackRelease("32n", execTime, 0.15);
                 } else if (stroke === "aro") {
-                    this.synths.aro.triggerAttackRelease("A4", "32n", time, 0.6);
+                    this.synths.aro.triggerAttackRelease("A4", "32n", execTime, 0.6);
                 } else if (stroke === "rimshot") {
-                    this.synths.caixaPele.triggerAttackRelease("A2", "16n", time, 1.0);
-                    this.synths.rimshot.triggerAttackRelease("16n", time, 0.85);
+                    this.synths.caixaPele.triggerAttackRelease("A2", "16n", execTime, 1.0);
+                    this.synths.rimshot.triggerAttackRelease("16n", execTime, 0.85);
                 } else if (stroke === "rufo") {
-                    // Trinado rápido de 32avos
                     for (let r = 0; r < 3; r++) {
-                        const subTime = Tone.Time(time).toSeconds() + (r * 0.025);
+                        const subTime = Tone.Time(execTime).toSeconds() + (r * 0.025);
                         this.synths.caixaEsteira.triggerAttackRelease("64n", subTime, 0.4 - (r * 0.08));
                     }
                 }
                 break;
 
-            // -------------------------------------------------------------
-            // REPIQUE
-            // -------------------------------------------------------------
             case "repique":
                 this.synths.repique.disconnect().connect(channel);
                 this.synths.aro.disconnect().connect(channel);
                 this.synths.rimshot.disconnect().connect(channel);
 
                 if (stroke === "pele-aberto") {
-                    this.synths.repique.triggerAttackRelease("D3", "16n", time, 0.95);
+                    this.synths.repique.triggerAttackRelease("D3", "16n", execTime, 0.95);
                 } else if (stroke === "rimshot") {
-                    this.synths.repique.triggerAttackRelease("F3", "16n", time, 1.0);
-                    this.synths.rimshot.triggerAttackRelease("32n", time, 0.7);
+                    this.synths.repique.triggerAttackRelease("F3", "16n", execTime, 1.0);
+                    this.synths.rimshot.triggerAttackRelease("32n", execTime, 0.7);
                 } else if (stroke === "aro") {
-                    this.synths.aro.triggerAttackRelease("B4", "32n", time, 0.65);
+                    this.synths.aro.triggerAttackRelease("B4", "32n", execTime, 0.65);
                 } else if (stroke === "slap") {
-                    this.synths.repique.triggerAttackRelease("G3", "32n", time, 1.0);
-                    this.synths.aro.triggerAttackRelease("D5", "32n", time, 0.5);
+                    this.synths.repique.triggerAttackRelease("G3", "32n", execTime, 1.0);
+                    this.synths.aro.triggerAttackRelease("D5", "32n", execTime, 0.5);
                 } else if (stroke === "rufo") {
                     for (let r = 0; r < 3; r++) {
-                        const subTime = Tone.Time(time).toSeconds() + (r * 0.022);
+                        const subTime = Tone.Time(execTime).toSeconds() + (r * 0.022);
                         this.synths.repique.triggerAttackRelease("D3", "64n", subTime, 0.5);
                     }
                 }
                 break;
 
-            // -------------------------------------------------------------
-            // CHOCALHO
-            // -------------------------------------------------------------
             case "chocalho":
                 this.chocalhoFilter.disconnect().connect(channel);
                 if (stroke === "chocalho-frente") {
-                    this.chocalhoFilter.frequency.setValueAtTime(4200, time);
-                    this.synths.chocalho.triggerAttackRelease("16n", time, 0.85);
+                    this.chocalhoFilter.frequency.setValueAtTime(4200, execTime);
+                    this.synths.chocalho.triggerAttackRelease("16n", execTime, 0.85);
                 } else if (stroke === "chocalho-tras") {
-                    this.chocalhoFilter.frequency.setValueAtTime(3200, time);
-                    this.synths.chocalho.triggerAttackRelease("32n", time, 0.5);
+                    this.chocalhoFilter.frequency.setValueAtTime(3200, execTime);
+                    this.synths.chocalho.triggerAttackRelease("32n", execTime, 0.5);
                 }
                 break;
 
-            // -------------------------------------------------------------
-            // TAMBORIM
-            // -------------------------------------------------------------
             case "tamborim":
                 this.synths.tamborim.disconnect().connect(channel);
                 if (stroke === "tamborim-cima") {
-                    this.synths.tamborim.triggerAttackRelease("A3", "16n", time, 1.0);
+                    this.synths.tamborim.triggerAttackRelease("A3", "16n", execTime, 1.0);
                 } else if (stroke === "tamborim-baixo") {
-                    this.synths.tamborim.triggerAttackRelease("F#3", "16n", time, 0.75);
+                    this.synths.tamborim.triggerAttackRelease("F#3", "16n", execTime, 0.75);
                 }
                 break;
         }
+    },
+
+    async previewStroke(instId, strokeType) {
+        if (!strokeType) return;
+        if (!this.isInitialized) {
+            this.init();
+        }
+        await Tone.start();
+
+        const inst = scoreState.instruments.find(i => i.id === instId);
+        if (!inst) return;
+
+        // Se o instrumento estiver mutado, usamos volume moderado para feedback de preview
+        const effectiveInst = inst.volume > 0 ? inst : { ...inst, volume: 80 };
+        if (inst.volume <= 0) {
+            this.initInstrumentChannel(effectiveInst);
+        }
+
+        this.triggerStroke(effectiveInst, strokeType, Tone.now());
     },
 
     schedulePlaybackLoop() {
@@ -236,10 +236,7 @@ const audioEngine = {
             this.loopEventId = null;
         }
 
-        // Usar "16n" agenda perfeitamente o disparo a cada semicolcheia
         this.loopEventId = Tone.Transport.scheduleRepeat((time) => {
-
-            // Tone.Transport.position formato -> "Compassos:Tempos:Semicolcheias" (Ex: "0:3:2")
             const timeStr = Tone.Transport.position.split('.')[0];
             const parts = timeStr.split(':');
             const measure = parseInt(parts[0], 10);
@@ -248,7 +245,7 @@ const audioEngine = {
 
             const stepIndex = (beat * scoreState.subdivisions) + sixteenth;
 
-            // Desliga o áudio automaticamente se passar do último compasso e o loop estiver desligado
+            // Tratamento de fim de partitura sem loop
             if (!scoreState.loopState.active && measure >= scoreState.measuresCount) {
                 Tone.Draw.schedule(() => {
                     this.stop();
@@ -261,7 +258,7 @@ const audioEngine = {
             }
 
             scoreState.instruments.forEach(inst => {
-                if (inst.pattern[measure]) {
+                if (inst.pattern && inst.pattern[measure]) {
                     const stroke = inst.pattern[measure][stepIndex];
                     if (stroke) {
                         this.triggerStroke(inst, stroke, time);
@@ -275,7 +272,15 @@ const audioEngine = {
         if (!this.isInitialized) return;
         Tone.Transport.bpm.value = scoreState.bpm;
 
-        // Sincroniza o Tone.Transport com o visual magnético
+        // Clamping da posição atual caso compassos tenham sido deletados durante a reprodução
+        const currentMeasure = parseInt(Tone.Transport.position.split(':')[0], 10);
+        if (currentMeasure >= scoreState.measuresCount) {
+            Tone.Transport.position = scoreState.loopState.active
+                ? `${scoreState.loopState.startMeasure}:0:0`
+                : "0:0:0";
+            if (window.updatePlayheadPosition) window.updatePlayheadPosition();
+        }
+
         if (scoreState.loopState.active) {
             Tone.Transport.loop = true;
             Tone.Transport.setLoopPoints(
@@ -283,8 +288,6 @@ const audioEngine = {
                 `${scoreState.loopState.endMeasure}m`
             );
 
-            // Se o cursor estiver fora dos limites do loop durante o playback/ajuste, reposiciona para o início do loop
-            const currentMeasure = parseInt(Tone.Transport.position.split(':')[0], 10);
             if (currentMeasure < scoreState.loopState.startMeasure || currentMeasure >= scoreState.loopState.endMeasure) {
                 Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
                 if (window.updatePlayheadPosition) window.updatePlayheadPosition();
@@ -299,7 +302,6 @@ const audioEngine = {
         await Tone.start();
         this.updateTransportSettings();
 
-        // Se estava parado (não pausado) e há loop ativo, começa do início da região de loop
         if (!this.isPaused && scoreState.loopState.active) {
             Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
         }
@@ -323,7 +325,6 @@ const audioEngine = {
         this.isPlaying = false;
         this.isPaused = false;
 
-        // Ao parar, reseta para o início do loop (se ativo) ou para 0:0:0
         if (scoreState.loopState.active) {
             Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
         } else {
