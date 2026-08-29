@@ -1,6 +1,6 @@
 :root {
   --color-purple-primary: #31006f;
-  --color-purple-loop: #4a00af;
+  --color-purple-loop: #31006f;
   --color-purple-light: rgba(74, 0, 175, 0.12);
   --color-gray-bg: #eef2f6;
   --color-gray-border: #cbd5e1;
@@ -9,7 +9,7 @@
   --color-text-main: #0f172a;
   --color-text-muted: #475569;
   --color-black: #0f172a;
-  --sidebar-width: 140px;
+  --sidebar-width: 160px;
 }
 
 * {
@@ -54,12 +54,12 @@ body {
 }
 
 .brand-logo {
-  font-weight: 900;
-  font-size: 1.45rem;
+  font-weight: 800;
+  font-size: 1.5rem;
   color: var(--color-purple-primary);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -167,6 +167,10 @@ body {
 .player-btn.active {
   background-color: var(--color-purple-loop);
   color: #ffffff;
+}
+
+.player-btn.active img {
+  filter: brightness(0) invert(1); 
 }
 
 .player-divider {
@@ -345,7 +349,7 @@ body {
   border: 1.5px solid var(--color-gray-border);
   border-radius: 12px;
   padding: 4px 6px 6px 6px;
-  height: 84px;
+  height: 96px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -402,22 +406,22 @@ body {
 }
 
 .inst-icon-img {
-  width: 26px;
-  height: 26px;
+  width: 34px;
+  height: 34px;
   object-fit: contain;
   margin: 0;
   pointer-events: none;
 }
 
 .inst-name {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--color-text-main);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 110px;
+  max-width: 130px;
   line-height: 1.1;
   pointer-events: none;
 }
@@ -426,7 +430,7 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   padding: 0 2px;
   position: relative;
 }
@@ -448,8 +452,8 @@ body {
 }
 
 .btn-mute img {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   pointer-events: none;
   display: block;
 }
@@ -586,8 +590,7 @@ body {
 }
 
 .score-row {
-  height: 84px;
-  /* Altura idêntica ao card */
+  height: 96px;
   display: flex;
   align-items: center;
   gap: 0px;
@@ -617,7 +620,7 @@ body {
   background-color: #ffffff;
   border: 1.5px solid var(--color-gray-border);
   border-right: none;
-  padding: 8px 0;
+  padding: 12px 0;
   height: 100%;
   transition: all 0.15s ease;
 }
@@ -946,8 +949,8 @@ body {
    6. ÍCONES UI E IMAGENS SVG
    ========================================== */
 .ui-icon-logo {
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
 }
 
 .player-btn img,

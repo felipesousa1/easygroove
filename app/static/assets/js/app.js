@@ -85,7 +85,8 @@ const INSTRUMENT_PRESETS = {
 
 function getVolumeIcon(vol) {
     if (vol === 0) return "assets/icons/vol-off.svg";
-    if (vol < 60) return "assets/icons/vol-baixo.svg";
+    if (vol < 35) return "assets/icons/vol-baixo.svg";
+    if (vol < 70) return "assets/icons/vol-med.svg";
     return "assets/icons/vol-alto.svg";
 }
 
@@ -1107,7 +1108,7 @@ function setupLoopEvents() {
         if (e.target.closest(".measure-menu-btn") || e.target.closest(".measure-dropdown-menu")) {
             return;
         }
-        
+
         const loopBar = document.getElementById("loop-bar");
         if (!loopBar || !scoreState.loopState.active) return;
 
