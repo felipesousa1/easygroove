@@ -118,7 +118,7 @@ const scoreState = {
             id: "surdo1",
             name: "Surdo 1ª",
             iconSvg: "assets/icons/inst-surdo1.svg",
-            volume: 80,
+            volume: 50,
             availableStrokes: ["pele-aberto", "surdo-abafado"],
             pattern: []
         },
@@ -126,7 +126,7 @@ const scoreState = {
             id: "surdo2",
             name: "Surdo 2ª",
             iconSvg: "assets/icons/inst-surdo2.svg",
-            volume: 80,
+            volume: 50,
             availableStrokes: ["pele-aberto", "surdo-abafado"],
             pattern: []
         },
@@ -134,7 +134,7 @@ const scoreState = {
             id: "surdo3",
             name: "Surdo 3ª",
             iconSvg: "assets/icons/inst-surdo3.svg",
-            volume: 80,
+            volume: 50,
             availableStrokes: ["pele-aberto", "surdo-abafado"],
             pattern: []
         },
@@ -142,7 +142,7 @@ const scoreState = {
             id: "caixa",
             name: "Caixa",
             iconSvg: "assets/icons/inst-caixa.svg",
-            volume: 80,
+            volume: 50,
             availableStrokes: ["pele-aberto", "fantasma", "aro", "rimshot", "rufo"],
             pattern: []
         },
@@ -150,7 +150,7 @@ const scoreState = {
             id: "repique",
             name: "Repique",
             iconSvg: "assets/icons/inst-repique.svg",
-            volume: 80,
+            volume: 50,
             availableStrokes: ["pele-aberto", "rimshot", "aro", "slap", "rufo"],
             pattern: []
         },
@@ -158,7 +158,7 @@ const scoreState = {
             id: "chocalho",
             name: "Chocalho",
             iconSvg: "assets/icons/inst-chocalho.svg",
-            volume: 80,
+            volume: 50,
             availableStrokes: ["chocalho-frente", "chocalho-tras"],
             pattern: []
         },
@@ -166,7 +166,7 @@ const scoreState = {
             id: "tamborim",
             name: "Tamborim",
             iconSvg: "assets/icons/inst-tamborim.svg",
-            volume: 80,
+            volume: 50,
             availableStrokes: ["tamborim-cima", "tamborim-baixo"],
             pattern: []
         }
@@ -263,28 +263,28 @@ function renderScore() {
         card.dataset.instIndex = index;
 
         card.innerHTML = `
-      <div class="inst-header-row">
-        <span></span>
-        <button type="button" class="btn-inst-menu" data-inst-id="${inst.id}" title="Opções do Instrumento">
-          <img src="assets/icons/more-vertical.svg" alt="Opções">
-        </button>
-      </div>
+            <div class="inst-header-row">
+                <span></span>
+                <button type="button" class="btn-inst-menu" data-inst-id="${inst.id}" title="Opções do Instrumento">
+                <img src="assets/icons/more-vertical.svg" alt="Opções">
+                </button>
+            </div>
 
-      <img src="${inst.iconSvg}" class="inst-icon-img" alt="${inst.name}">
-      <span class="inst-name">${inst.name}</span>
+            <img src="${inst.iconSvg}" class="inst-icon-img" alt="${inst.name}">
+            <span class="inst-name">${inst.name}</span>
 
-      <div class="inst-volume-row">
-        <button type="button" class="btn-mute" data-inst-id="${inst.id}" title="Mute / Desmutar (Duplo clique para digitar %)">
-          <img src="${getVolumeIcon(inst.volume)}" alt="Volume">
-        </button>
-        <input type="range" class="vol-slider" min="0" max="100" value="${inst.volume}" data-inst-id="${inst.id}">
-        
-        <div class="volume-popover">
-          <input type="number" class="volume-number-input" min="0" max="100" value="${inst.volume}">
-          <span>%</span>
-        </div>
-      </div>
-    `;
+            <div class="inst-volume-row">
+                <button type="button" class="btn-mute" data-inst-id="${inst.id}" title="Mute / Desmutar">
+                <img src="${getVolumeIcon(inst.volume)}" alt="Volume">
+                </button>
+                <input type="range" class="vol-slider" min="0" max="100" value="${inst.volume}" data-inst-id="${inst.id}">
+                
+                <div class="vol-display-box" data-inst-id="${inst.id}" title="Clique para editar valor">
+                <span class="vol-text">${inst.volume}%</span>
+                <input type="number" class="vol-direct-input" min="0" max="100" value="${inst.volume}" style="display: none;">
+                </div>
+            </div>
+        `;
 
         if (addInstWrapper) {
             sidebarList.insertBefore(card, addInstWrapper);
@@ -798,8 +798,41 @@ function setupInstrumentControlEvents() {
                     inst.previousVolume = inst.volume;
                     updateInstrumentVolume(instId, 0);
                 } else {
-                    updateInstrumentVolume(instId, inst.previousVolume || 80);
+                    updateInstrumentVolume(instId, inst.previousVolume || 50);
                 }
+                return;
+            }
+
+            // Clique na caixa de % para edição direta
+            const volBox = e.target.closest(".vol-display-box");
+            if (volBox) {
+                e.stopPropagation();
+                const volText = volBox.querySelector(".vol-text");
+                const volInput = volBox.querySelector(".vol-direct-input");
+                const instId = volBox.dataset.instId;
+
+                volText.style.display = "none";
+                volInput.style.display = "block";
+                volInput.focus();
+                volInput.select();
+
+                function commitVolume() {
+                    let val = parseInt(volInput.value, 10);
+                    if (isNaN(val)) val = 0;
+                    val = Math.max(0, Math.min(100, val));
+                    updateInstrumentVolume(instId, val);
+                    volInput.style.display = "none";
+                    volText.style.display = "block";
+                }
+
+                volInput.onkeydown = (evt) => {
+                    if (evt.key === "Enter") commitVolume();
+                    if (evt.key === "Escape") {
+                        volInput.style.display = "none";
+                        volText.style.display = "block";
+                    }
+                };
+                volInput.onblur = commitVolume;
                 return;
             }
 
@@ -900,9 +933,11 @@ function updateInstrumentVolume(instId, volume) {
     if (card) {
         const slider = card.querySelector(".vol-slider");
         const muteImg = card.querySelector(".btn-mute img");
+        const volText = card.querySelector(".vol-text");
         const numInput = card.querySelector(".volume-number-input");
 
         if (slider) slider.value = volume;
+        if (volText) volText.textContent = `${volume}%`;
         if (numInput) numInput.value = volume;
         if (muteImg) muteImg.src = getVolumeIcon(volume);
     }
@@ -923,7 +958,7 @@ function addNewInstrument(typeKey) {
         id: uniqueId,
         name: preset.name,
         iconSvg: preset.iconSvg,
-        volume: 80,
+        volume: 50,
         availableStrokes: [...preset.availableStrokes],
         pattern: []
     };

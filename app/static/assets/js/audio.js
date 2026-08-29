@@ -25,7 +25,8 @@ const audioEngine = {
 
     calculateDb(volume) {
         if (volume <= 0) return -Infinity;
-        return (volume / 100) * 40 - 36; // 1 a 100 mapeado para -36dB a +4dB
+        // Mapeia 1-100 para -38dB até +10dB (50% fica em cerca de -4.5dB)
+        return ((volume - 50) / 50) * 24 - 4.5;
     },
 
     initInstrumentChannel(inst) {
