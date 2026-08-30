@@ -1446,6 +1446,81 @@ async function loadArrangementFromURL() {
 }
 
 // ==========================================
+// 10. ATALHOS DE TECLADO
+// ==========================================
+
+function setupKeyboardShortcuts() {
+    window.addEventListener("keydown", (e) => {
+        // Ignora os atalhos se o usuário estiver focado em um campo de texto
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+
+        // Ignora atalhos com Ctrl, Cmd ou Alt para preservar funções nativas do navegador (exceto Undo/Redo se já tratados em outro lugar)
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        // Atalhos com Shift
+        if (e.shiftKey) {
+            switch (e.key.toLowerCase()) {
+                case "n":
+                    e.preventDefault();
+                    addMeasureToEnd();
+                    break;
+                case "b":
+                    e.preventDefault();
+                    document.getElementById("bpm-input")?.focus();
+                    break;
+                case "r":
+                    e.preventDefault();
+                    document.getElementById("btn-edit-title")?.click();
+                    break;
+                case "e":
+                    e.preventDefault();
+                    document.querySelector('button[title="Exportar Arranjo"]')?.click();
+                    break;
+                case "s":
+                    e.preventDefault();
+                    document.querySelector('button[title="Salvar Projeto"]')?.click();
+                    break;
+                case "h":
+                case "?":
+                    e.preventDefault();
+                    document.querySelector('.floating-help-btn')?.click();
+                    break;
+            }
+            return;
+        }
+
+        // Atalhos de tecla única (sem Shift)
+        switch (e.key.toLowerCase()) {
+            case "p":
+                e.preventDefault();
+                document.getElementById("btn-play")?.click();
+                break;
+            case "l":
+                e.preventDefault();
+                document.getElementById("btn-loop")?.click();
+                break;
+            case "s":
+                e.preventDefault();
+                document.getElementById("btn-stop")?.click();
+                break;
+            default:
+                // Seleção de toques (1-9)
+                const num = parseInt(e.key, 10);
+                if (!isNaN(num) && num >= 1 && num <= 9) {
+                    const paletteContainer = document.getElementById("strokes-palette-container");
+                    if (paletteContainer) {
+                        const buttons = paletteContainer.querySelectorAll(".tool-stroke");
+                        if (buttons[num - 1]) {
+                            buttons[num - 1].click();
+                        }
+                    }
+                }
+                break;
+        }
+    });
+}
+
+// ==========================================
 // INICIALIZAÇÃO
 // ==========================================
 
@@ -1460,4 +1535,5 @@ document.addEventListener("DOMContentLoaded", () => {
     setupLoopEvents();
     setupPersistenceEvents();
     loadArrangementFromURL();
+    setupKeyboardShortcuts();
 });
