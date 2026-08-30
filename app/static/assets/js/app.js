@@ -777,6 +777,60 @@ function setupInstrumentControlEvents() {
     }
 
     if (sidebarList) {
+
+        sidebarList.addEventListener("dragstart", (e) => {
+            if (e.target.closest(".vol-slider") || e.target.closest("input") || e.target.closest(".vol-display-box")) {
+                e.preventDefault();
+                return;
+            }
+
+            const card = e.target.closest(".instrument-card");
+            if (!card) return;
+            draggedInstId = card.dataset.instrumentId;
+            card.classList.add("dragging");
+            e.dataTransfer.effectAllowed = "move";
+        });
+
+        // Edição do Nome por Duplo Clique
+        sidebarList.addEventListener("dblclick", (e) => {
+            const card = e.target.closest(".instrument-card");
+            if (!card) return;
+
+            const instId = card.dataset.instrumentId;
+            const nameEl = card.querySelector(".inst-name");
+            const inputEl = card.querySelector(".inst-name-input");
+            const inst = scoreState.instruments.find(i => i.id === instId);
+
+            if (!inst || !nameEl || !inputEl) return;
+
+            e.stopPropagation();
+
+            // Oculta o texto e exibe o campo de edição
+            nameEl.style.display = "none";
+            inputEl.style.display = "block";
+            inputEl.focus();
+            inputEl.select();
+
+            function commitName() {
+                const newName = inputEl.value.trim() || inst.name;
+                inst.name = newName;
+                nameEl.textContent = newName;
+                inputEl.style.display = "none";
+                nameEl.style.display = "block";
+                updateToolbarPalettes();
+            }
+
+            inputEl.onkeydown = (evt) => {
+                if (evt.key === "Enter") commitName();
+                if (evt.key === "Escape") {
+                    inputEl.style.display = "none";
+                    nameEl.style.display = "block";
+                }
+            };
+
+            inputEl.onblur = commitName;
+        });
+
         sidebarList.addEventListener("input", (e) => {
             if (e.target.classList.contains("vol-slider")) {
                 const instId = e.target.dataset.instId;
@@ -855,44 +909,13 @@ function setupInstrumentControlEvents() {
             }
         });
 
-        // Renomear instrumento no duplo clique do nome
-        sidebarList.addEventListener("dblclick", (e) => {
-            const nameEl = e.target.closest(".inst-name");
-            if (!nameEl) return;
-
-            e.stopPropagation();
-            const card = nameEl.closest(".instrument-card");
-            const instId = card.dataset.instrumentId;
-            const inputEl = card.querySelector(".inst-name-input");
-            const inst = scoreState.instruments.find(i => i.id === instId);
-            if (!inst || !inputEl) return;
-
-            nameEl.style.display = "none";
-            inputEl.style.display = "block";
-            inputEl.focus();
-            inputEl.select();
-
-            function commitName() {
-                const newName = inputEl.value.trim() || inst.name;
-                inst.name = newName;
-                nameEl.textContent = newName;
-                inputEl.style.display = "none";
-                nameEl.style.display = "block";
-                updateToolbarPalettes();
-            }
-
-            inputEl.onkeydown = (evt) => {
-                if (evt.key === "Enter") commitName();
-                if (evt.key === "Escape") {
-                    inputEl.style.display = "none";
-                    nameEl.style.display = "block";
-                }
-            };
-            inputEl.onblur = commitName;
-        });
-
         // Eventos de Drag & Drop para reordenação vertical
         sidebarList.addEventListener("dragstart", (e) => {
+            if (e.target.closest(".vol-slider") || e.target.closest("input")) {
+                e.preventDefault();
+                return;
+            }
+
             const card = e.target.closest(".instrument-card");
             if (!card) return;
             draggedInstId = card.dataset.instrumentId;
