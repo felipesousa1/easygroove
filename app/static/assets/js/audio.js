@@ -259,6 +259,9 @@ const audioEngine = {
             }
 
             scoreState.instruments.forEach(inst => {
+                // Ignora instrumento caso esteja oculto
+                if (inst.hidden) return;
+
                 if (inst.pattern && inst.pattern[measure]) {
                     const stroke = inst.pattern[measure][stepIndex];
                     if (stroke) {

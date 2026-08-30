@@ -366,11 +366,11 @@ body {
   border-color: #94a3b8;
 }
 
-.instrument-card.active {
+/* .instrument-card.active {
   border-color: var(--color-purple-primary);
   background-color: #f5f0ff;
-  box-shadow: 0 0 0 2px var(--color-purple-primary);
-}
+ box-shadow: 0 0 0 2px var(--color-purple-primary);
+} */
 
 .inst-header-row {
   width: 100%;
@@ -413,6 +413,100 @@ body {
   pointer-events: none;
 }
 
+/* Card de Instrumento Ocultado */
+.instrument-card.hidden-track {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: none !important;
+  opacity: 0.7;
+}
+
+.instrument-card.hidden-track .inst-icon-img,
+.instrument-card.hidden-track .btn-mute img {
+  filter: grayscale(1) opacity(0.5) !important;
+}
+
+.instrument-card.hidden-track .inst-name,
+.instrument-card.hidden-track .vol-text {
+  color: #94a3b8 !important;
+}
+
+.instrument-card.hidden-track .vol-slider {
+filter: grayscale(1) opacity(0.6) !important;}
+
+/* Grade Padrão e Ocultada */
+.beat-beams {
+  width: 100%;
+  height: 28px;
+  display: block;
+  color: #0f172a; /* Cor base das traves */
+}
+
+.score-row.hidden-track {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.score-row.hidden-track .measure-container {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.score-row.hidden-track .slots-bar {
+  background-color: #e2e8f0 !important;
+}
+
+/* Transforma as traves em cinza herdando currentColor */
+.score-row.hidden-track .beat-beams {
+  color: #94a3b8 !important; 
+}
+
+/* Formas marcadas nos slots */
+.score-row.hidden-track .note-slot.filled::after,
+.score-row.hidden-track .note-slot.small-dot::after {
+  background-color: #94a3b8 !important;
+}
+
+.score-row.hidden-track .note-slot.ring-empty::after {
+  border-color: #94a3b8 !important;
+}
+
+.score-row.hidden-track .note-slot.ring-accent::after {
+  border-color: #94a3b8 !important;
+  background-color: #94a3b8 !important;
+  box-shadow: 0 0 0 1.5px #f8fafc inset !important;
+}
+
+.score-row.hidden-track .note-slot.chevron-accent,
+.score-row.hidden-track .note-slot.chevron-back,
+.score-row.hidden-track .note-slot.arrow-up,
+.score-row.hidden-track .note-slot.arrow-down {
+  color: #94a3b8 !important;
+}
+
+.score-row.hidden-track .note-slot img,
+.score-row.hidden-track .note-slot svg {
+  filter: grayscale(1) opacity(0.5) !important;
+}
+
+/* Drag and Drop dos cards */
+.instrument-card[draggable="true"] {
+  cursor: grab;
+}
+
+.instrument-card.dragging {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+.instrument-card.drag-over-top {
+  border-top: 2px solid var(--color-purple-primary);
+}
+
+.instrument-card.drag-over-bottom {
+  border-bottom: 2px solid var(--color-purple-primary);
+}
+
 .inst-name {
   font-size: 0.8rem;
   font-weight: 700;
@@ -424,6 +518,19 @@ body {
   max-width: 130px;
   line-height: 1.1;
   pointer-events: none;
+}
+
+.inst-name-input {
+  width: 90%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  text-align: center;
+  border: 1px solid var(--color-purple-primary);
+  border-radius: 4px;
+  padding: 1px 2px;
+  outline: none;
+  background-color: #ffffff;
 }
 
 .inst-volume-row {
@@ -615,9 +722,9 @@ body {
   border-color: var(--color-gray-border);
 }
 
-.score-row.active .slots-bar {
+/* .score-row.active .slots-bar {
   background-color: #d8b4fe;
-}
+} */
 
 .measure-container {
   width: 448px;

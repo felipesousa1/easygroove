@@ -180,14 +180,12 @@ const scoreState = {
 function createBeamsSVG() {
     return `
     <svg class="beat-beams" viewBox="0 0 112 28" preserveAspectRatio="none">
-      <!-- Barras duplas superiores de semicolcheia -->
-      <line x1="14" y1="3" x2="98" y2="3" stroke="#0f172a" stroke-width="2.5"/>
-      <line x1="14" y1="8.5" x2="98" y2="8.5" stroke="#0f172a" stroke-width="2.5"/>
-      <!-- 4 Hastes verticais conectando aos slots -->
-      <line x1="14" y1="3" x2="14" y2="28" stroke="#0f172a" stroke-width="1.8"/>
-      <line x1="42" y1="3" x2="42" y2="28" stroke="#0f172a" stroke-width="1.8"/>
-      <line x1="70" y1="3" x2="70" y2="28" stroke="#0f172a" stroke-width="1.8"/>
-      <line x1="98" y1="3" x2="98" y2="28" stroke="#0f172a" stroke-width="1.8"/>
+      <line x1="14" y1="3" x2="98" y2="3" stroke="currentColor" stroke-width="2.5"/>
+      <line x1="14" y1="8.5" x2="98" y2="8.5" stroke="currentColor" stroke-width="2.5"/>
+      <line x1="14" y1="3" x2="14" y2="28" stroke="currentColor" stroke-width="1.8"/>
+      <line x1="42" y1="3" x2="42" y2="28" stroke="currentColor" stroke-width="1.8"/>
+      <line x1="70" y1="3" x2="70" y2="28" stroke="currentColor" stroke-width="1.8"/>
+      <line x1="98" y1="3" x2="98" y2="28" stroke="currentColor" stroke-width="1.8"/>
     </svg>
   `;
 }
@@ -258,32 +256,33 @@ function renderScore() {
         }
 
         const card = document.createElement("div");
-        card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''}`;
-        card.dataset.instrumentId = inst.id;
+        card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`; card.dataset.instrumentId = inst.id;
         card.dataset.instIndex = index;
+        card.draggable = true;
 
         card.innerHTML = `
-            <div class="inst-header-row">
-                <span></span>
-                <button type="button" class="btn-inst-menu" data-inst-id="${inst.id}" title="Opções do Instrumento">
-                <img src="assets/icons/more-vertical.svg" alt="Opções">
-                </button>
-            </div>
+        <div class="inst-header-row">
+            <span></span>
+            <button type="button" class="btn-inst-menu" data-inst-id="${inst.id}" title="Opções do Instrumento">
+            <img src="assets/icons/more-vertical.svg" alt="Opções">
+            </button>
+        </div>
 
-            <img src="${inst.iconSvg}" class="inst-icon-img" alt="${inst.name}">
-            <span class="inst-name">${inst.name}</span>
+        <img src="${inst.iconSvg}" class="inst-icon-img" alt="${inst.name}">
+        <span class="inst-name" title="Duplo clique para renomear">${inst.name}</span>
+        <input type="text" class="inst-name-input" value="${inst.name}" style="display:none;" maxlength="20">
 
-            <div class="inst-volume-row">
-                <button type="button" class="btn-mute" data-inst-id="${inst.id}" title="Mute / Desmutar">
-                <img src="${getVolumeIcon(inst.volume)}" alt="Volume">
-                </button>
-                <input type="range" class="vol-slider" min="0" max="100" value="${inst.volume}" data-inst-id="${inst.id}">
-                
-                <div class="vol-display-box" data-inst-id="${inst.id}" title="Clique para editar valor">
-                <span class="vol-text">${inst.volume}%</span>
-                <input type="number" class="vol-direct-input" min="0" max="100" value="${inst.volume}" style="display: none;">
-                </div>
+        <div class="inst-volume-row">
+            <button type="button" class="btn-mute" data-inst-id="${inst.id}" title="Mute / Desmutar">
+            <img src="${getVolumeIcon(inst.volume)}" alt="Volume">
+            </button>
+            <input type="range" class="vol-slider" min="0" max="100" value="${inst.volume}" data-inst-id="${inst.id}">
+            
+            <div class="vol-display-box" data-inst-id="${inst.id}" title="Clique para editar valor">
+            <span class="vol-text">${inst.volume}%</span>
+            <input type="number" class="vol-direct-input" min="0" max="100" value="${inst.volume}" style="display: none;">
             </div>
+        </div>
         `;
 
         if (addInstWrapper) {
@@ -298,8 +297,7 @@ function renderScore() {
 
     scoreState.instruments.forEach((inst, instIndex) => {
         const row = document.createElement("div");
-        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''}`;
-        row.dataset.instrumentId = inst.id;
+        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`; row.dataset.instrumentId = inst.id;
 
         for (let m = 0; m < scoreState.measuresCount; m++) {
             const measureContainer = document.createElement("div");
@@ -755,6 +753,7 @@ function setupInstrumentControlEvents() {
     const optionsDropdown = document.getElementById("instrument-options-dropdown");
 
     let activeInstForMenu = null;
+    let draggedInstId = null;
 
     if (addInstBtn && addInstDropdown) {
         addInstDropdown.innerHTML = "";
@@ -840,6 +839,14 @@ function setupInstrumentControlEvents() {
             if (menuBtn) {
                 e.stopPropagation();
                 activeInstForMenu = menuBtn.dataset.instId;
+
+                // Atualiza o texto do botão de visibilidade
+                const targetInst = scoreState.instruments.find(i => i.id === activeInstForMenu);
+                const hideBtn = optionsDropdown.querySelector('[data-action="toggle-hide-inst"]');
+                if (hideBtn && targetInst) {
+                    hideBtn.textContent = targetInst.hidden ? "👁️ Exibir Instrumento" : "👁️ Ocultar Instrumento";
+                }
+
                 const rect = menuBtn.getBoundingClientRect();
                 optionsDropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
                 optionsDropdown.style.left = `${rect.left + window.scrollX}px`;
@@ -848,34 +855,99 @@ function setupInstrumentControlEvents() {
             }
         });
 
+        // Renomear instrumento no duplo clique do nome
         sidebarList.addEventListener("dblclick", (e) => {
-            const volRow = e.target.closest(".inst-volume-row");
-            if (!volRow) return;
+            const nameEl = e.target.closest(".inst-name");
+            if (!nameEl) return;
 
             e.stopPropagation();
-            const popover = volRow.querySelector(".volume-popover");
-            const numInput = volRow.querySelector(".volume-number-input");
-            const slider = volRow.querySelector(".vol-slider");
-            const instId = slider.dataset.instId;
+            const card = nameEl.closest(".instrument-card");
+            const instId = card.dataset.instrumentId;
+            const inputEl = card.querySelector(".inst-name-input");
+            const inst = scoreState.instruments.find(i => i.id === instId);
+            if (!inst || !inputEl) return;
 
-            document.querySelectorAll(".volume-popover").forEach(p => p.classList.remove("visible"));
-            popover.classList.add("visible");
-            numInput.focus();
-            numInput.select();
+            nameEl.style.display = "none";
+            inputEl.style.display = "block";
+            inputEl.focus();
+            inputEl.select();
 
-            function applyExact() {
-                let val = parseInt(numInput.value, 10);
-                if (isNaN(val)) val = 0;
-                val = Math.max(0, Math.min(100, val));
-                updateInstrumentVolume(instId, val);
-                popover.classList.remove("visible");
+            function commitName() {
+                const newName = inputEl.value.trim() || inst.name;
+                inst.name = newName;
+                nameEl.textContent = newName;
+                inputEl.style.display = "none";
+                nameEl.style.display = "block";
+                updateToolbarPalettes();
             }
 
-            numInput.onkeydown = (evt) => {
-                if (evt.key === "Enter") applyExact();
-                if (evt.key === "Escape") popover.classList.remove("visible");
+            inputEl.onkeydown = (evt) => {
+                if (evt.key === "Enter") commitName();
+                if (evt.key === "Escape") {
+                    inputEl.style.display = "none";
+                    nameEl.style.display = "block";
+                }
             };
-            numInput.onblur = applyExact;
+            inputEl.onblur = commitName;
+        });
+
+        // Eventos de Drag & Drop para reordenação vertical
+        sidebarList.addEventListener("dragstart", (e) => {
+            const card = e.target.closest(".instrument-card");
+            if (!card) return;
+            draggedInstId = card.dataset.instrumentId;
+            card.classList.add("dragging");
+            e.dataTransfer.effectAllowed = "move";
+        });
+
+        sidebarList.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            const targetCard = e.target.closest(".instrument-card");
+            if (!targetCard || targetCard.dataset.instrumentId === draggedInstId) return;
+
+            const rect = targetCard.getBoundingClientRect();
+            const isTop = (e.clientY - rect.top) < (rect.height / 2);
+            targetCard.classList.toggle("drag-over-top", isTop);
+            targetCard.classList.toggle("drag-over-bottom", !isTop);
+        });
+
+        sidebarList.addEventListener("dragleave", (e) => {
+            const targetCard = e.target.closest(".instrument-card");
+            if (targetCard) {
+                targetCard.classList.remove("drag-over-top", "drag-over-bottom");
+            }
+        });
+
+        sidebarList.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const targetCard = e.target.closest(".instrument-card");
+            if (!targetCard || !draggedInstId) return;
+
+            const targetInstId = targetCard.dataset.instrumentId;
+            if (targetInstId === draggedInstId) return;
+
+            const fromIndex = scoreState.instruments.findIndex(i => i.id === draggedInstId);
+            let toIndex = scoreState.instruments.findIndex(i => i.id === targetInstId);
+
+            const rect = targetCard.getBoundingClientRect();
+            const isBottom = (e.clientY - rect.top) >= (rect.height / 2);
+            if (isBottom) toIndex++;
+
+            if (fromIndex !== -1 && toIndex !== -1) {
+                historyManager.pushState();
+                const [moved] = scoreState.instruments.splice(fromIndex, 1);
+                const insertIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+                scoreState.instruments.splice(insertIndex, 0, moved);
+                renderScore();
+            }
+        });
+
+        sidebarList.addEventListener("dragend", () => {
+            draggedInstId = null;
+            document.querySelectorAll(".instrument-card").forEach(c => {
+                c.classList.remove("dragging", "drag-over-top", "drag-over-bottom");
+            });
         });
     }
 
@@ -890,7 +962,9 @@ function setupInstrumentControlEvents() {
 
             historyManager.pushState();
 
-            if (action === "delete-inst") {
+            if (action === "toggle-hide-inst") {
+                scoreState.instruments[instIndex].hidden = !scoreState.instruments[instIndex].hidden;
+            } else if (action === "delete-inst") {
                 if (scoreState.instruments.length <= 1) {
                     alert("O arranjo precisa ter no mínimo 1 instrumento.");
                     return;
@@ -903,7 +977,7 @@ function setupInstrumentControlEvents() {
                 const original = scoreState.instruments[instIndex];
                 const cloned = {
                     ...JSON.parse(JSON.stringify(original)),
-                    id: `${original.id}_copy_${Date.now()}`,
+                    id: `${original.id.split('_')[0]}_${Date.now()}`,
                     name: `${original.name} (Cópia)`
                 };
                 scoreState.instruments.splice(instIndex + 1, 0, cloned);
