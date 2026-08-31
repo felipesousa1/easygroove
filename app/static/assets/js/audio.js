@@ -44,20 +44,19 @@ const audioEngine = {
         }
     },
 
-    createSynthesizers() {
-        // Surdos
-        this.synths.surdo = new Tone.MembraneSynth({
-            pitchDecay: 0.05,
-            octaves: 4,
-            oscillator: { type: "sine" },
+createSynthesizers() {
+        // Criamos configurações base para reutilizar sem alterar o som original
+        const surdoConfig = {
+            pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" },
             envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.5 }
-        });
+        };
+        // Cada surdo ganha seu próprio synth
+        this.synths.surdo1 = new Tone.MembraneSynth(surdoConfig);
+        this.synths.surdo2 = new Tone.MembraneSynth(surdoConfig);
+        this.synths.surdo3 = new Tone.MembraneSynth(surdoConfig);
 
-        // Caixa
         this.synths.caixaPele = new Tone.MembraneSynth({
-            pitchDecay: 0.02,
-            octaves: 3,
-            oscillator: { type: "triangle" },
+            pitchDecay: 0.02, octaves: 3, oscillator: { type: "triangle" },
             envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.15 }
         });
 
@@ -66,43 +65,36 @@ const audioEngine = {
             envelope: { attack: 0.001, decay: 0.14, sustain: 0 }
         });
 
-        // Repique
         this.synths.repique = new Tone.MembraneSynth({
-            pitchDecay: 0.03,
-            octaves: 5,
-            oscillator: { type: "sine" },
+            pitchDecay: 0.03, octaves: 5, oscillator: { type: "sine" },
             envelope: { attack: 0.001, decay: 0.18, sustain: 0.01, release: 0.2 }
         });
 
-        // Aro / Rimshot / Slap
-        this.synths.rimshot = new Tone.MetalSynth({
-            frequency: 320,
-            envelope: { attack: 0.001, decay: 0.06, release: 0.05 },
-            harmonicity: 4.1,
-            modulationIndex: 28,
-            resonance: 2500,
-            octaves: 1.2
-        });
+        const rimshotConfig = {
+            frequency: 320, envelope: { attack: 0.001, decay: 0.06, release: 0.05 },
+            harmonicity: 4.1, modulationIndex: 28, resonance: 2500, octaves: 1.2
+        };
+        // Caixa e Repique ganham Rimshots independentes
+        this.synths.rimshotCaixa = new Tone.MetalSynth(rimshotConfig);
+        this.synths.rimshotRepique = new Tone.MetalSynth(rimshotConfig);
 
-        this.synths.aro = new Tone.MembraneSynth({
-            pitchDecay: 0.01,
-            octaves: 2,
-            oscillator: { type: "square" },
+        const aroConfig = {
+            pitchDecay: 0.01, octaves: 2, oscillator: { type: "square" },
             envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.04 }
-        });
+        };
+        // Caixa e Repique ganham Aros independentes
+        this.synths.aroCaixa = new Tone.MembraneSynth(aroConfig);
+        this.synths.aroRepique = new Tone.MembraneSynth(aroConfig);
 
-        // Chocalho
+        // Chocalho e Tamborim (originais)
         this.chocalhoFilter = new Tone.Filter(3500, "highpass").toDestination();
         this.synths.chocalho = new Tone.NoiseSynth({
             noise: { type: "pink" },
             envelope: { attack: 0.008, decay: 0.05, sustain: 0 }
         }).connect(this.chocalhoFilter);
 
-        // Tamborim
         this.synths.tamborim = new Tone.MembraneSynth({
-            pitchDecay: 0.04,
-            octaves: 4,
-            oscillator: { type: "triangle" },
+            pitchDecay: 0.04, octaves: 4, oscillator: { type: "triangle" },
             envelope: { attack: 0.001, decay: 0.09, sustain: 0.01, release: 0.08 }
         });
     },
@@ -116,37 +108,37 @@ const audioEngine = {
 
         switch (baseType) {
             case "surdo1":
-                this.synths.surdo.disconnect().connect(channel);
+                this.synths.surdo1.disconnect().connect(channel);
                 if (stroke === "pele-aberto") {
-                    this.synths.surdo.triggerAttackRelease("C1", "4n", execTime, 1.0);
+                    this.synths.surdo1.triggerAttackRelease("C1", "4n", execTime, 1.0);
                 } else if (stroke === "surdo-abafado") {
-                    this.synths.surdo.triggerAttackRelease("D1", "16n", execTime, 0.5);
+                    this.synths.surdo1.triggerAttackRelease("D1", "16n", execTime, 0.5);
                 }
                 break;
 
             case "surdo2":
-                this.synths.surdo.disconnect().connect(channel);
+                this.synths.surdo2.disconnect().connect(channel);
                 if (stroke === "pele-aberto") {
-                    this.synths.surdo.triggerAttackRelease("G1", "4n", execTime, 0.95);
+                    this.synths.surdo2.triggerAttackRelease("G1", "4n", execTime, 0.95);
                 } else if (stroke === "surdo-abafado") {
-                    this.synths.surdo.triggerAttackRelease("A1", "16n", execTime, 0.5);
+                    this.synths.surdo2.triggerAttackRelease("A1", "16n", execTime, 0.5);
                 }
                 break;
 
             case "surdo3":
-                this.synths.surdo.disconnect().connect(channel);
+                this.synths.surdo3.disconnect().connect(channel);
                 if (stroke === "pele-aberto") {
-                    this.synths.surdo.triggerAttackRelease("C2", "8n", execTime, 0.9);
+                    this.synths.surdo3.triggerAttackRelease("C2", "8n", execTime, 0.9);
                 } else if (stroke === "surdo-abafado") {
-                    this.synths.surdo.triggerAttackRelease("D2", "16n", execTime, 0.45);
+                    this.synths.surdo3.triggerAttackRelease("D2", "16n", execTime, 0.45);
                 }
                 break;
 
             case "caixa":
                 this.synths.caixaPele.disconnect().connect(channel);
                 this.synths.caixaEsteira.disconnect().connect(channel);
-                this.synths.aro.disconnect().connect(channel);
-                this.synths.rimshot.disconnect().connect(channel);
+                this.synths.aroCaixa.disconnect().connect(channel);
+                this.synths.rimshotCaixa.disconnect().connect(channel);
 
                 if (stroke === "pele-aberto") {
                     this.synths.caixaPele.triggerAttackRelease("F2", "16n", execTime, 0.9);
@@ -155,37 +147,39 @@ const audioEngine = {
                     this.synths.caixaPele.triggerAttackRelease("E2", "32n", execTime, 0.3);
                     this.synths.caixaEsteira.triggerAttackRelease("32n", execTime, 0.15);
                 } else if (stroke === "aro") {
-                    this.synths.aro.triggerAttackRelease("A4", "32n", execTime, 0.6);
+                    this.synths.aroCaixa.triggerAttackRelease("A4", "32n", execTime, 0.6);
                 } else if (stroke === "rimshot") {
                     this.synths.caixaPele.triggerAttackRelease("A2", "16n", execTime, 1.0);
-                    this.synths.rimshot.triggerAttackRelease("16n", execTime, 0.85);
+                    this.synths.rimshotCaixa.triggerAttackRelease("16n", execTime, 0.85);
                 } else if (stroke === "rufo") {
                     for (let r = 0; r < 3; r++) {
                         const subTime = Tone.Time(execTime).toSeconds() + (r * 0.025);
-                        this.synths.caixaEsteira.triggerAttackRelease("64n", subTime, 0.4 - (r * 0.08));
+                        // Substituído "64n" por 0.015s para não encavalar com o próximo subTime
+                        this.synths.caixaEsteira.triggerAttackRelease(0.015, subTime, 0.4 - (r * 0.08));
                     }
                 }
                 break;
 
             case "repique":
                 this.synths.repique.disconnect().connect(channel);
-                this.synths.aro.disconnect().connect(channel);
-                this.synths.rimshot.disconnect().connect(channel);
+                this.synths.aroRepique.disconnect().connect(channel);
+                this.synths.rimshotRepique.disconnect().connect(channel);
 
                 if (stroke === "pele-aberto") {
                     this.synths.repique.triggerAttackRelease("D3", "16n", execTime, 0.95);
                 } else if (stroke === "rimshot") {
                     this.synths.repique.triggerAttackRelease("F3", "16n", execTime, 1.0);
-                    this.synths.rimshot.triggerAttackRelease("32n", execTime, 0.7);
+                    this.synths.rimshotRepique.triggerAttackRelease("32n", execTime, 0.7);
                 } else if (stroke === "aro") {
-                    this.synths.aro.triggerAttackRelease("B4", "32n", execTime, 0.65);
+                    this.synths.aroRepique.triggerAttackRelease("B4", "32n", execTime, 0.65);
                 } else if (stroke === "slap") {
                     this.synths.repique.triggerAttackRelease("G3", "32n", execTime, 1.0);
-                    this.synths.aro.triggerAttackRelease("D5", "32n", execTime, 0.5);
+                    this.synths.aroRepique.triggerAttackRelease("D5", "32n", execTime, 0.5);
                 } else if (stroke === "rufo") {
                     for (let r = 0; r < 3; r++) {
                         const subTime = Tone.Time(execTime).toSeconds() + (r * 0.022);
-                        this.synths.repique.triggerAttackRelease("D3", "64n", subTime, 0.5);
+                        // Substituído "64n" por 0.015s
+                        this.synths.repique.triggerAttackRelease("D3", 0.015, subTime, 0.5);
                     }
                 }
                 break;
