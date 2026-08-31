@@ -740,6 +740,33 @@ body {
   padding: 12px 0;
   height: 100%;
   transition: all 0.15s ease;
+  cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Borda pontilhada por cima de todo o conteúdo (inclusive a faixa cinza) */
+.measure-container.selected::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px dashed var(--color-purple-primary, #31006f);
+    border-radius: 6px; /* Acompanha a curvatura das pontas se houver */
+    pointer-events: none; /* Não interfere nos cliques das notas e controles */
+    z-index: 40; /* Fica acima da barra cinza das notas (z-index < 40) */
+}
+
+/* Evita que elementos internos do fundo interfiram na captura do clique de fundo */
+.beat-group {
+  pointer-events: none;
+}
+
+.slots-bar,
+.beat-beams {
+  pointer-events: auto;
 }
 
 .measure-container:first-child {
@@ -2315,4 +2342,54 @@ body {
   border-top: 3.5px solid transparent;
   border-bottom: 3.5px solid transparent;
   border-right: 5px solid var(--color-purple-primary, #31006f);
+}
+
+/* Caixa de Seleção em Área (Marquee) */
+#selection-marquee {
+    position: absolute;
+    border: 1.5px dashed var(--color-purple-primary, #31006f);
+    background-color: rgba(49, 0, 111, 0.08);
+    pointer-events: none;
+    z-index: 100;
+    display: none;
+    border-radius: 4px;
+}
+
+/* Compasso Ativo no Clipboard (Borda Pontilhada Laranja/Dourada) */
+.measure-container.in-clipboard::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px dashed #f59e0b !important; 
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 50 !important;
+}
+
+/* Balão de Feedback Flutuante próximo à seleção */
+#toast-notification {
+    position: fixed;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 10000;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+#toast-notification.toast-success {
+    background-color: var(--color-purple-primary, #31006f);
+    color: #ffffff;
+}
+
+#toast-notification.toast-error {
+    background-color: #dc2626;
+    color: #ffffff;
 }

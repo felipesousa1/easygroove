@@ -2,8 +2,10 @@
 let currentArrangementId = null;
 let copiedMeasureData = null;
 let activeMeasureMenuIndex = null;
+let selectionClipboard = null;
 
 window.addEventListener("resize", renderRepeats);
+window.selectionClipboard = null;
 
 // ==========================================
 // 1. DICIONÁRIO DE ARTICULAÇÕES E METADADOS
@@ -106,6 +108,7 @@ let scoreState = {
     beatsPerMeasure: 4,
     subdivisions: 4,
     repeats: [],
+    selectedSelection: [],
 
     // Novo estado de loop magnético
     loopState: {
@@ -226,10 +229,9 @@ function renderScore() {
         const header = document.createElement("div");
         header.className = "measure-header";
 
-        // Verifica o estado do ritornelo para o compasso m
         const activeRepeat = scoreState.repeats?.find(r => m >= r.start && m <= r.end);
         const isRepeatEnd = activeRepeat && activeRepeat.end === m;
-        const isInsideRepeat = activeRepeat && !isRepeatEnd; // Está no meio do ritornelo
+        const isInsideRepeat = activeRepeat && !isRepeatEnd;
 
         header.innerHTML = `
           <span>Compasso ${m + 1}</span>
@@ -262,9 +264,9 @@ function renderScore() {
     loopBar.id = "loop-bar";
     loopBar.className = `loop-bar-container ${scoreState.loopState.active ? 'active' : ''}`;
     loopBar.innerHTML = `
-    <div class="loop-handle left" data-handle="left"></div>
-    <div class="loop-handle right" data-handle="right"></div>
-  `;
+        <div class="loop-handle left" data-handle="left"></div>
+        <div class="loop-handle right" data-handle="right"></div>
+    `;
     measuresTrack.appendChild(loopBar);
     updateLoopBarVisuals();
 
@@ -278,7 +280,8 @@ function renderScore() {
         }
 
         const card = document.createElement("div");
-        card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`; card.dataset.instrumentId = inst.id;
+        card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
+        card.dataset.instrumentId = inst.id;
         card.dataset.instIndex = index;
         card.draggable = true;
 
@@ -319,11 +322,31 @@ function renderScore() {
 
     scoreState.instruments.forEach((inst, instIndex) => {
         const row = document.createElement("div");
-        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`; row.dataset.instrumentId = inst.id;
+        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
+        row.dataset.instrumentId = inst.id;
 
         for (let m = 0; m < scoreState.measuresCount; m++) {
             const measureContainer = document.createElement("div");
-            measureContainer.className = "measure-container";
+
+            // 1. Verifica se está Selecionado
+            const isSelected = scoreState.selectedSelection?.some(
+                s => s.instId === inst.id && s.measureIndex === m
+            );
+
+            // 2. Verifica se está no Clipboard (Garante a comparação por String/Número)
+            const isInClipboard = window.selectionClipboard &&
+                window.selectionClipboard.instId === inst.id &&
+                window.selectionClipboard.measures &&
+                window.selectionClipboard.measures.includes(m);
+
+            // Monta as classes
+            let classes = ["measure-container"];
+            if (isSelected) classes.push("selected");
+            if (isInClipboard) classes.push("in-clipboard");
+
+            measureContainer.className = classes.join(" ");
+            measureContainer.dataset.instId = inst.id;
+            measureContainer.dataset.measureIndex = m;
 
             const measurePattern = inst.pattern[m] || createEmptyMeasure();
 
@@ -372,7 +395,6 @@ function renderRepeats() {
     const measuresTrack = document.getElementById("measures-track");
     if (!measuresTrack) return;
 
-    // 1. Limpa ritornelos desenhados anteriormente
     measuresTrack.querySelectorAll(".repeat-container").forEach(el => el.remove());
 
     if (!scoreState.repeats || scoreState.repeats.length === 0) return;
@@ -380,7 +402,6 @@ function renderRepeats() {
     const measureHeaders = measuresTrack.querySelectorAll(".measure-header");
     if (measureHeaders.length === 0) return;
 
-    // 2. Renderiza cada ritornelo ativo
     scoreState.repeats.forEach((repeat) => {
         const startHeader = measureHeaders[repeat.start];
         const endHeader = measureHeaders[repeat.end];
@@ -460,6 +481,200 @@ function setupRepeatControlEvents() {
     });
 }
 
+function setupSelectionEvents() {
+    const scoreGrid = document.getElementById("score-grid");
+    if (!scoreGrid) return;
+
+    // Identifica o elemento exato que tem overflow-x: auto / scroll
+    const scrollContainer = scoreGrid.parentElement;
+
+    let marquee = document.getElementById("selection-marquee");
+    if (!marquee) {
+        marquee = document.createElement("div");
+        marquee.id = "selection-marquee";
+        document.body.appendChild(marquee);
+    }
+
+    let isMouseDown = false;
+    let isDraggingMarquee = false;
+
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    let initialContainer = null;
+    let autoScrollInterval = null;
+
+    function updateMarqueeAndSelection() {
+        const rectLeft = Math.min(startX, currentX);
+        const rectTop = Math.min(startY, currentY);
+        const rectWidth = Math.abs(currentX - startX);
+        const rectHeight = Math.abs(currentY - startY);
+
+        marquee.style.left = `${rectLeft}px`;
+        marquee.style.top = `${rectTop}px`;
+        marquee.style.width = `${rectWidth}px`;
+        marquee.style.height = `${rectHeight}px`;
+
+        const marqueeBox = marquee.getBoundingClientRect();
+        const newSelection = [];
+        const measureContainers = scoreGrid.querySelectorAll(".measure-container");
+
+        measureContainers.forEach((container) => {
+            const box = container.getBoundingClientRect();
+
+            const intersects = !(
+                box.right < marqueeBox.left ||
+                box.left > marqueeBox.right ||
+                box.bottom < marqueeBox.top ||
+                box.top > marqueeBox.bottom
+            );
+
+            if (intersects) {
+                const instId = container.dataset.instId;
+                const measureIndex = parseInt(container.dataset.measureIndex, 10);
+                if (instId && !isNaN(measureIndex)) {
+                    newSelection.push({ instId, measureIndex });
+                }
+            }
+        });
+
+        scoreState.selectedSelection = newSelection;
+
+        measureContainers.forEach((container) => {
+            const instId = container.dataset.instId;
+            const measureIndex = parseInt(container.dataset.measureIndex, 10);
+
+            const isSelected = scoreState.selectedSelection.some(
+                s => s.instId === instId && s.measureIndex === measureIndex
+            );
+
+            container.classList.toggle("selected", isSelected);
+        });
+    }
+
+    function checkAndScroll() {
+        if (!isDraggingMarquee || !scrollContainer) return;
+
+        const containerRect = scrollContainer.getBoundingClientRect();
+        const threshold = 60;
+        const speed = 15;
+
+        // Borda Direita
+        if (currentX > containerRect.right - threshold) {
+            scrollContainer.scrollLeft += speed;
+            updateMarqueeAndSelection();
+        }
+        // Borda Esquerda
+        else if (currentX < containerRect.left + threshold) {
+            scrollContainer.scrollLeft -= speed;
+            updateMarqueeAndSelection();
+        }
+    }
+
+    document.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+
+        if (
+            e.target.closest(".note-slot") ||
+            e.target.closest(".beat-beams") ||
+            e.target.closest("button") ||
+            e.target.closest("input") ||
+            e.target.closest("select") ||
+            e.target.closest(".dropdown-menu") ||
+            e.target.closest(".repeat-control-pill") ||
+            e.target.closest("#loop-bar")
+        ) {
+            return;
+        }
+
+        const measureContainer = e.target.closest(".measure-container");
+
+        if (!measureContainer) {
+            if (scoreState.selectedSelection && scoreState.selectedSelection.length > 0) {
+                scoreState.selectedSelection = [];
+                renderScore();
+            }
+            return;
+        }
+
+        isMouseDown = true;
+        isDraggingMarquee = false;
+
+        startX = e.pageX;
+        startY = e.pageY;
+        currentX = e.clientX;
+        currentY = e.clientY;
+
+        initialContainer = measureContainer;
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!isMouseDown) return;
+
+        currentX = e.clientX;
+        currentY = e.clientY;
+
+        const deltaX = Math.abs(e.pageX - startX);
+        const deltaY = Math.abs(e.pageY - startY);
+
+        if (!isDraggingMarquee && (deltaX > 5 || deltaY > 5)) {
+            isDraggingMarquee = true;
+            marquee.style.display = "block";
+
+            if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                scoreState.selectedSelection = [];
+            }
+
+            if (autoScrollInterval) clearInterval(autoScrollInterval);
+            autoScrollInterval = setInterval(checkAndScroll, 20);
+        }
+
+        if (isDraggingMarquee) {
+            updateMarqueeAndSelection();
+        }
+    });
+
+    document.addEventListener("mouseup", (e) => {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
+
+        if (!isMouseDown) return;
+
+        if (!isDraggingMarquee && initialContainer) {
+            const instId = initialContainer.dataset.instId;
+            const measureIndex = parseInt(initialContainer.dataset.measureIndex, 10);
+
+            if (instId && !isNaN(measureIndex)) {
+                if (!scoreState.selectedSelection) scoreState.selectedSelection = [];
+
+                if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                    scoreState.selectedSelection = [{ instId, measureIndex }];
+                } else {
+                    const existsIndex = scoreState.selectedSelection.findIndex(
+                        s => s.instId === instId && s.measureIndex === measureIndex
+                    );
+
+                    if (existsIndex !== -1) {
+                        scoreState.selectedSelection.splice(existsIndex, 1);
+                    } else {
+                        scoreState.selectedSelection.push({ instId, measureIndex });
+                    }
+                }
+                renderScore();
+            }
+        }
+
+        isMouseDown = false;
+        isDraggingMarquee = false;
+        initialContainer = null;
+        marquee.style.display = "none";
+    });
+}
+
 // ==========================================
 // 4. ATUALIZAÇÃO CONTEXTUAL DA TOOLBAR
 // ==========================================
@@ -497,7 +712,6 @@ function updateToolbarPalettes() {
                 btn.classList.add("active");
                 scoreState.activeTool.strokeType = strokeKey;
 
-                // Preview sonoro ao selecionar a ferramenta
                 if (window.audioEngine) {
                     audioEngine.previewStroke(currentInst.id, strokeKey);
                 }
@@ -574,7 +788,6 @@ function setupGridEvents() {
             slot.className = `note-slot ${visual.className}`;
             slot.innerHTML = visual.content;
 
-            // Preview sonoro instantâneo ao adicionar/alternar a nota
             if (nextStroke && window.audioEngine) {
                 audioEngine.previewStroke(instrument.id, nextStroke);
             }
@@ -645,14 +858,12 @@ function setupMeasureMenuEvents() {
         dropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
         dropdown.style.left = `${rect.left + window.scrollX}px`;
 
-        // Controle de exibição dos botões de mover
         const btnMoveLeft = dropdown.querySelector('[data-action="move-left"]');
         const btnMoveRight = dropdown.querySelector('[data-action="move-right"]');
 
         if (btnMoveLeft) btnMoveLeft.style.display = (activeMeasureIndex === 0) ? "none" : "flex";
         if (btnMoveRight) btnMoveRight.style.display = (activeMeasureIndex === scoreState.measuresCount - 1) ? "none" : "flex";
 
-        // Controle do botão Colar (oculta se o clipboard estiver vazio)
         const btnPaste = dropdown.querySelector('[data-action="paste"]');
         if (btnPaste) btnPaste.style.display = copiedMeasureData ? "flex" : "none";
 
@@ -669,7 +880,6 @@ function setupMeasureMenuEvents() {
         historyManager.pushState();
 
         if (action === "copy") {
-            // Salva um deep clone do compasso 'm' de todos os instrumentos
             copiedMeasureData = scoreState.instruments.map(inst => {
                 return {
                     instrumentId: inst.id,
@@ -678,7 +888,6 @@ function setupMeasureMenuEvents() {
             });
         } else if (action === "paste") {
             if (copiedMeasureData) {
-                // Cola o padrão copiado no compasso 'm' correspondente de cada instrumento
                 copiedMeasureData.forEach(copiedItem => {
                     const inst = scoreState.instruments.find(i => i.id === copiedItem.instrumentId);
                     if (inst) {
@@ -703,15 +912,15 @@ function setupMeasureMenuEvents() {
                 });
             }
         } else if (action === "duplicate") {
-            duplicateMeasure(m);
+            handleMeasureAction("duplicate", m);
         } else if (action === "add-before") {
-            addMeasureAt(m);
+            handleMeasureAction("add-before", m);
         } else if (action === "add-after") {
-            addMeasureAt(m + 1);
+            handleMeasureAction("add-after", m);
         } else if (action === "clear") {
-            clearMeasure(m);
+            handleMeasureAction("clear", m);
         } else if (action === "delete") {
-            deleteMeasure(m);
+            handleMeasureAction("delete", m);
         }
 
         dropdown.classList.remove("visible");
@@ -734,7 +943,6 @@ function handleMeasureAction(action, index) {
             });
             scoreState.measuresCount++;
 
-            // Se inseriu antes ou no meio do loop, desloca os limites
             if (index < scoreState.loopState.startMeasure) {
                 scoreState.loopState.startMeasure++;
                 scoreState.loopState.endMeasure++;
@@ -749,7 +957,6 @@ function handleMeasureAction(action, index) {
             });
             scoreState.measuresCount++;
 
-            // Se adicionou antes ou no próprio início do loop, empurra o loop para a direita
             if (index <= scoreState.loopState.startMeasure) {
                 scoreState.loopState.startMeasure++;
                 scoreState.loopState.endMeasure++;
@@ -764,7 +971,6 @@ function handleMeasureAction(action, index) {
             });
             scoreState.measuresCount++;
 
-            // Se adicionou antes do início do loop
             if (index < scoreState.loopState.startMeasure) {
                 scoreState.loopState.startMeasure++;
                 scoreState.loopState.endMeasure++;
@@ -789,19 +995,16 @@ function handleMeasureAction(action, index) {
             });
             scoreState.measuresCount--;
 
-            // Ajusta os limites do loop ao excluir
             if (index < scoreState.loopState.startMeasure) {
                 scoreState.loopState.startMeasure--;
                 scoreState.loopState.endMeasure--;
             } else if (index >= scoreState.loopState.startMeasure && index < scoreState.loopState.endMeasure) {
                 scoreState.loopState.endMeasure--;
-                // Se o loop ficou vazio (start >= end)
                 if (scoreState.loopState.startMeasure >= scoreState.loopState.endMeasure) {
                     scoreState.loopState.startMeasure = Math.max(0, scoreState.loopState.endMeasure - 1);
                 }
             }
 
-            // Garante limites válidos dentro do novo measuresCount
             if (scoreState.loopState.endMeasure > scoreState.measuresCount) {
                 scoreState.loopState.endMeasure = scoreState.measuresCount;
             }
@@ -813,7 +1016,6 @@ function handleMeasureAction(action, index) {
 
     renderScore();
 
-    // Sincroniza o áudio se estiver rodando
     if (window.audioEngine && audioEngine.isInitialized) {
         audioEngine.updateTransportSettings();
     }
@@ -825,33 +1027,6 @@ function addMeasureToEnd() {
         inst.pattern.push(createEmptyMeasure());
     });
     scoreState.measuresCount++;
-    renderScore();
-}
-
-function deleteMeasure(index) {
-    if (scoreState.measuresCount <= 1) return; // Mantém pelo menos 1 compasso
-
-    // Remove o compasso do padrão de todos os instrumentos
-    scoreState.instruments.forEach(inst => {
-        if (inst.pattern && inst.pattern.length > index) {
-            inst.pattern.splice(index, 1);
-        }
-    });
-
-    // Atualiza a contagem geral
-    scoreState.measuresCount -= 1;
-
-    // Remove ou ajusta ritornelos afetados
-    if (scoreState.repeats) {
-        scoreState.repeats = scoreState.repeats
-            .filter(r => !(r.start === index && r.end === index)) // Remove se o ritornelo era só nesse compasso
-            .map(r => {
-                if (r.start > index) r.start -= 1;
-                if (r.end >= index && r.end > 0) r.end -= 1;
-                return r;
-            });
-    }
-
     renderScore();
 }
 
@@ -874,10 +1049,8 @@ function setupMeasureLoopEvents() {
         historyManager.pushState();
 
         if (existingIndex !== -1) {
-            // Se já tem ritornelo, remove
             scoreState.repeats.splice(existingIndex, 1);
         } else {
-            // Se não tem, adiciona um ritornelo cobrindo este compasso
             scoreState.repeats.push({
                 id: `rep-${Date.now()}`,
                 start: mIndex,
@@ -1017,7 +1190,6 @@ function setupInstrumentControlEvents() {
     }
 
     if (sidebarList) {
-
         sidebarList.addEventListener("dragstart", (e) => {
             if (e.target.closest(".vol-slider") || e.target.closest("input") || e.target.closest(".vol-display-box")) {
                 e.preventDefault();
@@ -1031,7 +1203,6 @@ function setupInstrumentControlEvents() {
             e.dataTransfer.effectAllowed = "move";
         });
 
-        // Edição do Nome por Duplo Clique
         sidebarList.addEventListener("dblclick", (e) => {
             const card = e.target.closest(".instrument-card");
             if (!card) return;
@@ -1045,7 +1216,6 @@ function setupInstrumentControlEvents() {
 
             e.stopPropagation();
 
-            // Oculta o texto e exibe o campo de edição
             nameEl.style.display = "none";
             inputEl.style.display = "block";
             inputEl.focus();
@@ -1096,7 +1266,6 @@ function setupInstrumentControlEvents() {
                 return;
             }
 
-            // Clique na caixa de % para edição direta
             const volBox = e.target.closest(".vol-display-box");
             if (volBox) {
                 e.stopPropagation();
@@ -1134,7 +1303,6 @@ function setupInstrumentControlEvents() {
                 e.stopPropagation();
                 activeInstForMenu = menuBtn.dataset.instId;
 
-                // Atualiza o texto do botão de visibilidade
                 const targetInst = scoreState.instruments.find(i => i.id === activeInstForMenu);
                 const hideBtn = optionsDropdown.querySelector('[data-action="toggle-hide-inst"]');
                 if (hideBtn && targetInst) {
@@ -1147,20 +1315,6 @@ function setupInstrumentControlEvents() {
                 optionsDropdown.classList.add("visible");
                 return;
             }
-        });
-
-        // Eventos de Drag & Drop para reordenação vertical
-        sidebarList.addEventListener("dragstart", (e) => {
-            if (e.target.closest(".vol-slider") || e.target.closest("input")) {
-                e.preventDefault();
-                return;
-            }
-
-            const card = e.target.closest(".instrument-card");
-            if (!card) return;
-            draggedInstId = card.dataset.instrumentId;
-            card.classList.add("dragging");
-            e.dataTransfer.effectAllowed = "move";
         });
 
         sidebarList.addEventListener("dragover", (e) => {
@@ -1323,24 +1477,20 @@ function updatePlayheadPosition() {
     const measureWidth = 448;
     const ticksPerMeasure = scoreState.beatsPerMeasure * Tone.Transport.PPQ;
 
-    // Obtém a sequência "desdobrada" do áudio
     const sequence = (window.audioEngine && window.audioEngine.getPlaybackSequence)
         ? window.audioEngine.getPlaybackSequence()
         : [];
 
     if (sequence.length === 0) return;
 
-    // O segredo da fluidez 60FPS: tempo contínuo nativo
     const ticks = Tone.Transport.ticks;
     const m_linear = Math.floor(ticks / ticksPerMeasure);
     const ticks_inside_measure = ticks % ticksPerMeasure;
 
-    if (m_linear >= sequence.length) return; // Fim da música
+    if (m_linear >= sequence.length) return;
 
-    // Descobre em qual compasso da tela estamos
     const visual_measure = sequence[m_linear];
 
-    // Interpolação suave em pixels
     const currentX = (visual_measure * measureWidth) + ((ticks_inside_measure / ticksPerMeasure) * measureWidth);
 
     playhead.style.transform = `translateX(${currentX}px)`;
@@ -1451,7 +1601,6 @@ function updateLoopBarVisuals() {
     const loopBar = document.getElementById("loop-bar");
     if (!loopBar) return;
 
-    // Garante que os limites não extrapolem o tamanho do arranjo
     if (scoreState.loopState.endMeasure > scoreState.measuresCount) {
         scoreState.loopState.endMeasure = scoreState.measuresCount;
     }
@@ -1459,7 +1608,7 @@ function updateLoopBarVisuals() {
         scoreState.loopState.startMeasure = Math.max(0, scoreState.loopState.endMeasure - 1);
     }
 
-    const measureWidth = 448; // Largura exata de 1 bloco de compasso
+    const measureWidth = 448;
     loopBar.style.left = `${scoreState.loopState.startMeasure * measureWidth}px`;
     loopBar.style.width = `${(scoreState.loopState.endMeasure - scoreState.loopState.startMeasure) * measureWidth}px`;
 
@@ -1473,7 +1622,7 @@ function updateLoopBarVisuals() {
 function setupLoopEvents() {
     const btnLoop = document.getElementById("btn-loop");
     const measuresTrack = document.getElementById("measures-track");
-    let draggingMode = null; // 'left' | 'right' | 'body'
+    let draggingMode = null;
     let dragStartX = 0;
     let initialStart = 0;
     let initialEnd = 0;
@@ -1487,9 +1636,7 @@ function setupLoopEvents() {
         });
     }
 
-    // Lógica magnética de drag-and-drop
     document.addEventListener("mousedown", (e) => {
-        // Se o clique foi no botão de opções ou dentro do dropdown, não inicia arraste de loop
         if (e.target.closest(".measure-menu-btn") || e.target.closest(".measure-dropdown-menu")) {
             return;
         }
@@ -1501,7 +1648,6 @@ function setupLoopEvents() {
             draggingMode = e.target.dataset.handle;
             document.body.style.cursor = "ew-resize";
         } else if (e.target === loopBar) {
-            // Clicou no meio da barra para transladar
             draggingMode = "body";
             dragStartX = e.clientX;
             initialStart = scoreState.loopState.startMeasure;
@@ -1525,7 +1671,6 @@ function setupLoopEvents() {
             let newStart = initialStart + measureShift;
             let newEnd = initialEnd + measureShift;
 
-            // Clamping com preservação de tamanho
             if (newStart < 0) {
                 newStart = 0;
                 newEnd = Math.min(scoreState.measuresCount, loopLength);
@@ -1578,26 +1723,30 @@ function showToast(message, isError = false) {
     if (!toast) {
         toast = document.createElement("div");
         toast.id = "toast-notification";
-        toast.style.position = "fixed";
-        toast.style.bottom = "24px";
-        toast.style.right = "80px"; // Respiro para não sobrepor o botão de ajuda
-        toast.style.padding = "10px 18px";
-        toast.style.borderRadius = "8px";
-        toast.style.color = "#fff";
-        toast.style.fontSize = "0.9rem";
-        toast.style.fontWeight = "600";
-        toast.style.zIndex = "9999";
-        toast.style.transition = "opacity 0.3s ease";
         document.body.appendChild(toast);
     }
 
-    toast.style.backgroundColor = isError ? "#dc2626" : "#16a34a";
+    toast.className = isError ? "toast-error" : "toast-success";
     toast.textContent = message;
+
+    // Posiciona o toast próximo ao primeiro compasso selecionado ou no centro superior
+    const selectedEl = document.querySelector(".measure-container.selected") || document.querySelector(".measure-container.in-clipboard");
+
+    if (selectedEl) {
+        const rect = selectedEl.getBoundingClientRect();
+        toast.style.top = `${rect.top - 40}px`;
+        toast.style.left = `${rect.left + (rect.width / 2) - 60}px`;
+    } else {
+        toast.style.top = "80px";
+        toast.style.left = "50%";
+        toast.style.transform = "translateX(-50%)";
+    }
+
     toast.style.opacity = "1";
 
     setTimeout(() => {
         toast.style.opacity = "0";
-    }, 2500);
+    }, 2000);
 }
 
 async function saveCurrentArrangement() {
@@ -1651,12 +1800,11 @@ async function saveCurrentArrangement() {
         showToast("Arranjo salvo com sucesso!");
     } catch (error) {
         console.error("Erro de conexão ao salvar:", error);
-        showToast("Falha de conexão com o servidor.", true);
+        showToast("Falha de conexão com el servidor.", true);
     }
 }
 
 function setupPersistenceEvents() {
-    // Localiza o botão salvar pelo atributo title
     const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
     if (saveBtn) {
         saveBtn.addEventListener("click", saveCurrentArrangement);
@@ -1691,7 +1839,6 @@ async function loadArrangementFromURL() {
         if (arrangement && arrangement.score_data) {
             currentArrangementId = arrangement.id;
 
-            // Carrega os dados e força o loopState zerado/desativado
             Object.assign(scoreState, arrangement.score_data);
             scoreState.loopState = {
                 active: false,
@@ -1712,8 +1859,6 @@ async function loadArrangementFromURL() {
             historyManager.undoStack = [];
             historyManager.redoStack = [];
             historyManager.updateButtonsState();
-
-            // showToast(`Arranjo "${arrangement.name}" carregado!`);
         }
     } catch (error) {
         console.error("Erro ao carregar arranjo:", error);
@@ -1727,11 +1872,53 @@ async function loadArrangementFromURL() {
 
 function setupKeyboardShortcuts() {
     window.addEventListener("keydown", (e) => {
-        // Ignora os atalhos se o usuário estiver focado em um campo de texto
         if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
-        // Ignora atalhos com Ctrl, Cmd ou Alt para preservar funções nativas do navegador (exceto Undo/Redo se já tratados em outro lugar)
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        // Atalhos com Ctrl / Cmd
+        if (e.ctrlKey || e.metaKey) {
+            const key = e.key.toLowerCase();
+
+            if (key === "s") {
+                e.preventDefault(); // Impede o navegador de tentar salvar a página em HTML
+                document.querySelector('button[title="Salvar Projeto"]')?.click();
+            } else if (key === "c") {
+                e.preventDefault();
+                copySelectedMeasures();
+            } else if (key === "x") {
+                e.preventDefault();
+                cutSelectedMeasures();
+            } else if (key === "v") {
+                e.preventDefault();
+                if (scoreState.selectedSelection && scoreState.selectedSelection.length > 0) {
+                    const first = scoreState.selectedSelection[0];
+                    pasteClipboardToTarget(first.instId, first.measureIndex);
+                } else {
+                    pasteClipboardToTarget(scoreState.activeTool.instrumentId, 0);
+                }
+            }
+            return;
+        }
+
+        // Tecla ESC: Limpa a Seleção E o Clipboard
+        if (e.key === "Escape") {
+            let needsRender = false;
+
+            if (scoreState.selectedSelection && scoreState.selectedSelection.length > 0) {
+                scoreState.selectedSelection = [];
+                needsRender = true;
+            }
+
+            if (window.selectionClipboard) {
+                window.selectionClipboard = null;
+                showToast("Área de transferência limpa.");
+                needsRender = true;
+            }
+
+            if (needsRender) {
+                renderScore(); // Limpa as bordas roxas e a borda amarela do clipboard
+            }
+            return;
+        }
 
         // Atalhos com Shift
         if (e.shiftKey) {
@@ -1752,10 +1939,6 @@ function setupKeyboardShortcuts() {
                     e.preventDefault();
                     document.querySelector('button[title="Exportar Arranjo"]')?.click();
                     break;
-                case "s":
-                    e.preventDefault();
-                    document.querySelector('button[title="Salvar Projeto"]')?.click();
-                    break;
                 case "h":
                 case "?":
                     e.preventDefault();
@@ -1765,7 +1948,7 @@ function setupKeyboardShortcuts() {
             return;
         }
 
-        // Atalhos de tecla única (sem Shift)
+        // Atalhos de tecla única
         switch (e.key.toLowerCase()) {
             case "p":
                 e.preventDefault();
@@ -1780,15 +1963,12 @@ function setupKeyboardShortcuts() {
                 document.getElementById("btn-stop")?.click();
                 break;
             default:
-                // Seleção de toques (1-9)
                 const num = parseInt(e.key, 10);
                 if (!isNaN(num) && num >= 1 && num <= 9) {
                     const paletteContainer = document.getElementById("strokes-palette-container");
                     if (paletteContainer) {
                         const buttons = paletteContainer.querySelectorAll(".tool-stroke");
-                        if (buttons[num - 1]) {
-                            buttons[num - 1].click();
-                        }
+                        if (buttons[num - 1]) buttons[num - 1].click();
                     }
                 }
                 break;
@@ -1797,21 +1977,131 @@ function setupKeyboardShortcuts() {
 }
 
 // ==========================================
+// 11. CLIPBOARD DE COMPASSOS
+// ==========================================
+
+function copySelectedMeasures() {
+    if (!scoreState.selectedSelection || scoreState.selectedSelection.length === 0) return false;
+
+    const instIds = [...new Set(scoreState.selectedSelection.map(s => s.instId))];
+    if (instIds.length > 1) {
+        showToast("Copie 1 instrumento por vez.", true);
+        return false;
+    }
+
+    const targetInstId = instIds[0];
+    const inst = scoreState.instruments.find(i => i.id === targetInstId);
+    if (!inst) return false;
+
+    const sortedMeasures = [...scoreState.selectedSelection]
+        .map(s => s.measureIndex)
+        .sort((a, b) => a - b);
+
+    const copiedPatterns = sortedMeasures.map(m => JSON.parse(JSON.stringify(inst.pattern[m] || createEmptyMeasure())));
+
+    window.selectionClipboard = {
+        instId: targetInstId,
+        measures: sortedMeasures,
+        patterns: copiedPatterns
+    };
+
+    showToast(`${copiedPatterns.length} compasso(s) copiado(s)`);
+    renderScore(); // Força a atualização da tela
+    return true;
+}
+
+function cutSelectedMeasures() {
+    if (copySelectedMeasures()) {
+        historyManager.pushState();
+        clearSelectedMeasures(false);
+        renderScore();
+    }
+}
+
+function clearSelectedMeasures(showNotification = true) {
+    if (!scoreState.selectedSelection || scoreState.selectedSelection.length === 0) return;
+
+    historyManager.pushState();
+
+    scoreState.selectedSelection.forEach(item => {
+        const inst = scoreState.instruments.find(i => i.id === item.instId);
+        if (inst && inst.pattern[item.measureIndex]) {
+            inst.pattern[item.measureIndex] = createEmptyMeasure();
+        }
+    });
+
+    if (showNotification) showToast("Conteúdo limpo.");
+    renderScore();
+}
+
+// Retorna a "família" de articulações do instrumento para validar a colagem
+function getInstrumentFamily(instId) {
+    if (!instId) return "";
+    // Se for surdo1, surdo2 ou surdo3, pertence à família 'surdo'
+    if (instId.startsWith("surdo")) return "surdo";
+    // Para caixa, repique, chocalho, tamborim, etc., retorna a própria base
+    return instId.split("_")[0];
+}
+
+function pasteClipboardToTarget(targetInstId, targetMeasureIndex) {
+    const clipboard = window.selectionClipboard;
+
+    if (!clipboard || !clipboard.patterns || clipboard.patterns.length === 0) {
+        showToast("Nenhum compasso copiado.", true);
+        return;
+    }
+
+    const sourceFamily = getInstrumentFamily(clipboard.instId);
+    const targetFamily = getInstrumentFamily(targetInstId);
+
+    // Validação de compatibilidade entre instrumentos
+    if (sourceFamily !== targetFamily) {
+        showToast("Não é possível colar o padrão em um instrumento diferente.", true);
+        return;
+    }
+
+    const inst = scoreState.instruments.find(i => i.id === targetInstId);
+    if (!inst) return;
+
+    historyManager.pushState();
+
+    // Cola os compassos em sequência a partir do compasso alvo
+    clipboard.patterns.forEach((pattern, offset) => {
+        const destMeasure = targetMeasureIndex + offset;
+        if (destMeasure < scoreState.measuresCount) {
+            inst.pattern[destMeasure] = JSON.parse(JSON.stringify(pattern));
+        }
+    });
+
+    showToast("Conteúdo colado com sucesso!");
+    renderScore();
+}
+
+// ==========================================
 // INICIALIZAÇÃO
 // ==========================================
 
 document.addEventListener("DOMContentLoaded", () => {
-    renderScore();
-    setupToolbarEvents();
-    setupGridEvents();
-    setupHeaderEvents();
-    setupTransportEvents();
-    setupMeasureMenuEvents();
-    setupMeasureLoopEvents();
-    setupRepeatControlEvents();
-    setupInstrumentControlEvents();
-    setupLoopEvents();
-    setupPersistenceEvents();
-    loadArrangementFromURL();
-    setupKeyboardShortcuts();
+    try {
+        renderScore();
+        setupToolbarEvents();
+        setupGridEvents();
+        setupHeaderEvents();
+        setupTransportEvents();
+        setupMeasureMenuEvents();
+        setupMeasureLoopEvents();
+        setupRepeatControlEvents();
+        setupSelectionEvents();
+        setupInstrumentControlEvents();
+        setupLoopEvents();
+        setupPersistenceEvents();
+
+        if (window.location.search.includes("id=")) {
+            loadArrangementFromURL();
+        }
+
+        setupKeyboardShortcuts();
+    } catch (err) {
+        console.error("Erro na inicialização:", err);
+    }
 });
