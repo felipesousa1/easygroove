@@ -1,4 +1,7 @@
+// Variáveis globais de estado
 let currentArrangementId = null;
+let copiedMeasureData = null;
+let activeMeasureMenuIndex = null;
 
 // ==========================================
 // 1. DICIONÁRIO DE ARTICULAÇÕES E METADADOS
@@ -512,38 +515,101 @@ function setupToolbarEvents() {
 }
 
 function setupMeasureMenuEvents() {
-    const dropdown = document.getElementById("measure-dropdown");
     const measuresTrack = document.getElementById("measures-track");
-    if (!dropdown || !measuresTrack) return;
+    const dropdown = document.getElementById("measure-dropdown");
+
+    if (!measuresTrack || !dropdown) return;
+
+    let activeMeasureIndex = null;
 
     measuresTrack.addEventListener("click", (e) => {
         const btn = e.target.closest(".measure-menu-btn");
         if (!btn) return;
 
         e.stopPropagation();
-        activeMeasureMenuIndex = parseInt(btn.dataset.measureIndex, 10);
+        activeMeasureIndex = parseInt(btn.dataset.measureIndex, 10);
 
         const rect = btn.getBoundingClientRect();
-        dropdown.style.top = `${rect.bottom + window.scrollY + 6}px`;
-        dropdown.style.left = `${rect.left + window.scrollX - 160}px`;
+        dropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
+        dropdown.style.left = `${rect.left + window.scrollX}px`;
+
+        // Controle de exibição dos botões de mover
+        const btnMoveLeft = dropdown.querySelector('[data-action="move-left"]');
+        const btnMoveRight = dropdown.querySelector('[data-action="move-right"]');
+
+        if (btnMoveLeft) btnMoveLeft.style.display = (activeMeasureIndex === 0) ? "none" : "flex";
+        if (btnMoveRight) btnMoveRight.style.display = (activeMeasureIndex === scoreState.measuresCount - 1) ? "none" : "flex";
+
+        // Controle do botão Colar (oculta se o clipboard estiver vazio)
+        const btnPaste = dropdown.querySelector('[data-action="paste"]');
+        if (btnPaste) btnPaste.style.display = copiedMeasureData ? "flex" : "none";
+
         dropdown.classList.add("visible");
     });
 
     dropdown.addEventListener("click", (e) => {
         const item = e.target.closest(".dropdown-item");
-        if (!item || activeMeasureMenuIndex === null) return;
+        if (!item || activeMeasureIndex === null) return;
 
         const action = item.dataset.action;
-        handleMeasureAction(action, activeMeasureMenuIndex);
+        const m = activeMeasureIndex;
+
+        historyManager.pushState();
+
+        if (action === "copy") {
+            // Salva um deep clone do compasso 'm' de todos os instrumentos
+            copiedMeasureData = scoreState.instruments.map(inst => {
+                return {
+                    instrumentId: inst.id,
+                    pattern: JSON.parse(JSON.stringify(inst.pattern[m] || []))
+                };
+            });
+        } else if (action === "paste") {
+            if (copiedMeasureData) {
+                // Cola o padrão copiado no compasso 'm' correspondente de cada instrumento
+                copiedMeasureData.forEach(copiedItem => {
+                    const inst = scoreState.instruments.find(i => i.id === copiedItem.instrumentId);
+                    if (inst) {
+                        inst.pattern[m] = JSON.parse(JSON.stringify(copiedItem.pattern));
+                    }
+                });
+            }
+        } else if (action === "move-left") {
+            if (m > 0) {
+                scoreState.instruments.forEach(inst => {
+                    const temp = inst.pattern[m];
+                    inst.pattern[m] = inst.pattern[m - 1];
+                    inst.pattern[m - 1] = temp;
+                });
+            }
+        } else if (action === "move-right") {
+            if (m < scoreState.measuresCount - 1) {
+                scoreState.instruments.forEach(inst => {
+                    const temp = inst.pattern[m];
+                    inst.pattern[m] = inst.pattern[m + 1];
+                    inst.pattern[m + 1] = temp;
+                });
+            }
+        } else if (action === "duplicate") {
+            duplicateMeasure(m);
+        } else if (action === "add-before") {
+            addMeasureAt(m);
+        } else if (action === "add-after") {
+            addMeasureAt(m + 1);
+        } else if (action === "clear") {
+            clearMeasure(m);
+        } else if (action === "delete") {
+            deleteMeasure(m);
+        }
+
         dropdown.classList.remove("visible");
+        renderScore();
     });
 
     document.addEventListener("click", () => {
         dropdown.classList.remove("visible");
     });
 }
-
-let activeMeasureMenuIndex = null;
 
 function handleMeasureAction(action, index) {
     historyManager.pushState();
