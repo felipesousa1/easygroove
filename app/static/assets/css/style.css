@@ -432,14 +432,16 @@ body {
 }
 
 .instrument-card.hidden-track .vol-slider {
-filter: grayscale(1) opacity(0.6) !important;}
+  filter: grayscale(1) opacity(0.6) !important;
+}
 
 /* Grade Padrão e Ocultada */
 .beat-beams {
   width: 100%;
   height: 28px;
   display: block;
-  color: #0f172a; /* Cor base das traves */
+  color: #0f172a;
+  /* Cor base das traves */
 }
 
 .score-row.hidden-track {
@@ -458,7 +460,7 @@ filter: grayscale(1) opacity(0.6) !important;}
 
 /* Transforma as traves em cinza herdando currentColor */
 .score-row.hidden-track .beat-beams {
-  color: #94a3b8 !important; 
+  color: #94a3b8 !important;
 }
 
 /* Formas marcadas nos slots */
@@ -747,6 +749,35 @@ filter: grayscale(1) opacity(0.6) !important;}
 .measure-container:last-child {
   border-right: 1.5px solid var(--color-gray-border);
   border-radius: 0 10px 10px 0;
+}
+
+/* Botão de Loop no Header do Compasso */
+.measure-loop-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted, #475569);
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  z-index: 50;
+  pointer-events: auto !important;
+  transition: all 0.15s ease;
+}
+
+.measure-loop-btn:hover {
+  background-color: var(--color-gray-hover, #e2e8f0);
+  color: var(--color-purple-primary, #31006f);
+}
+
+.measure-loop-btn.active {
+  background-color: var(--color-purple-primary, #31006f);
+  color: #ffffff;
 }
 
 .beat-group {
@@ -2171,5 +2202,117 @@ filter: grayscale(1) opacity(0.6) !important;}
   font-size: 1rem;
   flex-shrink: 0;
   margin-top: auto;
-  /* Empurra o rodapé para o final da página */
+}
+
+/* ==========================================
+   RITORNELLO (PILULA DE REPETIÇÃO)
+   ========================================== */
+
+/* Ajuste no container para dar respiro vertical à pílula do ritornelo */
+.sticky-top-track {
+  padding-top: 36px !important;
+  /* Aumenta o topo para acomodar a linha/pílula */
+}
+
+/* Container do Ritornelo */
+.repeat-container {
+  position: absolute;
+  top: -14px;
+  height: 14px;
+  z-index: 30;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Linha Superior Horizontal */
+.repeat-line-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--color-purple-primary, #31006f);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Trava/Linha Vertical do Início */
+.repeat-start-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 12px;
+  background-color: var(--color-purple-primary, #31006f);
+}
+
+/* Pílula Flutuante de Controles (Lado Direito) */
+.repeat-control-pill {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  /* Traz a pílula um pouco mais para baixo */
+  background-color: var(--color-purple-primary, #31006f);
+  color: #ffffff;
+  border-radius: 20px;
+  padding: 3px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  pointer-events: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+.repeat-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+}
+
+.repeat-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.repeat-times-text {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  user-select: none;
+}
+
+/* Curva de Seta de Retorno na ponta da linha */
+.repeat-loop-arrow {
+  position: absolute;
+  right: -10px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  border: 2.5px solid var(--color-purple-primary, #31006f);
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  pointer-events: none;
+}
+
+.repeat-loop-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: -2px;
+  width: 0;
+  height: 0;
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+  border-right: 5px solid var(--color-purple-primary, #31006f);
 }

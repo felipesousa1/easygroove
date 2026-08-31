@@ -17,8 +17,7 @@ const audioEngine = {
         });
 
         this.createSynthesizers();
-        this.schedulePlaybackLoop();
-
+        
         Tone.Transport.bpm.value = scoreState.bpm;
         this.isInitialized = true;
     },
@@ -44,7 +43,7 @@ const audioEngine = {
         }
     },
 
-createSynthesizers() {
+    createSynthesizers() {
         // Criamos configurações base para reutilizar sem alterar o som original
         const surdoConfig = {
             pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" },
@@ -154,7 +153,6 @@ createSynthesizers() {
                 } else if (stroke === "rufo") {
                     for (let r = 0; r < 3; r++) {
                         const subTime = Tone.Time(execTime).toSeconds() + (r * 0.025);
-                        // Substituído "64n" por 0.015s para não encavalar com o próximo subTime
                         this.synths.caixaEsteira.triggerAttackRelease(0.015, subTime, 0.4 - (r * 0.08));
                     }
                 }
@@ -178,7 +176,6 @@ createSynthesizers() {
                 } else if (stroke === "rufo") {
                     for (let r = 0; r < 3; r++) {
                         const subTime = Tone.Time(execTime).toSeconds() + (r * 0.022);
-                        // Substituído "64n" por 0.015s
                         this.synths.repique.triggerAttackRelease("D3", 0.015, subTime, 0.5);
                     }
                 }
@@ -216,13 +213,70 @@ createSynthesizers() {
         const inst = scoreState.instruments.find(i => i.id === instId);
         if (!inst) return;
 
-        // Se o instrumento estiver mutado, usamos volume moderado para feedback de preview
         const effectiveInst = inst.volume > 0 ? inst : { ...inst, volume: 80 };
         if (inst.volume <= 0) {
             this.initInstrumentChannel(effectiveInst);
         }
 
         this.triggerStroke(effectiveInst, strokeType, Tone.now());
+    },
+
+    // Retorna a ordem real de compassos a serem executados considerando os ritornelos
+    getPlaybackSequence() {
+        const sequence = [];
+        let m = 0;
+
+        while (m < scoreState.measuresCount) {
+            const repeat = scoreState.repeats?.find(r => r.start === m);
+
+            if (repeat) {
+                for (let count = 0; count < repeat.times; count++) {
+                    for (let stepM = repeat.start; stepM <= repeat.end; stepM++) {
+                        sequence.push(stepM);
+                    }
+                }
+                m = repeat.end + 1;
+            } else {
+                sequence.push(m);
+                m++;
+            }
+        }
+
+        return sequence;
+    },
+
+    // Converte os limites visuais do Loop Magnético para os limites da sequência desdobrada
+    getLinearLoopPoints() {
+        const sequence = this.getPlaybackSequence();
+        
+        let linearStart = sequence.findIndex(m => m >= scoreState.loopState.startMeasure);
+        if (linearStart === -1) linearStart = 0;
+
+        let linearEnd = sequence.findIndex(m => m >= scoreState.loopState.endMeasure);
+        if (linearEnd === -1) linearEnd = sequence.length;
+
+        return { linearStart, linearEnd };
+    },
+
+    updateTransportSettings() {
+        if (!this.isInitialized) return;
+        Tone.Transport.bpm.value = scoreState.bpm;
+
+        if (scoreState.loopState.active) {
+            Tone.Transport.loop = true;
+            
+            const { linearStart, linearEnd } = this.getLinearLoopPoints();
+            
+            Tone.Transport.setLoopPoints(`${linearStart}m`, `${linearEnd}m`);
+
+            const currentMeasure = Math.floor(Tone.Transport.ticks / (scoreState.beatsPerMeasure * Tone.Transport.PPQ));
+            if (currentMeasure < linearStart || currentMeasure >= linearEnd) {
+                Tone.Transport.position = `${linearStart}:0:0`;
+                if (window.updatePlayheadPosition) window.updatePlayheadPosition();
+            }
+        } else {
+            Tone.Transport.loop = false;
+        }
     },
 
     schedulePlaybackLoop() {
@@ -232,16 +286,15 @@ createSynthesizers() {
         }
 
         this.loopEventId = Tone.Transport.scheduleRepeat((time) => {
-            const timeStr = Tone.Transport.position.split('.')[0];
-            const parts = timeStr.split(':');
-            const measure = parseInt(parts[0], 10);
+            const parts = Tone.Transport.position.split('.')[0].split(':');
+            const m_linear = parseInt(parts[0], 10);
             const beat = parseInt(parts[1], 10);
             const sixteenth = parseInt(parts[2], 10);
-
             const stepIndex = (beat * scoreState.subdivisions) + sixteenth;
 
-            // Tratamento de fim de partitura sem loop
-            if (!scoreState.loopState.active && measure >= scoreState.measuresCount) {
+            const sequence = this.getPlaybackSequence();
+
+            if (m_linear >= sequence.length) {
                 Tone.Draw.schedule(() => {
                     this.stop();
                     const btnPlay = document.getElementById("btn-play");
@@ -252,61 +305,34 @@ createSynthesizers() {
                 return;
             }
 
-            scoreState.instruments.forEach(inst => {
-                // Ignora instrumento caso esteja oculto
-                if (inst.hidden) return;
+            const actualMeasure = sequence[m_linear];
 
-                if (inst.pattern && inst.pattern[measure]) {
-                    const stroke = inst.pattern[measure][stepIndex];
-                    if (stroke) {
-                        this.triggerStroke(inst, stroke, time);
-                    }
+            scoreState.instruments.forEach(inst => {
+                if (inst.hidden) return;
+                if (inst.pattern && inst.pattern[actualMeasure]) {
+                    const stroke = inst.pattern[actualMeasure][stepIndex];
+                    if (stroke) this.triggerStroke(inst, stroke, time);
                 }
             });
         }, "16n");
     },
 
-    updateTransportSettings() {
-        if (!this.isInitialized) return;
-        Tone.Transport.bpm.value = scoreState.bpm;
-
-        // Clamping da posição atual caso compassos tenham sido deletados durante a reprodução
-        const currentMeasure = parseInt(Tone.Transport.position.split(':')[0], 10);
-        if (currentMeasure >= scoreState.measuresCount) {
-            Tone.Transport.position = scoreState.loopState.active
-                ? `${scoreState.loopState.startMeasure}:0:0`
-                : "0:0:0";
-            if (window.updatePlayheadPosition) window.updatePlayheadPosition();
-        }
-
-        if (scoreState.loopState.active) {
-            Tone.Transport.loop = true;
-            Tone.Transport.setLoopPoints(
-                `${scoreState.loopState.startMeasure}m`,
-                `${scoreState.loopState.endMeasure}m`
-            );
-
-            if (currentMeasure < scoreState.loopState.startMeasure || currentMeasure >= scoreState.loopState.endMeasure) {
-                Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
-                if (window.updatePlayheadPosition) window.updatePlayheadPosition();
-            }
-        } else {
-            Tone.Transport.loop = false;
-        }
-    },
-
     async start() {
         if (!this.isInitialized) this.init();
         await Tone.start();
+        
         this.updateTransportSettings();
+        this.schedulePlaybackLoop();
 
         if (!this.isPaused && scoreState.loopState.active) {
-            Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
+            const { linearStart } = this.getLinearLoopPoints();
+            Tone.Transport.position = `${linearStart}:0:0`;
         }
 
         Tone.Transport.start();
         this.isPlaying = true;
         this.isPaused = false;
+        
         if (window.startPlayheadAnimation) window.startPlayheadAnimation();
     },
 
@@ -323,8 +349,11 @@ createSynthesizers() {
         this.isPlaying = false;
         this.isPaused = false;
 
+        this.schedulePlaybackLoop();
+
         if (scoreState.loopState.active) {
-            Tone.Transport.position = `${scoreState.loopState.startMeasure}:0:0`;
+            const { linearStart } = this.getLinearLoopPoints();
+            Tone.Transport.position = `${linearStart}:0:0`;
         } else {
             Tone.Transport.position = "0:0:0";
         }

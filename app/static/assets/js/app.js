@@ -3,6 +3,8 @@ let currentArrangementId = null;
 let copiedMeasureData = null;
 let activeMeasureMenuIndex = null;
 
+window.addEventListener("resize", renderRepeats);
+
 // ==========================================
 // 1. DICIONÁRIO DE ARTICULAÇÕES E METADADOS
 // ==========================================
@@ -97,18 +99,19 @@ function getVolumeIcon(vol) {
 // 2. MODELAGEM DO ESTADO (scoreState)
 // ==========================================
 
-const scoreState = {
-    title: "Bossa Nova Principal",
-    bpm: 120,
-    measuresCount: 3,
+let scoreState = {
+    title: "Novo arranjo",
+    bpm: 90,
+    measuresCount: 1,
     beatsPerMeasure: 4,
     subdivisions: 4,
+    repeats: [],
 
     // Novo estado de loop magnético
     loopState: {
         active: false,
         startMeasure: 0,
-        endMeasure: 3
+        endMeasure: 1
     },
 
     activeTool: {
@@ -222,12 +225,28 @@ function renderScore() {
     for (let m = 0; m < scoreState.measuresCount; m++) {
         const header = document.createElement("div");
         header.className = "measure-header";
+
+        // Verifica o estado do ritornelo para o compasso m
+        const activeRepeat = scoreState.repeats?.find(r => m >= r.start && m <= r.end);
+        const isRepeatEnd = activeRepeat && activeRepeat.end === m;
+        const isInsideRepeat = activeRepeat && !isRepeatEnd; // Está no meio do ritornelo
+
         header.innerHTML = `
-      <span>Compasso ${m + 1}</span>
-      <button type="button" class="measure-menu-btn" data-measure-index="${m}" title="Opções do Compasso">
-        <img src="assets/icons/more-vertical.svg" alt="Opções">
-      </button>
-    `;
+          <span>Compasso ${m + 1}</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            ${!isInsideRepeat ? `
+            <button type="button" class="measure-loop-btn ${isRepeatEnd ? 'active' : ''}" data-measure-index="${m}" title="Ativar/Desativar Ritornelo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                    <path d="M21 3v5h-5"></path>
+                </svg>
+            </button>
+            ` : ''}
+            <button type="button" class="measure-menu-btn" data-measure-index="${m}" title="Opções do Compasso">
+              <img src="assets/icons/more-vertical.svg" alt="Opções">
+            </button>
+          </div>
+        `;
         measuresTrack.appendChild(header);
     }
 
@@ -342,10 +361,103 @@ function renderScore() {
     });
 
     updateToolbarPalettes();
+    renderRepeats();
 
     if (window.audioEngine && audioEngine.isInitialized) {
         audioEngine.updateTransportSettings();
     }
+}
+
+function renderRepeats() {
+    const measuresTrack = document.getElementById("measures-track");
+    if (!measuresTrack) return;
+
+    // 1. Limpa ritornelos desenhados anteriormente
+    measuresTrack.querySelectorAll(".repeat-container").forEach(el => el.remove());
+
+    if (!scoreState.repeats || scoreState.repeats.length === 0) return;
+
+    const measureHeaders = measuresTrack.querySelectorAll(".measure-header");
+    if (measureHeaders.length === 0) return;
+
+    // 2. Renderiza cada ritornelo ativo
+    scoreState.repeats.forEach((repeat) => {
+        const startHeader = measureHeaders[repeat.start];
+        const endHeader = measureHeaders[repeat.end];
+
+        if (!startHeader || !endHeader) return;
+
+        const left = startHeader.offsetLeft;
+        const right = endHeader.offsetLeft + endHeader.offsetWidth;
+        const width = right - left;
+
+        const canShrink = repeat.end > repeat.start;
+
+        const container = document.createElement("div");
+        container.className = "repeat-container";
+        container.style.left = `${left}px`;
+        container.style.width = `${width}px`;
+
+        container.innerHTML = `
+            <div class="repeat-line-top"></div>
+            <div class="repeat-start-bar"></div>
+            <div class="repeat-loop-arrow"></div>
+            <div class="repeat-control-pill" data-repeat-id="${repeat.id}">
+                ${canShrink ? '<button type="button" class="repeat-btn btn-repeat-shrink" title="Reduzir 1 Compasso">|←</button>' : ''}
+                <button type="button" class="repeat-btn btn-repeat-minus" title="Diminuir Repetições">−</button>
+                <span class="repeat-times-text">${repeat.times}x</span>
+                <button type="button" class="repeat-btn btn-repeat-plus" title="Aumentar Repetições">+</button>
+                <button type="button" class="repeat-btn btn-repeat-extend" title="Expandir 1 Compasso">→|</button>
+            </div>
+        `;
+
+        measuresTrack.appendChild(container);
+    });
+}
+
+function setupRepeatControlEvents() {
+    const measuresTrack = document.getElementById("measures-track");
+    if (!measuresTrack) return;
+
+    measuresTrack.addEventListener("click", (e) => {
+        const btnMinus = e.target.closest(".btn-repeat-minus");
+        const btnPlus = e.target.closest(".btn-repeat-plus");
+        const btnExtend = e.target.closest(".btn-repeat-extend");
+        const btnShrink = e.target.closest(".btn-repeat-shrink");
+
+        if (!btnMinus && !btnPlus && !btnExtend && !btnShrink) return;
+
+        e.stopPropagation();
+        e.preventDefault();
+
+        const pill = e.target.closest(".repeat-control-pill");
+        if (!pill) return;
+
+        const repeatId = pill.dataset.repeatId;
+        const repeat = scoreState.repeats.find(r => r.id === repeatId);
+        if (!repeat) return;
+
+        historyManager.pushState();
+
+        if (btnMinus) {
+            repeat.times -= 1;
+            if (repeat.times <= 1) {
+                scoreState.repeats = scoreState.repeats.filter(r => r.id !== repeatId);
+            }
+        } else if (btnPlus) {
+            repeat.times += 1;
+        } else if (btnExtend) {
+            if (repeat.end < scoreState.measuresCount - 1) {
+                repeat.end += 1;
+            }
+        } else if (btnShrink) {
+            if (repeat.end > repeat.start) {
+                repeat.end -= 1;
+            }
+        }
+
+        renderScore();
+    });
 }
 
 // ==========================================
@@ -714,6 +826,68 @@ function addMeasureToEnd() {
     });
     scoreState.measuresCount++;
     renderScore();
+}
+
+function deleteMeasure(index) {
+    if (scoreState.measuresCount <= 1) return; // Mantém pelo menos 1 compasso
+
+    // Remove o compasso do padrão de todos os instrumentos
+    scoreState.instruments.forEach(inst => {
+        if (inst.pattern && inst.pattern.length > index) {
+            inst.pattern.splice(index, 1);
+        }
+    });
+
+    // Atualiza a contagem geral
+    scoreState.measuresCount -= 1;
+
+    // Remove ou ajusta ritornelos afetados
+    if (scoreState.repeats) {
+        scoreState.repeats = scoreState.repeats
+            .filter(r => !(r.start === index && r.end === index)) // Remove se o ritornelo era só nesse compasso
+            .map(r => {
+                if (r.start > index) r.start -= 1;
+                if (r.end >= index && r.end > 0) r.end -= 1;
+                return r;
+            });
+    }
+
+    renderScore();
+}
+
+function setupMeasureLoopEvents() {
+    const measuresTrack = document.getElementById("measures-track");
+    if (!measuresTrack) return;
+
+    measuresTrack.addEventListener("click", (e) => {
+        const loopBtn = e.target.closest(".measure-loop-btn");
+        if (!loopBtn) return;
+
+        e.stopPropagation();
+        const mIndex = parseInt(loopBtn.dataset.measureIndex, 10);
+        if (isNaN(mIndex)) return;
+
+        if (!scoreState.repeats) scoreState.repeats = [];
+
+        const existingIndex = scoreState.repeats.findIndex(r => mIndex >= r.start && mIndex <= r.end);
+
+        historyManager.pushState();
+
+        if (existingIndex !== -1) {
+            // Se já tem ritornelo, remove
+            scoreState.repeats.splice(existingIndex, 1);
+        } else {
+            // Se não tem, adiciona um ritornelo cobrindo este compasso
+            scoreState.repeats.push({
+                id: `rep-${Date.now()}`,
+                start: mIndex,
+                end: mIndex,
+                times: 2
+            });
+        }
+
+        renderScore();
+    });
 }
 
 function setupHeaderEvents() {
@@ -1146,15 +1320,34 @@ function updatePlayheadPosition() {
     const playhead = document.getElementById("playhead");
     if (!playhead) return;
 
-    const ticksPerMeasure = scoreState.beatsPerMeasure * Tone.Transport.PPQ;
     const measureWidth = 448;
+    const ticksPerMeasure = scoreState.beatsPerMeasure * Tone.Transport.PPQ;
 
-    const currentX = (Tone.Transport.ticks / ticksPerMeasure) * measureWidth;
+    // Obtém a sequência "desdobrada" do áudio
+    const sequence = (window.audioEngine && window.audioEngine.getPlaybackSequence)
+        ? window.audioEngine.getPlaybackSequence()
+        : [];
+
+    if (sequence.length === 0) return;
+
+    // O segredo da fluidez 60FPS: tempo contínuo nativo
+    const ticks = Tone.Transport.ticks;
+    const m_linear = Math.floor(ticks / ticksPerMeasure);
+    const ticks_inside_measure = ticks % ticksPerMeasure;
+
+    if (m_linear >= sequence.length) return; // Fim da música
+
+    // Descobre em qual compasso da tela estamos
+    const visual_measure = sequence[m_linear];
+
+    // Interpolação suave em pixels
+    const currentX = (visual_measure * measureWidth) + ((ticks_inside_measure / ticksPerMeasure) * measureWidth);
+
     playhead.style.transform = `translateX(${currentX}px)`;
 }
 
 function animatePlayhead() {
-    if (!audioEngine.isPlaying) return;
+    if (!window.audioEngine || !window.audioEngine.isPlaying) return;
     updatePlayheadPosition();
     playheadAnimFrameId = requestAnimationFrame(animatePlayhead);
 }
@@ -1165,27 +1358,21 @@ function startPlayheadAnimation() {
 }
 
 function pausePlayheadAnimation() {
-    if (playheadAnimFrameId) {
-        cancelAnimationFrame(playheadAnimFrameId);
-        playheadAnimFrameId = null;
-    }
-    // Mantém a posição visual exata onde pausou
+    if (playheadAnimFrameId) cancelAnimationFrame(playheadAnimFrameId);
+    playheadAnimFrameId = null;
     updatePlayheadPosition();
 }
 
 function stopPlayheadAnimation() {
-    if (playheadAnimFrameId) {
-        cancelAnimationFrame(playheadAnimFrameId);
-        playheadAnimFrameId = null;
-    }
-    // Atualiza a posição para o ponto de reset (0 ou início do loop)
+    if (playheadAnimFrameId) cancelAnimationFrame(playheadAnimFrameId);
+    playheadAnimFrameId = null;
     updatePlayheadPosition();
 }
 
+window.updatePlayheadPosition = updatePlayheadPosition;
 window.startPlayheadAnimation = startPlayheadAnimation;
 window.pausePlayheadAnimation = pausePlayheadAnimation;
 window.stopPlayheadAnimation = stopPlayheadAnimation;
-window.updatePlayheadPosition = updatePlayheadPosition;
 
 // ==========================================
 // 7. HISTÓRICO
@@ -1620,6 +1807,8 @@ document.addEventListener("DOMContentLoaded", () => {
     setupHeaderEvents();
     setupTransportEvents();
     setupMeasureMenuEvents();
+    setupMeasureLoopEvents();
+    setupRepeatControlEvents();
     setupInstrumentControlEvents();
     setupLoopEvents();
     setupPersistenceEvents();
