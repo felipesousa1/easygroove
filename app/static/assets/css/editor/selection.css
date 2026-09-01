@@ -1,0 +1,38 @@
+/* Borda da seleção por clique */
+.measure-container.selected::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px dashed var(--color-purple-primary, #31006f);
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 40;
+}
+
+/* Retângulo de seleção em área (Marquee) */
+#selection-marquee {
+  position: absolute;
+  border: 1.5px dashed var(--color-purple-primary, #31006f);
+  background-color: rgba(49, 0, 111, 0.08);
+  pointer-events: none;
+  z-index: 100;
+  display: none;
+  border-radius: 4px;
+}
+
+/* Compasso no Clipboard */
+.measure-container.in-clipboard::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px dashed #f59e0b !important;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 50 !important;
+}

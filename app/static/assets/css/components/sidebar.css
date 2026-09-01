@@ -1,0 +1,318 @@
+.instruments-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  position: sticky;
+  left: 0;
+  z-index: 40;
+  background-color: var(--color-gray-bg);
+  margin-right: 12px;
+  padding-top: 2px;
+}
+
+.sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.instrument-card {
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  border-radius: 12px;
+  padding: 4px 6px 6px 6px;
+  height: 96px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: visible;
+}
+
+.instrument-card:hover {
+  border-color: #94a3b8;
+}
+
+.inst-header-row {
+  width: 100%;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 2px;
+}
+
+.btn-inst-menu {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.instrument-card:hover .btn-inst-menu {
+  opacity: 1;
+}
+
+.btn-inst-menu:hover {
+  background-color: var(--color-gray-hover);
+}
+
+.btn-inst-menu img {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+.inst-icon-img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* Card de Instrumento Ocultado */
+.instrument-card.hidden-track {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: none !important;
+  opacity: 0.7;
+}
+
+.instrument-card.hidden-track .inst-icon-img,
+.instrument-card.hidden-track .btn-mute img {
+  filter: grayscale(1) opacity(0.5) !important;
+}
+
+.instrument-card.hidden-track .inst-name,
+.instrument-card.hidden-track .vol-text {
+  color: #94a3b8 !important;
+}
+
+.instrument-card.hidden-track .vol-slider {
+  filter: grayscale(1) opacity(0.6) !important;
+}
+
+/* Drag and Drop dos cards */
+.instrument-card[draggable="true"] {
+  cursor: grab;
+}
+
+.instrument-card.dragging {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+.instrument-card.drag-over-top {
+  border-top: 2px solid var(--color-purple-primary);
+}
+
+.instrument-card.drag-over-bottom {
+  border-bottom: 2px solid var(--color-purple-primary);
+}
+
+.inst-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+  line-height: 1.1;
+  cursor: pointer;
+  pointer-events: none !important;
+}
+
+.inst-name-input {
+  width: 90%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  text-align: center;
+  border: 1px solid var(--color-purple-primary);
+  border-radius: 4px;
+  padding: 1px 2px;
+  outline: none;
+  background-color: #ffffff;
+}
+
+.inst-volume-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+.btn-mute {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.btn-mute:hover {
+  background-color: var(--color-gray-hover);
+}
+
+.btn-mute img {
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  display: block;
+}
+
+.vol-slider {
+  flex: 1;
+  min-width: 0;
+  height: 4px;
+  margin: 0 4px;
+  accent-color: var(--color-purple-primary);
+  cursor: pointer;
+  display: block;
+}
+
+.vol-display-box {
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.vol-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  line-height: 1;
+  display: inline-block;
+  transition: color 0.15s ease;
+}
+
+.vol-display-box:hover .vol-text {
+  color: var(--color-purple-primary);
+}
+
+.vol-direct-input {
+  width: 100%;
+  border: 1px solid var(--color-purple-primary);
+  border-radius: 4px;
+  padding: 1px 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  background-color: #ffffff;
+  line-height: 1;
+}
+
+.btn-add-instrument {
+  width: 100%;
+  height: 44px;
+  background-color: #ffffff;
+  border: 1.5px dashed var(--color-gray-border);
+  border-radius: 10px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.btn-add-instrument:hover {
+  border-color: var(--color-purple-primary);
+  color: var(--color-purple-primary);
+  background-color: #f5f0ff;
+}
+
+.add-instrument-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 180px;
+  display: none !important;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 110;
+}
+
+.add-instrument-menu.visible {
+  display: flex !important;
+}
+
+.instrument-selector-wrapper {
+  position: relative;
+}
+
+.instrument-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  padding: 6px;
+  min-width: 180px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 110;
+}
+
+.instrument-dropdown-menu.visible {
+  display: flex;
+}
+
+.inst-dropdown-item {
+  background: none;
+  border: none;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.1s ease;
+}
+
+.inst-dropdown-item:hover {
+  background-color: var(--color-gray-hover);
+}
+
+.inst-dropdown-item.active {
+  background-color: #f5f0ff;
+  color: var(--color-purple-primary);
+  font-weight: 700;
+}

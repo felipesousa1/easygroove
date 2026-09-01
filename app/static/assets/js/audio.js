@@ -1,6 +1,8 @@
-// audio.js - MOTOR DE ÁUDIO (TONE.JS)
+// assets/js/audio.js - MOTOR DE ÁUDIO (TONE.JS)
 
-const audioEngine = {
+import { scoreState } from './state.js';
+
+export const audioEngine = {
     isPlaying: false,
     isPaused: false,
     isInitialized: false,
@@ -44,12 +46,10 @@ const audioEngine = {
     },
 
     createSynthesizers() {
-        // Criamos configurações base para reutilizar sem alterar o som original
         const surdoConfig = {
             pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" },
             envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.5 }
         };
-        // Cada surdo ganha seu próprio synth
         this.synths.surdo1 = new Tone.MembraneSynth(surdoConfig);
         this.synths.surdo2 = new Tone.MembraneSynth(surdoConfig);
         this.synths.surdo3 = new Tone.MembraneSynth(surdoConfig);
@@ -73,7 +73,6 @@ const audioEngine = {
             frequency: 320, envelope: { attack: 0.001, decay: 0.06, release: 0.05 },
             harmonicity: 4.1, modulationIndex: 28, resonance: 2500, octaves: 1.2
         };
-        // Caixa e Repique ganham Rimshots independentes
         this.synths.rimshotCaixa = new Tone.MetalSynth(rimshotConfig);
         this.synths.rimshotRepique = new Tone.MetalSynth(rimshotConfig);
 
@@ -81,11 +80,9 @@ const audioEngine = {
             pitchDecay: 0.01, octaves: 2, oscillator: { type: "square" },
             envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.04 }
         };
-        // Caixa e Repique ganham Aros independentes
         this.synths.aroCaixa = new Tone.MembraneSynth(aroConfig);
         this.synths.aroRepique = new Tone.MembraneSynth(aroConfig);
 
-        // Chocalho e Tamborim (originais)
         this.chocalhoFilter = new Tone.Filter(3500, "highpass").toDestination();
         this.synths.chocalho = new Tone.NoiseSynth({
             noise: { type: "pink" },
@@ -221,7 +218,6 @@ const audioEngine = {
         this.triggerStroke(effectiveInst, strokeType, Tone.now());
     },
 
-    // Retorna a ordem real de compassos a serem executados considerando os ritornelos
     getPlaybackSequence() {
         const sequence = [];
         let m = 0;
@@ -245,7 +241,6 @@ const audioEngine = {
         return sequence;
     },
 
-    // Converte os limites visuais do Loop Magnético para os limites da sequência desdobrada
     getLinearLoopPoints() {
         const sequence = this.getPlaybackSequence();
         
@@ -362,4 +357,4 @@ const audioEngine = {
     }
 };
 
-window.audioEngine = audioEngine;   
+window.audioEngine = audioEngine;

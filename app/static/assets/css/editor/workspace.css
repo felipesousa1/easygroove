@@ -1,0 +1,70 @@
+.workspace-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.score-viewport {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  background-color: var(--color-gray-bg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.sticky-top-track {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: var(--color-gray-bg);
+  padding: 16px 40px 8px 24px;
+  width: max-content;
+}
+
+.corner-header-spacer {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.measures-track {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  position: relative;
+}
+
+.workspace-body {
+  display: flex;
+  padding: 4px 40px 140px 24px;
+  width: max-content;
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 2px;
+  background-color: var(--color-purple-loop);
+  pointer-events: none;
+  z-index: 60;
+  transform: translateX(0);
+  will-change: transform;
+}
+
+.playhead::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -5px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-purple-loop);
+  border-radius: 50%;
+}

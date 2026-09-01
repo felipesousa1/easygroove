@@ -1,0 +1,23 @@
+#toast-notification {
+  position: fixed;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 10000;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+#toast-notification.toast-success {
+  background-color: var(--color-purple-primary, #31006f);
+  color: #ffffff;
+}
+
+#toast-notification.toast-error {
+  background-color: #dc2626;
+  color: #ffffff;
+}

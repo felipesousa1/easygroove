@@ -1,0 +1,13 @@
+:root {
+  --color-purple-primary: #31006f;
+  --color-purple-loop: #31006f;
+  --color-purple-light: rgba(74, 0, 175, 0.12);
+  --color-gray-bg: #eef2f6;
+  --color-gray-border: #cbd5e1;
+  --color-gray-bar: #cbd5e1;
+  --color-gray-hover: #e2e8f0;
+  --color-text-main: #0f172a;
+  --color-text-muted: #475569;
+  --color-black: #0f172a;
+  --sidebar-width: 160px;
+}

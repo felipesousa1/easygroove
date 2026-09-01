@@ -1,0 +1,324 @@
+import { scoreState, createEmptyMeasure } from '../state.js';
+import { getVolumeIcon } from '../constants.js';
+import { createBeamsSVG, getStrokeVisual } from './beams.js';
+import { updateToolbarPalettes, selectActiveInstrument } from './toolbar.js';
+import { renderRepeats } from './repeat.js';
+import { updateLoopBarVisuals } from './loop.js';
+import { historyManager } from '../history.js';
+
+export function renderScore() {
+    const measuresTrack = document.getElementById("measures-track");
+    const sidebarList = document.getElementById("instruments-sidebar-list");
+    const scoreGrid = document.getElementById("score-grid");
+
+    if (!measuresTrack || !sidebarList || !scoreGrid) return;
+
+    const titleDisplay = document.getElementById("title-display");
+    const bpmInput = document.getElementById("bpm-input");
+    if (titleDisplay) titleDisplay.textContent = scoreState.title;
+    if (bpmInput) bpmInput.value = scoreState.bpm;
+
+    measuresTrack.innerHTML = "";
+    for (let m = 0; m < scoreState.measuresCount; m++) {
+        const header = document.createElement("div");
+        header.className = "measure-header";
+
+        const activeRepeat = scoreState.repeats?.find(r => m >= r.start && m <= r.end);
+        const isRepeatEnd = activeRepeat && activeRepeat.end === m;
+        const isInsideRepeat = activeRepeat && !isRepeatEnd;
+
+        header.innerHTML = `
+          <span>Compasso ${m + 1}</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            ${!isInsideRepeat ? `
+            <button type="button" class="measure-loop-btn ${isRepeatEnd ? 'active' : ''}" data-measure-index="${m}" title="Ativar/Desativar Ritornelo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                    <path d="M21 3v5h-5"></path>
+                </svg>
+            </button>
+            ` : ''}
+            <button type="button" class="measure-menu-btn" data-measure-index="${m}" title="Opções do Compasso">
+              <img src="assets/icons/more-vertical.svg" alt="Opções">
+            </button>
+          </div>
+        `;
+        measuresTrack.appendChild(header);
+    }
+
+    const btnAddTrack = document.createElement("button");
+    btnAddTrack.type = "button";
+    btnAddTrack.className = "btn-add-measure-track";
+    btnAddTrack.innerHTML = "+ Compasso";
+    btnAddTrack.addEventListener("click", () => addMeasureToEnd());
+    measuresTrack.appendChild(btnAddTrack);
+
+    const loopBar = document.createElement("div");
+    loopBar.id = "loop-bar";
+    loopBar.className = `loop-bar-container ${scoreState.loopState.active ? 'active' : ''}`;
+    loopBar.innerHTML = `
+        <div class="loop-handle left" data-handle="left"></div>
+        <div class="loop-handle right" data-handle="right"></div>
+    `;
+    measuresTrack.appendChild(loopBar);
+    updateLoopBarVisuals();
+
+    sidebarList.querySelectorAll(".instrument-card").forEach(el => el.remove());
+    const addInstWrapper = sidebarList.querySelector("div");
+
+    scoreState.instruments.forEach((inst, index) => {
+        while (inst.pattern.length < scoreState.measuresCount) {
+            inst.pattern.push(createEmptyMeasure());
+        }
+
+        const card = document.createElement("div");
+        card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
+        card.dataset.instrumentId = inst.id;
+        card.dataset.instIndex = index;
+        card.draggable = true;
+
+        card.innerHTML = `
+        <div class="inst-header-row">
+            <span></span>
+            <button type="button" class="btn-inst-menu" data-inst-id="${inst.id}" title="Opções do Instrumento">
+            <img src="assets/icons/more-vertical.svg" alt="Opções">
+            </button>
+        </div>
+
+        <img src="${inst.iconSvg}" class="inst-icon-img" alt="${inst.name}">
+        <span class="inst-name" title="Duplo clique para renomear">${inst.name}</span>
+        <input type="text" class="inst-name-input" value="${inst.name}" style="display:none;" maxlength="20">
+
+        <div class="inst-volume-row">
+            <button type="button" class="btn-mute" data-inst-id="${inst.id}" title="Mute / Desmutar">
+            <img src="${getVolumeIcon(inst.volume)}" alt="Volume">
+            </button>
+            <input type="range" class="vol-slider" min="0" max="100" value="${inst.volume}" data-inst-id="${inst.id}">
+            
+            <div class="vol-display-box" data-inst-id="${inst.id}" title="Clique para editar valor">
+            <span class="vol-text">${inst.volume}%</span>
+            <input type="number" class="vol-direct-input" min="0" max="100" value="${inst.volume}" style="display: none;">
+            </div>
+        </div>
+        `;
+
+        if (addInstWrapper) {
+            sidebarList.insertBefore(card, addInstWrapper);
+        } else {
+            sidebarList.appendChild(card);
+        }
+    });
+
+    scoreGrid.querySelectorAll(".score-row").forEach(el => el.remove());
+
+    scoreState.instruments.forEach((inst, instIndex) => {
+        const row = document.createElement("div");
+        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
+        row.dataset.instrumentId = inst.id;
+
+        for (let m = 0; m < scoreState.measuresCount; m++) {
+            const measureContainer = document.createElement("div");
+
+            const isSelected = scoreState.selectedSelection?.some(
+                s => s.instId === inst.id && s.measureIndex === m
+            );
+
+            const isInClipboard = window.selectionClipboard &&
+                window.selectionClipboard.instId === inst.id &&
+                window.selectionClipboard.measures &&
+                window.selectionClipboard.measures.includes(m);
+
+            let classes = ["measure-container"];
+            if (isSelected) classes.push("selected");
+            if (isInClipboard) classes.push("in-clipboard");
+
+            measureContainer.className = classes.join(" ");
+            measureContainer.dataset.instId = inst.id;
+            measureContainer.dataset.measureIndex = m;
+
+            const measurePattern = inst.pattern[m] || createEmptyMeasure();
+
+            for (let b = 0; b < scoreState.beatsPerMeasure; b++) {
+                const beatGroup = document.createElement("div");
+                beatGroup.className = "beat-group";
+                beatGroup.innerHTML = createBeamsSVG();
+
+                const slotsBar = document.createElement("div");
+                slotsBar.className = "slots-bar";
+
+                for (let s = 0; s < scoreState.subdivisions; s++) {
+                    const stepIndex = (b * scoreState.subdivisions) + s;
+                    const stroke = measurePattern[stepIndex] || null;
+                    const visual = getStrokeVisual(stroke);
+
+                    const slot = document.createElement("div");
+                    slot.className = `note-slot ${visual.className}`;
+                    slot.innerHTML = visual.content;
+                    slot.dataset.instIndex = instIndex;
+                    slot.dataset.measure = m;
+                    slot.dataset.step = stepIndex;
+
+                    slotsBar.appendChild(slot);
+                }
+
+                beatGroup.appendChild(slotsBar);
+                measureContainer.appendChild(beatGroup);
+            }
+
+            row.appendChild(measureContainer);
+        }
+
+        scoreGrid.appendChild(row);
+    });
+
+    updateToolbarPalettes();
+    renderRepeats();
+
+    if (window.audioEngine && audioEngine.isInitialized) {
+        audioEngine.updateTransportSettings();
+    }
+}
+
+export function addMeasureToEnd() {
+    historyManager.pushState();
+    scoreState.instruments.forEach(inst => {
+        inst.pattern.push(createEmptyMeasure());
+    });
+    scoreState.measuresCount++;
+    renderScore();
+}
+
+export function setupGridEvents() {
+    const scoreGrid = document.getElementById("score-grid");
+    if (!scoreGrid) return;
+
+    scoreGrid.addEventListener("click", (e) => {
+        const slot = e.target.closest(".note-slot");
+        if (!slot) return;
+
+        const instIndex = parseInt(slot.dataset.instIndex, 10);
+        const measure = parseInt(slot.dataset.measure, 10);
+        const step = parseInt(slot.dataset.step, 10);
+
+        const instrument = scoreState.instruments[instIndex];
+        if (!instrument || !instrument.pattern[measure]) return;
+
+        if (scoreState.activeTool.instrumentId !== instrument.id) {
+            selectActiveInstrument(instrument.id);
+        }
+
+        const currentStroke = instrument.pattern[measure][step];
+        const targetStroke = scoreState.activeTool.strokeType;
+        const nextStroke = (currentStroke === targetStroke) ? null : targetStroke;
+
+        if (currentStroke !== nextStroke) {
+            historyManager.pushState();
+
+            instrument.pattern[measure][step] = nextStroke;
+
+            const visual = getStrokeVisual(nextStroke);
+            slot.className = `note-slot ${visual.className}`;
+            slot.innerHTML = visual.content;
+
+            if (nextStroke && window.audioEngine) {
+                audioEngine.previewStroke(instrument.id, nextStroke);
+            }
+        }
+    });
+}
+
+export function setupHeaderEvents() {
+    const bpmInput = document.getElementById("bpm-input");
+    if (bpmInput) {
+        bpmInput.addEventListener("change", (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 40 && val <= 260) {
+                scoreState.bpm = val;
+            } else {
+                e.target.value = scoreState.bpm;
+            }
+        });
+    }
+
+    const titleDisplay = document.getElementById("title-display");
+    const titleInput = document.getElementById("title-input");
+    const btnEditTitle = document.getElementById("btn-edit-title");
+
+    if (titleDisplay && titleInput && btnEditTitle) {
+        function startEditingTitle() {
+            titleInput.value = scoreState.title;
+            titleDisplay.style.display = "none";
+            btnEditTitle.style.display = "none";
+            titleInput.style.display = "inline-block";
+            titleInput.focus();
+            titleInput.select();
+        }
+
+        function saveTitle() {
+            const newTitle = titleInput.value.trim() || "Sem Título";
+            scoreState.title = newTitle;
+            titleDisplay.textContent = newTitle;
+            titleDisplay.style.display = "inline-block";
+            btnEditTitle.style.display = "inline-flex";
+            titleInput.style.display = "none";
+        }
+
+        function cancelTitleEdit() {
+            titleDisplay.style.display = "inline-block";
+            btnEditTitle.style.display = "inline-flex";
+            titleInput.style.display = "none";
+        }
+
+        btnEditTitle.addEventListener("click", startEditingTitle);
+        titleDisplay.addEventListener("dblclick", startEditingTitle);
+
+        titleInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                saveTitle();
+            } else if (e.key === "Escape") {
+                cancelTitleEdit();
+            }
+        });
+
+        titleInput.addEventListener("blur", saveTitle);
+    }
+}
+
+export function setupTransportEvents() {
+    const btnPlay = document.getElementById("btn-play");
+    const btnStop = document.getElementById("btn-stop");
+    const bpmInput = document.getElementById("bpm-input");
+    const playIconImg = document.getElementById("play-icon-img");
+
+    if (!btnPlay || !btnStop) return;
+
+    btnPlay.addEventListener("click", async () => {
+        if (!audioEngine.isPlaying) {
+            await audioEngine.start();
+            btnPlay.classList.add("active");
+            if (playIconImg) playIconImg.src = "assets/icons/pause.svg";
+        } else {
+            audioEngine.pause();
+            btnPlay.classList.remove("active");
+            if (playIconImg) playIconImg.src = "assets/icons/play.svg";
+        }
+    });
+
+    btnStop.addEventListener("click", () => {
+        audioEngine.stop();
+        btnPlay.classList.remove("active");
+        if (playIconImg) playIconImg.src = "assets/icons/play.svg";
+    });
+
+    if (bpmInput) {
+        bpmInput.addEventListener("input", (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= 40 && val <= 260) {
+                scoreState.bpm = val;
+                if (Tone.Transport) {
+                    Tone.Transport.bpm.value = val;
+                }
+            }
+        });
+    }
+}

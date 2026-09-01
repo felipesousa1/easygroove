@@ -1,0 +1,108 @@
+.floating-editor-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15);
+  border-radius: 50px;
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 90;
+}
+
+.tool-btn {
+  background: none;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: var(--color-text-main);
+  transition: all 0.15s ease;
+}
+
+.tool-btn:hover {
+  background-color: var(--color-gray-hover);
+}
+
+.tool-palette {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-gray-bg);
+  padding: 6px 14px;
+  border-radius: 35px;
+  border: 1px solid var(--color-gray-border);
+}
+
+.palette-inst-badge {
+  background: none;
+  border: none;
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.palette-divider {
+  width: 1.5px;
+  height: 24px;
+  background-color: var(--color-gray-border);
+  margin: 0 6px;
+}
+
+.tool-stroke {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: var(--color-text-main);
+  transition: all 0.15s ease;
+}
+
+.tool-stroke:hover {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.tool-stroke.active {
+  background-color: var(--color-purple-primary);
+  color: #ffffff !important;
+}
+
+.tool-stroke.active img,
+.tool-stroke.active svg {
+  filter: brightness(0) invert(1);
+}
+
+.tool-stroke.active .stroke-dot {
+  background-color: #ffffff !important;
+}
+
+.tool-stroke.active .stroke-ring {
+  border-color: #ffffff !important;
+}
+
+.tool-stroke.active .stroke-ring-accent {
+  border-color: #ffffff !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 1.5px var(--color-purple-primary) inset !important;
+}
