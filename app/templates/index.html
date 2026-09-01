@@ -126,6 +126,24 @@
 
     <!-- Menu Dropdown de Compasso -->
     <div id="measure-dropdown" class="measure-dropdown-menu">
+        <!-- NOVO: Seletor de Métrica da Coluna -->
+        <div class="dropdown-item"
+            style="cursor: default; background: transparent; padding-top: 4px; padding-bottom: 4px;">
+            <span>⏱️ Métrica:</span>
+            <select id="measure-timesig-select" class="bpm-input"
+                style="width: 70px; margin-left: auto; height: 26px; font-size: 0.8rem; padding: 0 4px; cursor: pointer;">
+                <option value="4/4">4/4</option>
+                <option value="2/4">2/4</option>
+                <option value="3/4">3/4</option>
+                <option value="5/4">5/4</option>
+                <option value="7/4">7/4</option>
+                <option value="6/8">6/8</option>
+                <option value="9/8">9/8</option>
+                <option value="12/8">12/8</option>
+            </select>
+        </div>
+        <div class="dropdown-divider"></div>
+
         <button type="button" class="dropdown-item" data-action="copy">📋 Copiar Compasso</button>
         <button type="button" class="dropdown-item" data-action="paste">📥 Colar Compasso</button>
         <div class="dropdown-divider"></div>

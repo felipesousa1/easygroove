@@ -1,4 +1,5 @@
 import { scoreState } from '../state.js';
+import { TIME_SIGNATURES } from '../constants.js';
 
 export function updateLoopBarVisuals() {
     const loopBar = document.getElementById("loop-bar");
@@ -11,9 +12,24 @@ export function updateLoopBarVisuals() {
         scoreState.loopState.startMeasure = Math.max(0, scoreState.loopState.endMeasure - 1);
     }
 
-    const measureWidth = 448;
-    loopBar.style.left = `${scoreState.loopState.startMeasure * measureWidth}px`;
-    loopBar.style.width = `${(scoreState.loopState.endMeasure - scoreState.loopState.startMeasure) * measureWidth}px`;
+    // Calcula o deslocamento X até o compasso inicial
+    let startX = 0;
+    for (let m = 0; m < scoreState.loopState.startMeasure; m++) {
+        const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+        const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+        startX += cfg.beats * 112;
+    }
+
+    // Calcula a largura cobrindo os compassos do loop
+    let loopWidth = 0;
+    for (let m = scoreState.loopState.startMeasure; m < scoreState.loopState.endMeasure; m++) {
+        const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+        const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+        loopWidth += cfg.beats * 112;
+    }
+
+    loopBar.style.left = `${startX}px`;
+    loopBar.style.width = `${loopWidth}px`;
 
     if (scoreState.loopState.active) {
         loopBar.classList.add("active");
@@ -64,11 +80,11 @@ export function setupLoopEvents() {
         if (!draggingMode || !measuresTrack) return;
 
         const rect = measuresTrack.getBoundingClientRect();
-        const measureWidth = 448;
 
         if (draggingMode === "body") {
             const deltaX = e.clientX - dragStartX;
-            const measureShift = Math.round(deltaX / measureWidth);
+            // Aproximação por largura média de 448px (4 tempos)
+            const measureShift = Math.round(deltaX / 448); 
             const loopLength = initialEnd - initialStart;
 
             let newStart = initialStart + measureShift;
@@ -88,9 +104,21 @@ export function setupLoopEvents() {
             return;
         }
 
+        // Seleção de bordas (handles)
         const x = e.clientX - rect.left;
-        let targetMeasure = Math.round(x / measureWidth);
-        targetMeasure = Math.max(0, Math.min(scoreState.measuresCount, targetMeasure));
+        
+        let accumulatedX = 0;
+        let targetMeasure = 0;
+        for (let m = 0; m < scoreState.measuresCount; m++) {
+            const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+            const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+            const w = cfg.beats * 112;
+            
+            if (x >= accumulatedX + (w / 2)) {
+                targetMeasure = m + 1;
+            }
+            accumulatedX += w;
+        }
 
         if (draggingMode === "left") {
             if (targetMeasure < scoreState.loopState.endMeasure) {

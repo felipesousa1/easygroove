@@ -1,3 +1,5 @@
+import { TIME_SIGNATURES, INSTRUMENT_PRESETS } from './constants.js';
+
 export let currentArrangementId = null;
 export function setCurrentArrangementId(id) { currentArrangementId = id; }
 
@@ -13,11 +15,12 @@ export function setSelectionClipboard(data) {
 export const scoreState = {
     title: "Novo arranjo",
     bpm: 90,
+    timeSignature: "4/4",
     measuresCount: 1,
-    beatsPerMeasure: 4,
-    subdivisions: 4,
-    repeats: [],
     selectedSelection: [],
+    measuresConfig: [
+        { timeSignature: "4/4" }
+    ],
     loopState: {
         active: false,
         startMeasure: 0,
@@ -33,7 +36,7 @@ export const scoreState = {
             name: "Surdo 1ª",
             iconSvg: "assets/icons/inst-surdo1.svg",
             volume: 50,
-            availableStrokes: ["pele-aberto", "surdo-abafado"],
+            availableStrokes: [...INSTRUMENT_PRESETS.surdo1.availableStrokes],
             pattern: []
         },
         {
@@ -41,7 +44,7 @@ export const scoreState = {
             name: "Surdo 2ª",
             iconSvg: "assets/icons/inst-surdo2.svg",
             volume: 50,
-            availableStrokes: ["pele-aberto", "surdo-abafado"],
+            availableStrokes: [...INSTRUMENT_PRESETS.surdo2.availableStrokes],
             pattern: []
         },
         {
@@ -49,7 +52,7 @@ export const scoreState = {
             name: "Surdo 3ª",
             iconSvg: "assets/icons/inst-surdo3.svg",
             volume: 50,
-            availableStrokes: ["pele-aberto", "surdo-abafado"],
+            availableStrokes: [...INSTRUMENT_PRESETS.surdo3.availableStrokes],
             pattern: []
         },
         {
@@ -57,7 +60,7 @@ export const scoreState = {
             name: "Caixa",
             iconSvg: "assets/icons/inst-caixa.svg",
             volume: 50,
-            availableStrokes: ["pele-aberto", "fantasma", "aro", "rimshot", "rufo"],
+            availableStrokes: [...INSTRUMENT_PRESETS.caixa.availableStrokes],
             pattern: []
         },
         {
@@ -65,7 +68,7 @@ export const scoreState = {
             name: "Repique",
             iconSvg: "assets/icons/inst-repique.svg",
             volume: 50,
-            availableStrokes: ["pele-aberto", "rimshot", "aro", "slap", "rufo"],
+            availableStrokes: [...INSTRUMENT_PRESETS.repique.availableStrokes],
             pattern: []
         },
         {
@@ -73,7 +76,7 @@ export const scoreState = {
             name: "Chocalho",
             iconSvg: "assets/icons/inst-chocalho.svg",
             volume: 50,
-            availableStrokes: ["chocalho-frente", "chocalho-tras"],
+            availableStrokes: [...INSTRUMENT_PRESETS.chocalho.availableStrokes],
             pattern: []
         },
         {
@@ -81,12 +84,26 @@ export const scoreState = {
             name: "Tamborim",
             iconSvg: "assets/icons/inst-tamborim.svg",
             volume: 50,
-            availableStrokes: ["tamborim-cima", "tamborim-baixo"],
+            availableStrokes: [...INSTRUMENT_PRESETS.tamborim.availableStrokes],
             pattern: []
         }
     ]
 };
 
+// Retorna a estrutura de compasso em Objetos de Tempo
+export function createEmptyMeasureForSig(timeSigKey = scoreState.timeSignature) {
+    const config = TIME_SIGNATURES[timeSigKey] || TIME_SIGNATURES["4/4"];
+    const measureData = [];
+    for (let b = 0; b < config.beats; b++) {
+        measureData.push({
+            subdivisions: config.subdivisions,
+            notes: new Array(config.subdivisions).fill(null)
+        });
+    }
+    return measureData;
+}
+
+// Manter essa função para retrocompatibilidade com o estado padrão "4/4"
 export function createEmptyMeasure() {
-    return new Array(scoreState.beatsPerMeasure * scoreState.subdivisions).fill(null);
+    return createEmptyMeasureForSig(scoreState.timeSignature || "4/4");
 }

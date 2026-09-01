@@ -1,27 +1,36 @@
 import { scoreState, createEmptyMeasure } from '../state.js';
-import { getVolumeIcon } from '../constants.js';
+import { TIME_SIGNATURES, getVolumeIcon } from '../constants.js';
 import { createBeamsSVG, getStrokeVisual } from './beams.js';
 import { updateToolbarPalettes, selectActiveInstrument } from './toolbar.js';
 import { renderRepeats } from './repeat.js';
 import { updateLoopBarVisuals } from './loop.js';
 import { historyManager } from '../history.js';
 
-export function renderScore() {
-    const measuresTrack = document.getElementById("measures-track");
-    const sidebarList = document.getElementById("instruments-sidebar-list");
-    const scoreGrid = document.getElementById("score-grid");
+// ==========================================
+// FUNÇÕES AUXILIARES DE RENDERIZAÇÃO
+// ==========================================
 
-    if (!measuresTrack || !sidebarList || !scoreGrid) return;
-
+function updateHeader() {
     const titleDisplay = document.getElementById("title-display");
     const bpmInput = document.getElementById("bpm-input");
+    
     if (titleDisplay) titleDisplay.textContent = scoreState.title;
     if (bpmInput) bpmInput.value = scoreState.bpm;
+}
 
-    measuresTrack.innerHTML = "";
+function renderMeasuresTrack(trackContainer) {
+    trackContainer.innerHTML = "";
+    
     for (let m = 0; m < scoreState.measuresCount; m++) {
         const header = document.createElement("div");
         header.className = "measure-header";
+
+        // Calcula a largura exata baseada na métrica da coluna
+        const currentSig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+        const config = TIME_SIGNATURES[currentSig] || TIME_SIGNATURES["4/4"];
+        const measureWidth = config.beats * 112; 
+        
+        header.style.width = `${measureWidth}px`;
 
         const activeRepeat = scoreState.repeats?.find(r => m >= r.start && m <= r.end);
         const isRepeatEnd = activeRepeat && activeRepeat.end === m;
@@ -43,15 +52,15 @@ export function renderScore() {
             </button>
           </div>
         `;
-        measuresTrack.appendChild(header);
+        trackContainer.appendChild(header);
     }
 
     const btnAddTrack = document.createElement("button");
     btnAddTrack.type = "button";
     btnAddTrack.className = "btn-add-measure-track";
     btnAddTrack.innerHTML = "+ Compasso";
-    btnAddTrack.addEventListener("click", () => addMeasureToEnd());
-    measuresTrack.appendChild(btnAddTrack);
+    btnAddTrack.addEventListener("click", addMeasureToEnd);
+    trackContainer.appendChild(btnAddTrack);
 
     const loopBar = document.createElement("div");
     loopBar.id = "loop-bar";
@@ -60,9 +69,13 @@ export function renderScore() {
         <div class="loop-handle left" data-handle="left"></div>
         <div class="loop-handle right" data-handle="right"></div>
     `;
-    measuresTrack.appendChild(loopBar);
+    trackContainer.appendChild(loopBar);
+    
     updateLoopBarVisuals();
+    renderRepeats();
+}
 
+function renderSidebar(sidebarList) {
     sidebarList.querySelectorAll(".instrument-card").forEach(el => el.remove());
     const addInstWrapper = sidebarList.querySelector("div");
 
@@ -108,7 +121,9 @@ export function renderScore() {
             sidebarList.appendChild(card);
         }
     });
+}
 
+function renderGrid(scoreGrid) {
     scoreGrid.querySelectorAll(".score-row").forEach(el => el.remove());
 
     scoreState.instruments.forEach((inst, instIndex) => {
@@ -119,14 +134,8 @@ export function renderScore() {
         for (let m = 0; m < scoreState.measuresCount; m++) {
             const measureContainer = document.createElement("div");
 
-            const isSelected = scoreState.selectedSelection?.some(
-                s => s.instId === inst.id && s.measureIndex === m
-            );
-
-            const isInClipboard = window.selectionClipboard &&
-                window.selectionClipboard.instId === inst.id &&
-                window.selectionClipboard.measures &&
-                window.selectionClipboard.measures.includes(m);
+            const isSelected = scoreState.selectedSelection?.some(s => s.instId === inst.id && s.measureIndex === m);
+            const isInClipboard = window.selectionClipboard?.instId === inst.id && window.selectionClipboard?.measures?.includes(m);
 
             let classes = ["measure-container"];
             if (isSelected) classes.push("selected");
@@ -136,19 +145,27 @@ export function renderScore() {
             measureContainer.dataset.instId = inst.id;
             measureContainer.dataset.measureIndex = m;
 
-            const measurePattern = inst.pattern[m] || createEmptyMeasure();
+            // Busca a métrica específica desta coluna (Bloco 8)
+            const currentSig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+            const config = TIME_SIGNATURES[currentSig] || TIME_SIGNATURES["4/4"];
+            const measureWidth = config.beats * 112; // ORDEM CORRIGIDA: declarada após config
+            measureContainer.style.width = `${measureWidth}px`;
 
-            for (let b = 0; b < scoreState.beatsPerMeasure; b++) {
+            const measurePattern = inst.pattern[m] || [];
+
+            for (let b = 0; b < config.beats; b++) {
+                const beatData = measurePattern[b] || { subdivisions: config.subdivisions, notes: new Array(config.subdivisions).fill(null) };
+                const beatSubdivs = beatData.subdivisions;
+
                 const beatGroup = document.createElement("div");
                 beatGroup.className = "beat-group";
-                beatGroup.innerHTML = createBeamsSVG();
+                beatGroup.innerHTML = createBeamsSVG(beatSubdivs);
 
                 const slotsBar = document.createElement("div");
                 slotsBar.className = "slots-bar";
 
-                for (let s = 0; s < scoreState.subdivisions; s++) {
-                    const stepIndex = (b * scoreState.subdivisions) + s;
-                    const stroke = measurePattern[stepIndex] || null;
+                for (let s = 0; s < beatSubdivs; s++) {
+                    const stroke = beatData.notes[s] || null;
                     const visual = getStrokeVisual(stroke);
 
                     const slot = document.createElement("div");
@@ -156,7 +173,8 @@ export function renderScore() {
                     slot.innerHTML = visual.content;
                     slot.dataset.instIndex = instIndex;
                     slot.dataset.measure = m;
-                    slot.dataset.step = stepIndex;
+                    slot.dataset.beat = b;
+                    slot.dataset.step = s;
 
                     slotsBar.appendChild(slot);
                 }
@@ -167,12 +185,26 @@ export function renderScore() {
 
             row.appendChild(measureContainer);
         }
-
         scoreGrid.appendChild(row);
     });
+}
 
+// ==========================================
+// EXPORTS PRINCIPAIS
+// ==========================================
+
+export function renderScore() {
+    const measuresTrack = document.getElementById("measures-track");
+    const sidebarList = document.getElementById("instruments-sidebar-list");
+    const scoreGrid = document.getElementById("score-grid");
+
+    if (!measuresTrack || !sidebarList || !scoreGrid) return;
+
+    updateHeader();
+    renderMeasuresTrack(measuresTrack);
+    renderSidebar(sidebarList);
+    renderGrid(scoreGrid);
     updateToolbarPalettes();
-    renderRepeats();
 
     if (window.audioEngine && audioEngine.isInitialized) {
         audioEngine.updateTransportSettings();
@@ -188,6 +220,10 @@ export function addMeasureToEnd() {
     renderScore();
 }
 
+// ==========================================
+// EVENTOS DE SETUP
+// ==========================================
+
 export function setupGridEvents() {
     const scoreGrid = document.getElementById("score-grid");
     if (!scoreGrid) return;
@@ -198,23 +234,24 @@ export function setupGridEvents() {
 
         const instIndex = parseInt(slot.dataset.instIndex, 10);
         const measure = parseInt(slot.dataset.measure, 10);
+        const beat = parseInt(slot.dataset.beat, 10);
         const step = parseInt(slot.dataset.step, 10);
 
         const instrument = scoreState.instruments[instIndex];
-        if (!instrument || !instrument.pattern[measure]) return;
+        if (!instrument || !instrument.pattern[measure] || !instrument.pattern[measure][beat]) return;
 
         if (scoreState.activeTool.instrumentId !== instrument.id) {
             selectActiveInstrument(instrument.id);
         }
 
-        const currentStroke = instrument.pattern[measure][step];
+        const currentStroke = instrument.pattern[measure][beat].notes[step];
         const targetStroke = scoreState.activeTool.strokeType;
         const nextStroke = (currentStroke === targetStroke) ? null : targetStroke;
 
         if (currentStroke !== nextStroke) {
             historyManager.pushState();
 
-            instrument.pattern[measure][step] = nextStroke;
+            instrument.pattern[measure][beat].notes[step] = nextStroke;
 
             const visual = getStrokeVisual(nextStroke);
             slot.className = `note-slot ${visual.className}`;
@@ -237,6 +274,14 @@ export function setupHeaderEvents() {
             } else {
                 e.target.value = scoreState.bpm;
             }
+        });
+    }
+
+    const globalTimeSigSelect = document.getElementById("global-timesig-select");
+    if (globalTimeSigSelect) {
+        globalTimeSigSelect.value = scoreState.timeSignature || "4/4";
+        globalTimeSigSelect.addEventListener("change", (e) => {
+            scoreState.timeSignature = e.target.value;
         });
     }
 
@@ -273,11 +318,8 @@ export function setupHeaderEvents() {
         titleDisplay.addEventListener("dblclick", startEditingTitle);
 
         titleInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                saveTitle();
-            } else if (e.key === "Escape") {
-                cancelTitleEdit();
-            }
+            if (e.key === "Enter") saveTitle();
+            else if (e.key === "Escape") cancelTitleEdit();
         });
 
         titleInput.addEventListener("blur", saveTitle);

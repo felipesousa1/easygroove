@@ -1,16 +1,33 @@
 import { STROKE_DEFINITIONS } from '../constants.js';
 
-export function createBeamsSVG() {
+export function createBeamsSVG(subdivisionsCount = 4, width = 112) {
+    let linesCount = 2;
+    if (subdivisionsCount === 3) linesCount = 1;
+    if (subdivisionsCount === 8) linesCount = 3;
+
+    const yStart = 3;
+    const lineSpacing = 5.5;
+
+    let linesHTML = "";
+
+    // Traves horizontais
+    for (let i = 0; i < linesCount; i++) {
+        const y = yStart + (i * lineSpacing);
+        linesHTML += `<line x1="14" y1="${y}" x2="${width - 14}" y2="${y}" stroke="currentColor" stroke-width="2.5"/>`;
+    }
+
+    // Hastes verticais
+    const stepWidth = (width - 28) / (subdivisionsCount - 1 || 1);
+    for (let s = 0; s < subdivisionsCount; s++) {
+        const x = 14 + (s * stepWidth);
+        linesHTML += `<line x1="${x}" y1="${yStart}" x2="${x}" y2="28" stroke="currentColor" stroke-width="1.8"/>`;
+    }
+
     return `
-    <svg class="beat-beams" viewBox="0 0 112 28" preserveAspectRatio="none">
-      <line x1="14" y1="3" x2="98" y2="3" stroke="currentColor" stroke-width="2.5"/>
-      <line x1="14" y1="8.5" x2="98" y2="8.5" stroke="currentColor" stroke-width="2.5"/>
-      <line x1="14" y1="3" x2="14" y2="28" stroke="currentColor" stroke-width="1.8"/>
-      <line x1="42" y1="3" x2="42" y2="28" stroke="currentColor" stroke-width="1.8"/>
-      <line x1="70" y1="3" x2="70" y2="28" stroke="currentColor" stroke-width="1.8"/>
-      <line x1="98" y1="3" x2="98" y2="28" stroke="currentColor" stroke-width="1.8"/>
-    </svg>
-  `;
+      <svg class="beat-beams" viewBox="0 0 ${width} 28" preserveAspectRatio="none">
+        ${linesHTML}
+      </svg>
+    `;
 }
 
 export function getStrokeVisual(stroke) {

@@ -1,10 +1,16 @@
 import { scoreState } from '../state.js';
-import { STROKE_DEFINITIONS } from '../constants.js';
+import { STROKE_DEFINITIONS, INSTRUMENT_PRESETS, sanitizeStrokes } from '../constants.js';
 import { historyManager } from '../history.js';
 
 export function updateToolbarPalettes() {
     const currentInst = scoreState.instruments.find(i => i.id === scoreState.activeTool.instrumentId) || scoreState.instruments[0];
     if (!currentInst) return;
+
+    // Higieniza as chaves do instrumento caso venham de um JSON antigo
+    currentInst.availableStrokes = sanitizeStrokes(currentInst.availableStrokes);
+
+    // Se a ferramenta ativa for uma chave antiga, higieniza também
+    scoreState.activeTool.strokeType = sanitizeStrokes([scoreState.activeTool.strokeType])[0];
 
     const activeIconEl = document.getElementById("active-tool-icon");
     const activeNameEl = document.getElementById("active-tool-name");
@@ -27,7 +33,7 @@ export function updateToolbarPalettes() {
             btn.type = "button";
             btn.className = `tool-stroke ${scoreState.activeTool.strokeType === strokeKey ? 'active' : ''}`;
             btn.title = def.label;
-            btn.innerHTML = def.iconHTML;
+            btn.innerHTML = def.iconHTML || def.renderHTML || def.label;
             btn.dataset.strokeKey = strokeKey;
 
             btn.addEventListener("click", () => {
