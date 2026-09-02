@@ -9,8 +9,8 @@ export const audioEngine = {
     isInitialized: false,
     loopEventId: null,
 
-    channels: {}, 
-    synths: {},   
+    channels: {},
+    synths: {},
 
     init() {
         if (this.isInitialized) return;
@@ -20,7 +20,7 @@ export const audioEngine = {
         });
 
         this.createSynthesizers();
-        
+
         Tone.Transport.bpm.value = scoreState.bpm;
         this.isInitialized = true;
     },
@@ -41,7 +41,7 @@ export const audioEngine = {
     setInstrumentVolume(instId, volume) {
         if (this.channels[instId]) {
             const db = this.calculateDb(volume);
-            this.channels[instId].volume.rampTo(db, 0.03); 
+            this.channels[instId].volume.rampTo(db, 0.03);
         }
     },
 
@@ -227,10 +227,10 @@ export const audioEngine = {
         let m = 0;
 
         while (m < scoreState.measuresCount) {
-            const repeat = scoreState.repeats?.find(r => r.start === m);
+            const repeat = scoreState.repeats?.find(r => r.start <= m && r.end >= m);
 
-            if (repeat) {
-                for (let count = 0; count < repeat.times; count++) {
+            if (repeat && repeat.end === m) {
+                for (let count = 0; count < (repeat.times || 2); count++) {
                     for (let stepM = repeat.start; stepM <= repeat.end; stepM++) {
                         sequence.push(stepM);
                     }
@@ -245,21 +245,23 @@ export const audioEngine = {
         return sequence;
     },
 
-    // Calcula o total de ticks até o início e fim do loop
     getLoopTickLimits() {
-        const ppq = Tone.Transport.PPQ; // 192 ticks por tempo
+        const ppq = Tone.Transport.PPQ;
         let startTicks = 0;
         let endTicks = 0;
 
-        for (let m = 0; m < scoreState.measuresCount; m++) {
-            const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+        const sequence = this.getPlaybackSequence();
+
+        for (let i = 0; i < sequence.length; i++) {
+            const mIdx = sequence[i];
+            const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
             const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
             const measureTicks = cfg.beats * ppq;
 
-            if (m < scoreState.loopState.startMeasure) {
+            if (mIdx < scoreState.loopState.startMeasure) {
                 startTicks += measureTicks;
             }
-            if (m < scoreState.loopState.endMeasure) {
+            if (mIdx < scoreState.loopState.endMeasure) {
                 endTicks += measureTicks;
             }
         }
@@ -270,6 +272,18 @@ export const audioEngine = {
     updateTransportSettings() {
         if (!this.isInitialized) return;
         Tone.Transport.bpm.value = scoreState.bpm;
+
+        if (scoreState.loopState.active) {
+            const { startTicks, endTicks } = this.getLoopTickLimits();
+            if (endTicks > startTicks) {
+                // Configura o loop nativo por Ticks do Tone.js (sem engasgo de audio)
+                Tone.Transport.loop = true;
+                Tone.Transport.loopStart = Tone.Time(startTicks, "i").toSeconds();
+                Tone.Transport.loopEnd = Tone.Time(endTicks, "i").toSeconds();
+            }
+        } else {
+            Tone.Transport.loop = false;
+        }
     },
 
     schedulePlaybackLoop() {
@@ -278,27 +292,24 @@ export const audioEngine = {
             this.loopEventId = null;
         }
 
-        const ppq = Tone.Transport.PPQ; // 192 ticks por tempo (quarter note)
+        const ppq = Tone.Transport.PPQ;
 
-        // Executa a verificação a cada fatiamento de tempo/subdivisão (48 ticks = 16ª nota)
         this.loopEventId = Tone.Transport.scheduleRepeat((time) => {
-            const currentTicks = Tone.Transport.ticks;
+            let currentTicks = Math.round(Tone.Transport.ticks);
             const sequence = this.getPlaybackSequence();
 
-            // Gerenciamento Manual de Loop por Ticks
+            // Ajuste nativo de ticks em loop
             if (scoreState.loopState.active) {
                 const { startTicks, endTicks } = this.getLoopTickLimits();
-                if (currentTicks >= endTicks) {
-                    Tone.Transport.ticks = startTicks;
-                    return;
+                const loopDuration = endTicks - startTicks;
+                if (loopDuration > 0 && currentTicks >= startTicks) {
+                    currentTicks = startTicks + ((currentTicks - startTicks) % loopDuration);
                 }
             }
 
-            // Descobre exatamente qual compasso, tempo e sub-posição correspondem aos Ticks Atuais
             let accumulatedTicks = 0;
-            let currentMeasureLinear = -1;
-            let currentBeatInMeasure = 0;
-            let ticksIntoBeat = 0;
+            let currentSequenceIndex = -1;
+            let ticksIntoMeasure = 0;
 
             for (let i = 0; i < sequence.length; i++) {
                 const mIdx = sequence[i];
@@ -307,18 +318,15 @@ export const audioEngine = {
                 const measureTicks = cfg.beats * ppq;
 
                 if (currentTicks >= accumulatedTicks && currentTicks < accumulatedTicks + measureTicks) {
-                    currentMeasureLinear = i;
-                    const ticksInMeasure = currentTicks - accumulatedTicks;
-                    currentBeatInMeasure = Math.floor(ticksInMeasure / ppq);
-                    ticksIntoBeat = ticksInMeasure % ppq;
+                    currentSequenceIndex = i;
+                    ticksIntoMeasure = currentTicks - accumulatedTicks;
                     break;
                 }
 
                 accumulatedTicks += measureTicks;
             }
 
-            // Fim da partitura alcançado (fora do loop)
-            if (currentMeasureLinear === -1) {
+            if (currentSequenceIndex === -1 && !scoreState.loopState.active) {
                 Tone.Draw.schedule(() => {
                     this.stop();
                     const btnPlay = document.getElementById("btn-play");
@@ -329,7 +337,15 @@ export const audioEngine = {
                 return;
             }
 
-            const actualMeasure = sequence[currentMeasureLinear];
+            if (currentSequenceIndex === -1) return;
+
+            const actualMeasure = sequence[currentSequenceIndex];
+            const currentSig = scoreState.measuresConfig?.[actualMeasure]?.timeSignature || scoreState.timeSignature || "4/4";
+            const config = TIME_SIGNATURES[currentSig] || TIME_SIGNATURES["4/4"];
+
+            const currentBeatInMeasure = Math.floor(ticksIntoMeasure / ppq);
+
+            if (currentBeatInMeasure >= config.beats) return;
 
             scoreState.instruments.forEach(inst => {
                 if (inst.hidden) return;
@@ -337,26 +353,24 @@ export const audioEngine = {
                 if (!measureData || !measureData[currentBeatInMeasure]) return;
 
                 const beatObj = measureData[currentBeatInMeasure];
-                const stepTicks = ppq / beatObj.subdivisions; // Ticks por nota (ex: 48 para 4 subdivs, 64 para 3)
-                
-                // Verifica se os ticks atuais alinham com o início de alguma nota deste tempo
-                const stepIndex = Math.round(ticksIntoBeat / stepTicks);
-                const stepStartTick = Math.round(stepIndex * stepTicks);
+                const secondsPerBeat = 60 / scoreState.bpm;
+                const stepTimeInterval = secondsPerBeat / beatObj.subdivisions;
 
-                if (Math.abs(ticksIntoBeat - stepStartTick) < 12) {
-                    const stroke = beatObj.notes[stepIndex];
+                for (let s = 0; s < beatObj.subdivisions; s++) {
+                    const stroke = beatObj.notes[s];
                     if (stroke) {
-                        this.triggerStroke(inst, stroke, time);
+                        const noteTime = time + (s * stepTimeInterval);
+                        this.triggerStroke(inst, stroke, noteTime);
                     }
                 }
             });
-        }, "16n");
+        }, "4n");
     },
 
     async start() {
         if (!this.isInitialized) this.init();
         await Tone.start();
-        
+
         this.updateTransportSettings();
         this.schedulePlaybackLoop();
 
@@ -368,7 +382,7 @@ export const audioEngine = {
         Tone.Transport.start();
         this.isPlaying = true;
         this.isPaused = false;
-        
+
         if (window.startPlayheadAnimation) window.startPlayheadAnimation();
     },
 

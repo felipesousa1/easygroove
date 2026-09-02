@@ -35,8 +35,14 @@ export function setupInstrumentControlEvents() {
     }
 
     if (sidebarList) {
+        // Previne o drag-and-drop do card ao interagir com sliders ou inputs
         sidebarList.addEventListener("dragstart", (e) => {
-            if (e.target.closest(".vol-slider") || e.target.closest("input") || e.target.closest(".vol-display-box")) {
+            if (
+                e.target.closest(".vol-slider") ||
+                e.target.closest("input") ||
+                e.target.closest(".vol-display-box") ||
+                e.target.closest(".btn-inst-menu")
+            ) {
                 e.preventDefault();
                 return;
             }
@@ -48,42 +54,18 @@ export function setupInstrumentControlEvents() {
             e.dataTransfer.effectAllowed = "move";
         });
 
+        // Atualização do Evento de Duplo Clique no Sidebar
         sidebarList.addEventListener("dblclick", (e) => {
             const card = e.target.closest(".instrument-card");
             if (!card) return;
 
             const instId = card.dataset.instrumentId;
-            const nameEl = card.querySelector(".inst-name");
-            const inputEl = card.querySelector(".inst-name-input");
             const inst = scoreState.instruments.find(i => i.id === instId);
 
-            if (!inst || !nameEl || !inputEl) return;
-
-            e.stopPropagation();
-
-            nameEl.style.display = "none";
-            inputEl.style.display = "block";
-            inputEl.focus();
-            inputEl.select();
-
-            function commitName() {
-                const newName = inputEl.value.trim() || inst.name;
-                inst.name = newName;
-                nameEl.textContent = newName;
-                inputEl.style.display = "none";
-                nameEl.style.display = "block";
-                updateToolbarPalettes();
+            if (inst) {
+                e.stopPropagation();
+                startRenameInstrument(card, inst);
             }
-
-            inputEl.onkeydown = (evt) => {
-                if (evt.key === "Enter") commitName();
-                if (evt.key === "Escape") {
-                    inputEl.style.display = "none";
-                    nameEl.style.display = "block";
-                }
-            };
-
-            inputEl.onblur = commitName;
         });
 
         sidebarList.addEventListener("input", (e) => {
@@ -222,6 +204,17 @@ export function setupInstrumentControlEvents() {
             const instIndex = scoreState.instruments.findIndex(i => i.id === activeInstForMenu);
             if (instIndex === -1) return;
 
+            if (action === "rename-inst") {
+                optionsDropdown.classList.remove("visible");
+                const card = document.querySelector(`.instrument-card[data-instrument-id="${activeInstForMenu}"]`);
+                const inst = scoreState.instruments[instIndex];
+                if (card && inst) {
+                    // Pequeno atraso para fechar o menu antes de dar o foco no input
+                    setTimeout(() => startRenameInstrument(card, inst), 50);
+                }
+                return;
+            }
+
             historyManager.pushState();
 
             if (action === "toggle-hide-inst") {
@@ -257,6 +250,53 @@ export function setupInstrumentControlEvents() {
         if (optionsDropdown) optionsDropdown.classList.remove("visible");
         document.querySelectorAll(".volume-popover").forEach(p => p.classList.remove("visible"));
     });
+}
+
+// Função isolada e robusta para ativar a edição do nome
+function startRenameInstrument(card, inst) {
+    const nameEl = card.querySelector(".inst-name");
+    const inputEl = card.querySelector(".inst-name-input");
+
+    if (!nameEl || !inputEl) return;
+
+    nameEl.style.display = "none";
+    inputEl.style.display = "block";
+    inputEl.focus();
+    inputEl.select();
+
+    let isCommitted = false;
+
+    function commitName() {
+        if (isCommitted) return;
+        isCommitted = true;
+
+        const newName = inputEl.value.trim() || inst.name;
+        inst.name = newName;
+        nameEl.textContent = newName;
+        inputEl.style.display = "none";
+        nameEl.style.display = "block";
+
+        updateToolbarPalettes();
+    }
+
+    // Enter confirma, Escape cancela
+    function handleKeyDown(evt) {
+        if (evt.key === "Enter") {
+            evt.preventDefault();
+            commitName();
+            inputEl.blur();
+        } else if (evt.key === "Escape") {
+            evt.preventDefault();
+            isCommitted = true; // Cancela sem alterar
+            inputEl.value = inst.name;
+            inputEl.style.display = "none";
+            nameEl.style.display = "block";
+            inputEl.blur();
+        }
+    }
+
+    inputEl.addEventListener("keydown", handleKeyDown);
+    inputEl.addEventListener("blur", commitName, { once: true });
 }
 
 export function updateInstrumentVolume(instId, volume) {

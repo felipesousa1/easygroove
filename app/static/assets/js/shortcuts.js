@@ -41,7 +41,7 @@ export function setupKeyboardShortcuts() {
 
             if (window.selectionClipboard) {
                 setSelectionClipboard(null);
-                showToast("Área de transferência limpa.");
+                // showToast("Área de transferência limpa.");
                 needsRender = true;
             }
 

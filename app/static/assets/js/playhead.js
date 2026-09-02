@@ -13,13 +13,22 @@ export function updatePlayheadPosition() {
 
     if (sequence.length === 0) return;
 
-    const ppq = Tone.Transport.PPQ; // 192 ticks por tempo
-    const currentTicks = Tone.Transport.ticks;
+    const ppq = Tone.Transport.PPQ;
+    let currentTicks = Tone.Transport.ticks;
+
+    // Normaliza os ticks visuais para o ciclo do loop
+    if (scoreState.loopState.active && window.audioEngine?.getLoopTickLimits) {
+        const { startTicks, endTicks } = window.audioEngine.getLoopTickLimits();
+        const loopDuration = endTicks - startTicks;
+        if (loopDuration > 0 && currentTicks >= startTicks) {
+            currentTicks = startTicks + ((currentTicks - startTicks) % loopDuration);
+        }
+    }
 
     let accumulatedTicks = 0;
-    let targetMeasureLinear = 0;
-    let targetBeatInMeasure = 0;
+    let targetSequenceIndex = 0;
     let ticksIntoBeat = 0;
+    let targetBeatInMeasure = 0;
 
     for (let i = 0; i < sequence.length; i++) {
         const mIdx = sequence[i];
@@ -28,7 +37,7 @@ export function updatePlayheadPosition() {
         const measureTicks = cfg.beats * ppq;
 
         if (currentTicks < accumulatedTicks + measureTicks) {
-            targetMeasureLinear = i;
+            targetSequenceIndex = i;
             const ticksInMeasure = currentTicks - accumulatedTicks;
             targetBeatInMeasure = Math.floor(ticksInMeasure / ppq);
             ticksIntoBeat = ticksInMeasure % ppq;
@@ -38,29 +47,27 @@ export function updatePlayheadPosition() {
         accumulatedTicks += measureTicks;
 
         if (i === sequence.length - 1) {
-            targetMeasureLinear = sequence.length - 1;
+            targetSequenceIndex = sequence.length - 1;
             targetBeatInMeasure = cfg.beats - 1;
             ticksIntoBeat = ppq;
         }
     }
 
-    // Calcula a largura em pixels acumulada de todos os compassos anteriores
+    const actualMeasureIndex = sequence[targetSequenceIndex];
+
     let accumulatedX = 0;
-    for (let i = 0; i < targetMeasureLinear; i++) {
-        const mIdx = sequence[i];
-        const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
+    for (let m = 0; m < actualMeasureIndex; m++) {
+        const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
         const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
-        accumulatedX += cfg.beats * 112; // 112px por tempo
+        accumulatedX += cfg.beats * 112;
     }
 
-    // Posição no tempo atual em pixels
     const beatWidth = 112;
     const beatX = (targetBeatInMeasure * beatWidth) + ((ticksIntoBeat / ppq) * beatWidth);
     const totalX = accumulatedX + beatX;
 
     playhead.style.transform = `translateX(${totalX}px)`;
 }
-
 export function animatePlayhead() {
     if (!window.audioEngine || !window.audioEngine.isPlaying) return;
     updatePlayheadPosition();

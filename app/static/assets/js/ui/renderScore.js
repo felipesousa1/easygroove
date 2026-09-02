@@ -13,14 +13,14 @@ import { historyManager } from '../history.js';
 function updateHeader() {
     const titleDisplay = document.getElementById("title-display");
     const bpmInput = document.getElementById("bpm-input");
-    
+
     if (titleDisplay) titleDisplay.textContent = scoreState.title;
     if (bpmInput) bpmInput.value = scoreState.bpm;
 }
 
 function renderMeasuresTrack(trackContainer) {
     trackContainer.innerHTML = "";
-    
+
     for (let m = 0; m < scoreState.measuresCount; m++) {
         const header = document.createElement("div");
         header.className = "measure-header";
@@ -28,8 +28,8 @@ function renderMeasuresTrack(trackContainer) {
         // Calcula a largura exata baseada na métrica da coluna
         const currentSig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
         const config = TIME_SIGNATURES[currentSig] || TIME_SIGNATURES["4/4"];
-        const measureWidth = config.beats * 112; 
-        
+        const measureWidth = config.beats * 112;
+
         header.style.width = `${measureWidth}px`;
 
         const activeRepeat = scoreState.repeats?.find(r => m >= r.start && m <= r.end);
@@ -70,7 +70,7 @@ function renderMeasuresTrack(trackContainer) {
         <div class="loop-handle right" data-handle="right"></div>
     `;
     trackContainer.appendChild(loopBar);
-    
+
     updateLoopBarVisuals();
     renderRepeats();
 }
@@ -115,6 +115,14 @@ function renderSidebar(sidebarList) {
         </div>
         `;
 
+        // Previne conflito entre o drag do card e a barra de volume
+        const volSlider = card.querySelector(".vol-slider");
+        if (volSlider) {
+            volSlider.addEventListener("mousedown", () => { card.draggable = false; });
+            volSlider.addEventListener("mouseup", () => { card.draggable = true; });
+            volSlider.addEventListener("mouseleave", () => { card.draggable = true; });
+        }
+
         if (addInstWrapper) {
             sidebarList.insertBefore(card, addInstWrapper);
         } else {
@@ -122,7 +130,6 @@ function renderSidebar(sidebarList) {
         }
     });
 }
-
 function renderGrid(scoreGrid) {
     scoreGrid.querySelectorAll(".score-row").forEach(el => el.remove());
 
