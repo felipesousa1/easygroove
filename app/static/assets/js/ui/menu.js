@@ -3,8 +3,8 @@ import { historyManager } from '../history.js';
 import { renderScore } from './renderScore.js';
 import { TIME_SIGNATURES } from '../constants.js';
 
-// Função para criar o formato de compasso baseado na métrica
-function createMeasureFormat(timeSigKey) {
+// Função utilitária para criar a estrutura do compasso baseada na métrica
+export function createEmptyMeasureForSig(timeSigKey) {
     const config = TIME_SIGNATURES[timeSigKey] || TIME_SIGNATURES["4/4"];
     const measureData = [];
     for (let b = 0; b < config.beats; b++) {
@@ -68,8 +68,6 @@ export function setupMeasureMenuEvents() {
         const action = item.dataset.action;
         const m = activeMeasureIndex;
 
-        historyManager.pushState();
-
         if (action === "copy") {
             setCopiedMeasureData(scoreState.instruments.map(inst => {
                 return {
@@ -79,43 +77,40 @@ export function setupMeasureMenuEvents() {
             }));
         } else if (action === "paste") {
             if (copiedMeasureData) {
+                historyManager.pushState();
                 copiedMeasureData.forEach(copiedItem => {
                     const inst = scoreState.instruments.find(i => i.id === copiedItem.instrumentId);
                     if (inst) {
                         inst.pattern[m] = JSON.parse(JSON.stringify(copiedItem.pattern));
                     }
                 });
+                renderScore();
             }
         } else if (action === "move-left") {
             if (m > 0) {
+                historyManager.pushState();
                 scoreState.instruments.forEach(inst => {
                     const temp = inst.pattern[m];
                     inst.pattern[m] = inst.pattern[m - 1];
                     inst.pattern[m - 1] = temp;
                 });
+                renderScore();
             }
         } else if (action === "move-right") {
             if (m < scoreState.measuresCount - 1) {
+                historyManager.pushState();
                 scoreState.instruments.forEach(inst => {
                     const temp = inst.pattern[m];
                     inst.pattern[m] = inst.pattern[m + 1];
                     inst.pattern[m + 1] = temp;
                 });
+                renderScore();
             }
-        } else if (action === "duplicate") {
-            handleMeasureAction("duplicate", m);
-        } else if (action === "add-before") {
-            handleMeasureAction("add-before", m);
-        } else if (action === "add-after") {
-            handleMeasureAction("add-after", m);
-        } else if (action === "clear") {
-            handleMeasureAction("clear", m);
-        } else if (action === "delete") {
-            handleMeasureAction("delete", m);
+        } else {
+            handleMeasureAction(action, m);
         }
 
         dropdown.classList.remove("visible");
-        renderScore();
     });
 
     document.addEventListener("click", () => {
@@ -126,7 +121,9 @@ export function setupMeasureMenuEvents() {
 export function handleMeasureAction(action, index) {
     historyManager.pushState();
 
-    const currentSig = scoreState.measuresConfig?.[index]?.timeSignature || scoreState.timeSignature || "4/4";
+    if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
+
+    const currentSig = scoreState.measuresConfig[index]?.timeSignature || scoreState.timeSignature || "4/4";
 
     switch (action) {
         case "add-before":
@@ -157,7 +154,7 @@ export function handleMeasureAction(action, index) {
 
         case "clear":
             scoreState.instruments.forEach(inst => {
-                inst.pattern[index] = createEmptyMeasure();
+                inst.pattern[index] = createEmptyMeasureForSig(currentSig);
             });
             break;
 
@@ -166,6 +163,7 @@ export function handleMeasureAction(action, index) {
                 alert("O arranjo precisa ter no mínimo 1 compasso.");
                 return;
             }
+            scoreState.measuresConfig.splice(index, 1);
             scoreState.instruments.forEach(inst => {
                 inst.pattern.splice(index, 1);
             });
@@ -204,17 +202,8 @@ export function setColumnTimeSignature(measureIndex, newTimeSig) {
     if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
     scoreState.measuresConfig[measureIndex] = { timeSignature: newTimeSig };
 
-    const config = TIME_SIGNATURES[newTimeSig] || TIME_SIGNATURES["4/4"];
-
     scoreState.instruments.forEach(inst => {
-        const newMeasure = [];
-        for (let b = 0; b < config.beats; b++) {
-            newMeasure.push({
-                subdivisions: config.subdivisions,
-                notes: new Array(config.subdivisions).fill(null)
-            });
-        }
-        inst.pattern[measureIndex] = newMeasure;
+        inst.pattern[measureIndex] = createEmptyMeasureForSig(newTimeSig);
     });
 
     renderScore();

@@ -1,7 +1,6 @@
 import { scoreState, setSelectionClipboard } from './state.js';
-import { copySelectedMeasures, cutSelectedMeasures, pasteClipboardToTarget } from './clipboard.js';
+import { copySelectedMeasures, cutSelectedMeasures, pasteClipboardToTarget, clearSelectedMeasures } from './clipboard.js';
 import { addMeasureToEnd, renderScore } from './ui/renderScore.js';
-import { showToast } from './ui/toast.js';
 
 export function setupKeyboardShortcuts() {
     window.addEventListener("keydown", (e) => {
@@ -31,6 +30,15 @@ export function setupKeyboardShortcuts() {
             return;
         }
 
+        // Atalho para apagar o conteúdo dos compassos selecionados
+        if (e.key === "Delete" || e.key === "Backspace") {
+            if (scoreState.selectedSelection && scoreState.selectedSelection.length > 0) {
+                e.preventDefault();
+                clearSelectedMeasures();
+            }
+            return;
+        }
+
         if (e.key === "Escape") {
             let needsRender = false;
 
@@ -41,7 +49,6 @@ export function setupKeyboardShortcuts() {
 
             if (window.selectionClipboard) {
                 setSelectionClipboard(null);
-                // showToast("Área de transferência limpa.");
                 needsRender = true;
             }
 

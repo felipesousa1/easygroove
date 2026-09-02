@@ -19,8 +19,15 @@ export function renderRepeats() {
 
         if (!startHeader || !endHeader) return;
 
-        const left = startHeader.offsetLeft;
-        const right = endHeader.offsetLeft + endHeader.offsetWidth;
+        // Verifica se há outro ritornelo encostado à esquerda ou à direita para dar recuo
+        const hasAdjacentLeft = scoreState.repeats.some(r => r.end === repeat.start - 1);
+        const hasAdjacentRight = scoreState.repeats.some(r => r.start === repeat.end + 1);
+
+        const leftOffset = hasAdjacentLeft ? 5 : 0;
+        const rightOffset = hasAdjacentRight ? 5 : 0;
+
+        const left = startHeader.offsetLeft + leftOffset;
+        const right = endHeader.offsetLeft + endHeader.offsetWidth - rightOffset;
         const width = right - left;
 
         const canShrink = repeat.end > repeat.start;
