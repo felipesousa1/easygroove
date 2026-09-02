@@ -166,6 +166,9 @@ function renderGrid(scoreGrid) {
 
                 const beatGroup = document.createElement("div");
                 beatGroup.className = "beat-group";
+                beatGroup.dataset.instId = inst.id;
+                beatGroup.dataset.measureIndex = m;
+                beatGroup.dataset.beatIndex = b;
                 beatGroup.innerHTML = createBeamsSVG(beatSubdivs);
 
                 const slotsBar = document.createElement("div");

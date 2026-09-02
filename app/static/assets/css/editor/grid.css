@@ -402,3 +402,34 @@
   object-fit: contain;
   pointer-events: none;
 }
+
+/* Popover de Subdivisão (Nível 3) */
+.subdivision-popover {
+  position: fixed;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  z-index: 1000;
+}
+
+.subdivision-popover button {
+  background: #F3F4F6;
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.subdivision-popover button:hover {
+  background: #31006f;
+  color: #FFFFFF;
+}

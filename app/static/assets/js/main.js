@@ -9,6 +9,7 @@ import { setupInstrumentControlEvents } from './ui/instrument.js';
 import { setupLoopEvents } from './ui/loop.js';
 import { setupPersistenceEvents, loadArrangementFromURL } from './api.js';
 import { setupKeyboardShortcuts } from './shortcuts.js';
+import { setupSubdivisionEvents } from './ui/beams.js';
 
 window.addEventListener("resize", renderRepeats);
 
@@ -19,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setupGridEvents();
         setupHeaderEvents();
         setupTransportEvents();
+        setupSubdivisionEvents();
         setupMeasureMenuEvents();
         setupMeasureLoopEvents();
         setupRepeatControlEvents();
