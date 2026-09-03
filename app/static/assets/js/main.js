@@ -1,4 +1,4 @@
-import './playhead.js'; 
+import './playhead.js';
 import './audio.js';
 import { renderScore, setupGridEvents, setupHeaderEvents, setupTransportEvents } from './ui/renderScore.js';
 import { setupToolbarEvents } from './ui/toolbar.js';
