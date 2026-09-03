@@ -171,6 +171,46 @@
         <div class="dropdown-divider"></div>
         <button type="button" class="dropdown-item danger" data-action="delete-inst">🗑 Excluir Instrumento</button>
     </div>
+
+    <!-- Modal Inicial: Configuração de Novo Arranjo -->
+    <div id="new-arrangement-modal" class="lib-modal-overlay">
+        <div class="lib-modal-content new-arr-modal">
+            <h2 class="lib-modal-title">Novo Arranjo</h2>
+
+            <div class="modal-form-group">
+                <label for="modal-arr-title">Nome do Arranjo</label>
+                <input type="text" id="modal-arr-title" class="modal-input" value="Novo arranjo"
+                    placeholder="Ex: Bossa Nova, Marchinha...">
+            </div>
+
+            <div class="modal-form-group">
+                <label for="modal-arr-timesig">Métrica Base</label>
+                <select id="modal-arr-timesig" class="modal-select">
+                    <option value="4/4" selected>4/4</option>
+                    <option value="2/4">2/4</option>
+                    <option value="3/4">3/4</option>
+                    <option value="5/4">5/4</option>
+                    <option value="7/4">7/4</option>
+                    <option value="6/8">6/8</option>
+                    <option value="9/8">9/8</option>
+                    <option value="12/8">12/8</option>
+                </select>
+            </div>
+
+            <div class="modal-form-group">
+                <label>Instrumentos Iniciais</label>
+                <div id="modal-instruments-list" class="modal-checkbox-grid">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+                <span id="modal-inst-error" class="modal-error-msg" style="display: none;">Selecione pelo menos 1
+                    instrumento.</span>
+            </div>
+
+            <div class="lib-modal-actions">
+                <button type="button" id="btn-create-arrangement" class="btn-modal-primary">Criar Arranjo</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

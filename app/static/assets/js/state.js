@@ -12,6 +12,12 @@ export function setSelectionClipboard(data) {
     window.selectionClipboard = data;
 }
 
+// Controle de alterações não salvas
+export let isDirty = false;
+export function setIsDirty(value) {
+    isDirty = value;
+}
+
 export const scoreState = {
     title: "Novo arranjo",
     bpm: 90,

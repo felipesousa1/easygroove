@@ -1,4 +1,4 @@
-import { scoreState } from './state.js';
+import { scoreState, setIsDirty } from './state.js';
 import { renderScore } from './ui/renderScore.js';
 
 export const historyManager = {
@@ -23,6 +23,8 @@ export const historyManager = {
         }
         this.redoStack = [];
         this.updateButtonsState();
+
+        setIsDirty(true);
     },
 
     undo() {
@@ -31,6 +33,7 @@ export const historyManager = {
         const previousSnapshot = this.undoStack.pop();
         this.applySnapshot(previousSnapshot);
         this.updateButtonsState();
+        setIsDirty(true);
     },
 
     redo() {
@@ -39,6 +42,7 @@ export const historyManager = {
         const nextSnapshot = this.redoStack.pop();
         this.applySnapshot(nextSnapshot);
         this.updateButtonsState();
+        setIsDirty(true);
     },
 
     applySnapshot(snapshot) {

@@ -3,6 +3,7 @@ import { showToast } from './ui/toast.js';
 import { renderScore } from './ui/renderScore.js';
 import { updateLoopBarVisuals } from './ui/loop.js';
 import { historyManager } from './history.js';
+import { setIsDirty } from './state.js';
 
 export async function saveCurrentArrangement() {
     const { loopState, ...scoreDataToSave } = scoreState;
@@ -51,6 +52,7 @@ export async function saveCurrentArrangement() {
             window.history.replaceState(null, "", `/?id=${data.id}`);
         }
 
+        setIsDirty(false);
         showToast("Arranjo salvo com sucesso!");
     } catch (error) {
         console.error("Erro de conexão ao salvar:", error);
@@ -113,6 +115,7 @@ export async function loadArrangementFromURL() {
             historyManager.undoStack = [];
             historyManager.redoStack = [];
             historyManager.updateButtonsState();
+            setIsDirty(false);
         }
     } catch (error) {
         console.error("Erro ao carregar arranjo:", error);
