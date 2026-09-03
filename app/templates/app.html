@@ -77,9 +77,22 @@
 
         <!-- Ações à Direita -->
         <div class="header-right">
-            <button type="button" class="action-btn icon-only" title="Exportar Arranjo">
-                <img src="assets/icons/export.svg" alt="Exportar">
-            </button>
+            <!-- Container relativo para o dropdown de exportação -->
+            <div style="position: relative;">
+                <button type="button" id="btn-export-popover" class="action-btn icon-only" title="Exportar Arranjo">
+                    <img src="assets/icons/export.svg" alt="Exportar">
+                </button>
+
+                <!-- Dropdown pequeno colado ao botão -->
+                <div id="export-dropdown" class="measure-dropdown-menu"
+                    style="right: 0; left: auto; top: calc(100% + 8px); width: 180px;">
+                    <button type="button" class="dropdown-item" id="btn-export-pdf">Partitura (.pdf)</button>
+                    <button type="button" class="dropdown-item" id="btn-export-json">Projeto (.json)</button>
+                    <button type="button" class="dropdown-item" id="btn-export-mp3"
+                        style="opacity: 0.5; cursor: not-allowed;" title="Em breve">Áudio (.mp3)</button>
+                </div>
+            </div>
+
             <button type="button" class="action-btn icon-only" title="Salvar Projeto">
                 <img src="assets/icons/save.svg" alt="Salvar">
             </button>
@@ -186,6 +199,7 @@
 
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script type="module" src="assets/js/main.js"></script>
 
     <!-- Menu de Opções do Instrumento -->

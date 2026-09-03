@@ -267,3 +267,8 @@
   border-color: var(--color-purple-primary);
   transform: translateY(-2px);
 }
+
+/* Exibe o dropdown de exportação quando recebe .active */
+#export-dropdown.active {
+  display: block !important;
+}
