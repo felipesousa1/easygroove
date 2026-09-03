@@ -12,6 +12,7 @@ import { setupKeyboardShortcuts } from './shortcuts.js';
 import { setupSubdivisionEvents } from './ui/beams.js';
 import { setupNewArrangementModal } from './ui/newArrangementModal.js';
 import { isDirty } from './state.js';
+import { setupExportEvents } from './export.js';
 
 window.addEventListener("resize", renderRepeats);
 
@@ -38,6 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setupInstrumentControlEvents();
         setupLoopEvents();
         setupPersistenceEvents();
+        setupExportEvents();
 
         if (window.location.search.includes("id=")) {
             loadArrangementFromURL();

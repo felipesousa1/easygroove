@@ -266,7 +266,7 @@
                 const editBtn = e.target.closest(".btn-action-edit");
                 if (editBtn) {
                     e.stopPropagation();
-                    window.location.href = `/?id=${editBtn.dataset.id}`;
+                    window.location.href = `/app?id=${editBtn.dataset.id}`;
                     return;
                 }
 
@@ -368,7 +368,7 @@
                 // Clicar no corpo do card (abrir editor)
                 const card = e.target.closest(".lib-card");
                 if (card && !e.target.closest(".lib-card-menu-wrapper") && !e.target.closest(".lib-card-title-input")) {
-                    window.location.href = `/?id=${card.dataset.cardId}`;
+                    window.location.href = `/app?id=${card.dataset.cardId}`; // <-- Alterado de /?id= para /app?id=
                 }
             });
 
