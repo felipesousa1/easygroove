@@ -95,7 +95,7 @@
 
                 <!-- Container flutuante que trava o botão no rodapé do box -->
                 <div class="lib-fab-wrapper">
-                    <button class="lib-fab" onclick="window.location.href='/'">
+                    <button class="lib-fab" onclick="window.location.href='/app'">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 5v14M5 12h14"></path>
@@ -134,7 +134,7 @@
             if (btnLogout) {
                 btnLogout.addEventListener("click", async () => {
                     await fetch("/api/auth/logout", { method: "POST" });
-                    window.location.href = "/login";
+                    window.location.href = "/";
                 });
             }
 

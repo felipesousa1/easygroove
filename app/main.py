@@ -52,19 +52,21 @@ def get_user_from_cookie(
     return session.get(User, int(user_id))
 
 @app.get("/")
-async def get_editor(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html")
-
-
-@app.get("/login")
-async def get_login(
+async def get_index(
     request: Request,
     current_user: Optional[User] = Depends(get_user_from_cookie),
 ):
-    # Se já estiver logado, manda direto para a biblioteca
+    # Se o usuário já estiver logado, redireciona para a biblioteca
     if current_user:
         return RedirectResponse(url="/biblioteca", status_code=status.HTTP_303_SEE_OTHER)
+    # Se não estiver logado, exibe a página de login por padrão
     return templates.TemplateResponse(request=request, name="login.html")
+
+
+@app.get("/app")
+async def get_editor(request: Request):
+    # Rota dedicada para o Editor de Arranjos
+    return templates.TemplateResponse(request=request, name="app.html")
 
 def format_relative_time(dt: datetime) -> str:
     """Formata data relativa baseada no horário UTC atual."""
