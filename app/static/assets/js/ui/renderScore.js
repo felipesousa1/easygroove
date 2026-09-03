@@ -374,3 +374,62 @@ export function setupTransportEvents() {
         });
     }
 }
+
+export function setupMainMenuEvents() {
+    const btnMenu = document.getElementById("btn-main-menu");
+    const menuDropdown = document.getElementById("main-app-menu");
+    const importFileInput = document.getElementById("import-file-input");
+
+    if (!btnMenu || !menuDropdown) return;
+
+    // Toggle de visibilidade do menu
+    btnMenu.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menuDropdown.classList.toggle("active");
+    });
+
+    // Fecha o menu ao clicar fora dele
+    document.addEventListener("click", (e) => {
+        if (!menuDropdown.contains(e.target) && e.target !== btnMenu) {
+            menuDropdown.classList.remove("active");
+        }
+    });
+
+    // Ações dos itens do menu
+    document.getElementById("menu-opt-new")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        const modal = document.getElementById("new-arrangement-modal");
+        if (modal) modal.classList.add("active");
+    });
+
+    document.getElementById("menu-opt-library")?.addEventListener("click", () => {
+        window.location.href = "/biblioteca";
+    });
+
+    document.getElementById("menu-opt-save")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
+        if (saveBtn) saveBtn.click();
+    });
+
+    document.getElementById("menu-opt-export-json")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        const exportBtn = document.querySelector('.header-right button[title="Exportar Arranjo"]');
+        if (exportBtn) exportBtn.click();
+    });
+
+    document.getElementById("menu-opt-import-json")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        if (importFileInput) importFileInput.click();
+    });
+
+    document.getElementById("menu-opt-help")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        const helpBtn = document.querySelector(".floating-help-btn");
+        if (helpBtn) helpBtn.click();
+    });
+
+    document.getElementById("menu-opt-exit")?.addEventListener("click", () => {
+        window.location.href = "/";
+    });
+}

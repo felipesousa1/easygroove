@@ -14,6 +14,32 @@
     <!-- 1. Top Header -->
     <header class="top-header">
         <div class="header-left">
+            <!-- Botão Menu Hambúrguer -->
+            <div style="position: relative;">
+                <button type="button" id="btn-main-menu" class="action-btn icon-only" title="Menu Principal">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+
+                <!-- Dropdown do Menu Principal -->
+                <div id="main-app-menu" class="measure-dropdown-menu main-app-menu">
+                    <button type="button" class="dropdown-item" id="menu-opt-new">Novo Arranjo</button>
+                    <button type="button" class="dropdown-item" id="menu-opt-library">Minha Biblioteca</button>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item" id="menu-opt-save">Salvar Projeto</button>
+                    <button type="button" class="dropdown-item" id="menu-opt-export-json">Exportar JSON</button>
+                    <button type="button" class="dropdown-item" id="menu-opt-import-json">Importar JSON</button>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item" id="menu-opt-help">Ajuda & Atalhos</button>
+                    <div class="dropdown-divider"></div>
+                    <button type="button" class="dropdown-item danger" id="menu-opt-exit">Sair do Editor</button>
+                </div>
+            </div>
+
             <a href="/biblioteca" style="text-decoration: none;">
                 <div class="brand-logo">
                     <img src="assets/icons/logo.svg" alt="Logo" class="ui-icon-logo">
@@ -129,7 +155,7 @@
         <!-- NOVO: Seletor de Métrica da Coluna -->
         <div class="dropdown-item"
             style="cursor: default; background: transparent; padding-top: 4px; padding-bottom: 4px;">
-            <span>⏱️ Métrica:</span>
+            <span>Métrica:</span>
             <select id="measure-timesig-select" class="bpm-input"
                 style="width: 70px; margin-left: auto; height: 26px; font-size: 0.8rem; padding: 0 4px; cursor: pointer;">
                 <option value="4/4">4/4</option>
@@ -144,18 +170,18 @@
         </div>
         <div class="dropdown-divider"></div>
 
-        <button type="button" class="dropdown-item" data-action="copy">📋 Copiar Compasso</button>
-        <button type="button" class="dropdown-item" data-action="paste">📥 Colar Compasso</button>
+        <button type="button" class="dropdown-item" data-action="copy">Copiar Compasso</button>
+        <button type="button" class="dropdown-item" data-action="paste">Colar Compasso</button>
         <div class="dropdown-divider"></div>
         <button type="button" class="dropdown-item" data-action="move-left">⬅ Mover p/ Esquerda</button>
         <button type="button" class="dropdown-item" data-action="move-right">➡ Mover p/ Direita</button>
         <div class="dropdown-divider"></div>
-        <button type="button" class="dropdown-item" data-action="duplicate">📄 Duplicar Compasso</button>
+        <button type="button" class="dropdown-item" data-action="duplicate">Duplicar Compasso</button>
         <button type="button" class="dropdown-item" data-action="add-before">⬅ Adicionar Antes</button>
         <button type="button" class="dropdown-item" data-action="add-after">➡ Adicionar Depois</button>
-        <button type="button" class="dropdown-item" data-action="clear">🧹 Limpar Notas</button>
+        <button type="button" class="dropdown-item" data-action="clear">Limpar Notas</button>
         <div class="dropdown-divider"></div>
-        <button type="button" class="dropdown-item danger" data-action="delete">🗑 Excluir Compasso</button>
+        <button type="button" class="dropdown-item danger" data-action="delete">Excluir Compasso</button>
     </div>
 
     <!-- Scripts -->
@@ -164,12 +190,12 @@
 
     <!-- Menu de Opções do Instrumento -->
     <div id="instrument-options-dropdown" class="measure-dropdown-menu">
-        <button type="button" class="dropdown-item" data-action="rename-inst">✏️ Renomear</button>
-        <button type="button" class="dropdown-item" data-action="toggle-hide-inst">👁️ Ocultar Instrumento</button>
-        <button type="button" class="dropdown-item" data-action="duplicate-inst">📄 Duplicar Linha</button>
-        <button type="button" class="dropdown-item" data-action="clear-inst">🧹 Limpar Notas</button>
+        <button type="button" class="dropdown-item" data-action="rename-inst">Renomear</button>
+        <button type="button" class="dropdown-item" data-action="toggle-hide-inst">Ocultar Instrumento</button>
+        <button type="button" class="dropdown-item" data-action="duplicate-inst">Duplicar Linha</button>
+        <button type="button" class="dropdown-item" data-action="clear-inst">Limpar Notas</button>
         <div class="dropdown-divider"></div>
-        <button type="button" class="dropdown-item danger" data-action="delete-inst">🗑 Excluir Instrumento</button>
+        <button type="button" class="dropdown-item danger" data-action="delete-inst">Excluir Instrumento</button>
     </div>
 
     <!-- Modal Inicial: Configuração de Novo Arranjo -->
@@ -213,7 +239,7 @@
                 style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <button type="button" id="btn-import-json" class="btn-modal-secondary"
                     style="background: transparent; border: 1px solid var(--color-gray-border); color: var(--color-text-main); padding: 8px 14px; border-radius: 6px; cursor: pointer;">
-                    📂 Importar JSON
+                    Importar JSON
                 </button>
                 <button type="button" id="btn-create-arrangement" class="btn-modal-primary">Criar Arranjo</button>
             </div>

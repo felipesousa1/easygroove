@@ -1,6 +1,6 @@
 import './playhead.js';
 import './audio.js';
-import { renderScore, setupGridEvents, setupHeaderEvents, setupTransportEvents } from './ui/renderScore.js';
+import { renderScore, setupGridEvents, setupHeaderEvents, setupTransportEvents, setupMainMenuEvents } from './ui/renderScore.js';
 import { setupToolbarEvents } from './ui/toolbar.js';
 import { setupMeasureMenuEvents } from './ui/menu.js';
 import { setupMeasureLoopEvents, setupRepeatControlEvents, renderRepeats } from './ui/repeat.js';
@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setupToolbarEvents();
         setupGridEvents();
         setupHeaderEvents();
+        setupMainMenuEvents();
         setupTransportEvents();
         setupSubdivisionEvents();
         setupMeasureMenuEvents();
