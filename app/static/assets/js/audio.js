@@ -7,10 +7,13 @@ export const audioEngine = {
     isPlaying: false,
     isPaused: false,
     isInitialized: false,
+    metronomeEnabled: false,
+    metronomeVolume: 100, // Volume de 0 a 100
     loopEventId: null,
 
     channels: {},
     synths: {},
+    metronomeSynth: null,
 
     init() {
         if (this.isInitialized) return;
@@ -19,8 +22,41 @@ export const audioEngine = {
             this.initInstrumentChannel(inst);
         });
 
+        // Sintetizador do Metrônomo
+        this.metronomeSynth = new Tone.MembraneSynth({
+            pitchDecay: 0.005,
+            octaves: 2,
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 }
+        }).toDestination();
+
         Tone.Transport.bpm.value = scoreState.bpm;
         this.isInitialized = true;
+    },
+
+    toggleMetronome() {
+        this.metronomeEnabled = !this.metronomeEnabled;
+        const btnMetronome = document.getElementById("btn-metronome");
+        const toggleInput = document.getElementById("popover-metronome-toggle");
+
+        if (btnMetronome) btnMetronome.classList.toggle("active", this.metronomeEnabled);
+        if (toggleInput) toggleInput.checked = this.metronomeEnabled;
+
+        return this.metronomeEnabled;
+    },
+
+    setMetronomeVolume(vol) {
+        this.metronomeVolume = Math.min(Math.max(vol, 0), 100);
+    },
+
+    triggerMetronomeClick(isAccent, time) {
+        if (!this.metronomeEnabled || !this.metronomeSynth || this.metronomeVolume <= 0) return;
+
+        const pitch = isAccent ? "C5" : "C4";
+        const volFactor = this.metronomeVolume / 100;
+        const velocity = (isAccent ? 1.0 : 0.6) * volFactor;
+
+        this.metronomeSynth.triggerAttackRelease(pitch, "32n", time, velocity);
     },
 
     calculateDb(volume) {
@@ -49,8 +85,6 @@ export const audioEngine = {
 
     createSynthsForInstrument(instId, isOffline = false) {
         const baseType = instId.split("_")[0];
-
-        // Quando offline, ignoramos este.channels (que pertence ao contexto online) e conectamos diretamente em Tone.getDestination()
         const channel = isOffline ? Tone.getDestination() : (this.channels[instId] || Tone.getDestination());
 
         if (baseType.startsWith("surdo")) {
@@ -100,7 +134,7 @@ export const audioEngine = {
             return {
                 main: new Tone.PolySynth(Tone.MembraneSynth, {
                     pitchDecay: 0.03, octaves: 5, oscillator: { type: "sine" },
-                    envelope: { attack: 0.001, decay: 0.18, sustain: 0.01, release: 0.2 }
+                    envelope: { attack: 0.001, decay: 0.18, sustain: 0.2 }
                 }).connect(channel),
                 aro: new Tone.PolySynth(Tone.MembraneSynth, aroConfig).connect(channel),
                 rimshot: new Tone.MetalSynth(rimshotConfig).connect(channel)
@@ -201,29 +235,21 @@ export const audioEngine = {
         }
     },
 
-    // Dispara o som de um toque em um tempo específico durante a renderização offline
     triggerOfflineStroke(inst, stroke, time) {
-        if (!this.isInitialized) {
-            this.init();
-        }
+        if (!this.isInitialized) this.init();
         this.triggerStroke(inst, stroke, time);
     },
 
     async previewStroke(instId, strokeType) {
         if (this.isPlaying || !strokeType) return;
-
-        if (!this.isInitialized) {
-            this.init();
-        }
+        if (!this.isInitialized) this.init();
         await Tone.start();
 
         const inst = scoreState.instruments.find(i => i.id === instId);
         if (!inst) return;
 
         const effectiveInst = inst.volume > 0 ? inst : { ...inst, volume: 80 };
-        if (inst.volume <= 0) {
-            this.initInstrumentChannel(effectiveInst);
-        }
+        if (inst.volume <= 0) this.initInstrumentChannel(effectiveInst);
 
         this.triggerStroke(effectiveInst, strokeType, Tone.now());
     },
@@ -231,24 +257,18 @@ export const audioEngine = {
     getPlaybackSequence() {
         const sequence = [];
         let m = 0;
-
-        // Garante array ordenado para evitar conflitos de índices
         const repeats = (scoreState.repeats || []).slice().sort((a, b) => a.start - b.start);
 
         while (m < scoreState.measuresCount) {
-            // Encontra um ritornelo que COMEÇA exatamente no compasso atual m
             const repeat = repeats.find(r => r.start === m);
 
             if (repeat && repeat.end >= repeat.start && repeat.end < scoreState.measuresCount) {
                 const repeatCount = repeat.times || 2;
-
-                // Adiciona a sequência inteira do ritornelo (do start ao end) N vezes
                 for (let count = 0; count < repeatCount; count++) {
                     for (let stepM = repeat.start; stepM <= repeat.end; stepM++) {
                         sequence.push(stepM);
                     }
                 }
-                // Avança o ponteiro principal para logo após o término do ritornelo
                 m = repeat.end + 1;
             } else {
                 sequence.push(m);
@@ -272,12 +292,8 @@ export const audioEngine = {
             const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
             const measureTicks = cfg.beats * ppq;
 
-            if (mIdx < scoreState.loopState.startMeasure) {
-                startTicks += measureTicks;
-            }
-            if (mIdx < scoreState.loopState.endMeasure) {
-                endTicks += measureTicks;
-            }
+            if (mIdx < scoreState.loopState.startMeasure) startTicks += measureTicks;
+            if (mIdx < scoreState.loopState.endMeasure) endTicks += measureTicks;
         }
 
         return { startTicks, endTicks };
@@ -299,7 +315,6 @@ export const audioEngine = {
         }
     },
 
-    // Função para cortar instantaneamente qualquer som residual (caudas de prato, etc)
     cutAllSound() {
         Object.values(this.synths).forEach(synthGroup => {
             if (!synthGroup) return;
@@ -311,9 +326,7 @@ export const audioEngine = {
         });
     },
 
-    // Novo Agendamento Nativo (Substitui o schedulePlaybackLoop antigo)
     schedulePlaybackSequence() {
-        // Limpa a linha do tempo inteira antes de reagendar
         Tone.Transport.cancel(0);
 
         const sequence = this.getPlaybackSequence();
@@ -326,6 +339,17 @@ export const audioEngine = {
             const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
             const measureTicks = cfg.beats * ppq;
 
+            // Agendamento do Metrônomo
+            for (let b = 0; b < cfg.beats; b++) {
+                const beatTick = accumulatedTicks + (b * ppq);
+                const isFirstBeatOfMeasure = (b === 0);
+
+                Tone.Transport.schedule((time) => {
+                    this.triggerMetronomeClick(isFirstBeatOfMeasure, time);
+                }, beatTick + "i");
+            }
+
+            // Agendamento dos Instrumentos
             scoreState.instruments.forEach(inst => {
                 if (inst.hidden) return;
                 const measureData = inst.pattern && inst.pattern[mIdx];
@@ -340,10 +364,8 @@ export const audioEngine = {
                     for (let s = 0; s < beatObj.subdivisions; s++) {
                         const stroke = beatObj.notes[s];
                         if (stroke) {
-                            // Calcula o tick exato desta nota na linha do tempo global
                             const noteTick = accumulatedTicks + (b * ppq) + Math.round(s * ticksPerSub);
 
-                            // Agenda a nota nativamente no Transport
                             Tone.Transport.schedule((time) => {
                                 this.triggerStroke(inst, stroke, time);
                             }, noteTick + "i");
@@ -355,7 +377,6 @@ export const audioEngine = {
             accumulatedTicks += measureTicks;
         }
 
-        // Se não estiver em loop, agenda o Stop automático no exato tick final do arranjo
         if (!scoreState.loopState.active) {
             Tone.Transport.schedule((time) => {
                 Tone.Draw.schedule(() => {
@@ -375,7 +396,6 @@ export const audioEngine = {
 
         this.updateTransportSettings();
 
-        // Só reagenda as notas se for um Play do zero (não um despause)
         if (!this.isPaused) {
             this.schedulePlaybackSequence();
 
@@ -397,8 +417,8 @@ export const audioEngine = {
     pause() {
         if (!this.isPlaying) return;
 
-        Tone.Transport.pause(); // Pausa o relógio instantaneamente
-        this.cutAllSound();     // Corta caldas sonoras residuais
+        Tone.Transport.pause();
+        this.cutAllSound();
 
         this.isPlaying = false;
         this.isPaused = true;
@@ -412,7 +432,6 @@ export const audioEngine = {
         this.isPlaying = false;
         this.isPaused = false;
 
-        // Retorna a agulha para o início correto
         if (scoreState.loopState.active) {
             const { startTicks } = this.getLoopTickLimits();
             Tone.Transport.ticks = startTicks;

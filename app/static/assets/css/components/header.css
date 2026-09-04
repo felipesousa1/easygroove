@@ -149,6 +149,12 @@
   background-color: var(--color-gray-hover);
 }
 
+#btn-metronome img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
 .player-btn.primary {
   background-color: var(--color-purple-primary);
   color: #ffffff;
@@ -277,4 +283,151 @@
 /* Exibe o dropdown de exportação quando recebe .active */
 #export-dropdown.active {
   display: block !important;
+}
+
+/* Popover do Metrônomo */
+.metronome-popover {
+    display: none;
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 240px;
+    background: #ffffff;
+    border: 1px solid var(--color-gray-border, #e2e8f0);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    z-index: 100;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.metronome-popover.active {
+    display: flex;
+}
+
+.popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+
+.popover-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+/* Switch Toggle (iOS style) */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #cbd5e1;
+    transition: .2s;
+    border-radius: 22px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .2s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #360566;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(16px);
+}
+
+/* Seções e Labels */
+.popover-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.popover-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.popover-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.popover-value-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #360566;
+}
+
+/* Controle de BPM dentro do Popover */
+.bpm-stepper-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.popover-bpm-value {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #0f172a;
+    min-width: 40px;
+    text-align: center;
+}
+
+.bpm-stepper-control .btn-bpm-step {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #334155;
+    cursor: pointer;
+}
+
+.bpm-stepper-control .btn-bpm-step:hover {
+    background: #360566;
+    color: #ffffff;
+    border-color: #360566;
+}
+
+/* Range Input (Slider de Volume) */
+.popover-range {
+    width: 100%;
+    accent-color: #360566;
+    cursor: pointer;
 }

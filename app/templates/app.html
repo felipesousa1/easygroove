@@ -57,7 +57,7 @@
             </div>
         </div>
 
-        <!-- Player Rigidamente Centralizado -->
+        <!-- Player Centralizado -->
         <div class="header-center">
             <button type="button" id="btn-loop" class="player-btn" title="Loop Ativo/Inativo">
                 <img src="assets/icons/loop.svg" alt="Loop">
@@ -68,10 +68,50 @@
             <button type="button" id="btn-stop" class="player-btn" title="Parar e Voltar ao Início">
                 <img src="assets/icons/stop.svg" alt="Stop">
             </button>
+
             <div class="player-divider"></div>
+
+            <!-- Wrapper relativo para ancorar o Popover -->
+            <div style="position: relative;">
+                <button type="button" id="btn-metronome" class="player-btn" title="Configurações do Metrônomo">
+                    <img src="assets/icons/metronomo.svg" alt="Metrônomo">
+                </button>
+
+                <!-- Popover Estilo BandLab -->
+                <div id="metronome-popover" class="metronome-popover">
+                    <div class="popover-header">
+                        <span class="popover-title">Metrônomo</span>
+                        <label class="toggle-switch" title="Ativar/Desativar Metrônomo">
+                            <input type="checkbox" id="popover-metronome-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="popover-section">
+                        <label class="popover-label">Ajuste de Tempo (BPM)</label>
+                        <div class="bpm-stepper-control">
+                            <button type="button" class="btn-bpm-step" data-step="-5">-5</button>
+                            <button type="button" class="btn-bpm-step" data-step="-1">-1</button>
+                            <span id="popover-bpm-display" class="popover-bpm-value">120</span>
+                            <button type="button" class="btn-bpm-step" data-step="1">+1</button>
+                            <button type="button" class="btn-bpm-step" data-step="5">+5</button>
+                        </div>
+                    </div>
+
+                    <div class="popover-section">
+                        <div class="popover-label-row">
+                            <span class="popover-label">Volume do Metrônomo</span>
+                            <span id="metronome-vol-display" class="popover-value-text">100%</span>
+                        </div>
+                        <input type="range" id="metronome-vol-slider" class="popover-range" min="0" max="100"
+                            value="100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Display de BPM direto no Header -->
             <div class="bpm-control">
-                <span>BPM</span>
-                <input type="number" id="bpm-input" class="bpm-input" value="120" min="40" max="260">
+                <input type="number" id="bpm-input" class="bpm-input custom-bpm-input" value="120" min="40" max="260">
             </div>
         </div>
 

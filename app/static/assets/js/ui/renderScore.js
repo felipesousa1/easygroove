@@ -13,9 +13,11 @@ import { historyManager } from '../history.js';
 function updateHeader() {
     const titleDisplay = document.getElementById("title-display");
     const bpmInput = document.getElementById("bpm-input");
+    const popoverBpmDisplay = document.getElementById("popover-bpm-display");
 
     if (titleDisplay) titleDisplay.textContent = scoreState.title;
     if (bpmInput) bpmInput.value = scoreState.bpm;
+    if (popoverBpmDisplay) popoverBpmDisplay.textContent = scoreState.bpm;
 }
 
 function renderMeasuresTrack(trackContainer) {
@@ -25,7 +27,6 @@ function renderMeasuresTrack(trackContainer) {
         const header = document.createElement("div");
         header.className = "measure-header";
 
-        // Calcula a largura exata baseada na métrica da coluna
         const currentSig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
         const config = TIME_SIGNATURES[currentSig] || TIME_SIGNATURES["4/4"];
         const measureWidth = config.beats * 112;
@@ -115,7 +116,6 @@ function renderSidebar(sidebarList) {
         </div>
         `;
 
-        // Previne conflito entre o drag do card e a barra de volume
         const volSlider = card.querySelector(".vol-slider");
         if (volSlider) {
             volSlider.addEventListener("mousedown", () => { card.draggable = false; });
@@ -130,6 +130,7 @@ function renderSidebar(sidebarList) {
         }
     });
 }
+
 function renderGrid(scoreGrid) {
     scoreGrid.querySelectorAll(".score-row").forEach(el => el.remove());
 
@@ -152,10 +153,9 @@ function renderGrid(scoreGrid) {
             measureContainer.dataset.instId = inst.id;
             measureContainer.dataset.measureIndex = m;
 
-            // Busca a métrica específica desta coluna (Bloco 8)
             const currentSig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
             const config = TIME_SIGNATURES[currentSig] || TIME_SIGNATURES["4/4"];
-            const measureWidth = config.beats * 112; // ORDEM CORRIGIDA: declarada após config
+            const measureWidth = config.beats * 112;
             measureContainer.style.width = `${measureWidth}px`;
 
             const measurePattern = inst.pattern[m] || [];
@@ -276,22 +276,17 @@ export function setupGridEvents() {
 
 export function setupHeaderEvents() {
     const bpmInput = document.getElementById("bpm-input");
+    const popoverBpmDisplay = document.getElementById("popover-bpm-display");
+
     if (bpmInput) {
         bpmInput.addEventListener("change", (e) => {
             const val = parseInt(e.target.value, 10);
             if (!isNaN(val) && val >= 40 && val <= 260) {
                 scoreState.bpm = val;
+                if (popoverBpmDisplay) popoverBpmDisplay.textContent = val;
             } else {
                 e.target.value = scoreState.bpm;
             }
-        });
-    }
-
-    const globalTimeSigSelect = document.getElementById("global-timesig-select");
-    if (globalTimeSigSelect) {
-        globalTimeSigSelect.value = scoreState.timeSignature || "4/4";
-        globalTimeSigSelect.addEventListener("change", (e) => {
-            scoreState.timeSignature = e.target.value;
         });
     }
 
@@ -362,11 +357,59 @@ export function setupTransportEvents() {
         if (playIconImg) playIconImg.src = "assets/icons/play.svg";
     });
 
+    // POPOVER DO METRÔNOMO
+    const btnMetronome = document.getElementById("btn-metronome");
+    const popover = document.getElementById("metronome-popover");
+    const toggleInput = document.getElementById("popover-metronome-toggle");
+    const popoverBpmDisplay = document.getElementById("popover-bpm-display");
+    const volSlider = document.getElementById("metronome-vol-slider");
+    const volDisplay = document.getElementById("metronome-vol-display");
+
+    if (btnMetronome && popover) {
+        btnMetronome.addEventListener("click", (e) => {
+            e.stopPropagation();
+            popover.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!popover.contains(e.target) && !btnMetronome.contains(e.target)) {
+                popover.classList.remove("active");
+            }
+        });
+
+        toggleInput?.addEventListener("change", (e) => {
+            audioEngine.metronomeEnabled = e.target.checked;
+            btnMetronome.classList.toggle("active", e.target.checked);
+        });
+
+        volSlider?.addEventListener("input", (e) => {
+            const vol = parseInt(e.target.value, 10);
+            if (volDisplay) volDisplay.textContent = `${vol}%`;
+            audioEngine.setMetronomeVolume(vol);
+        });
+    }
+
+    // BOTÕES DE INCREMENTO DE BPM (POPOVER)
+    document.querySelectorAll(".bpm-stepper-control .btn-bpm-step").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const step = parseInt(btn.dataset.step, 10);
+            let currentBpm = scoreState.bpm || 120;
+            let newBpm = Math.min(Math.max(currentBpm + step, 40), 260);
+
+            scoreState.bpm = newBpm;
+            if (bpmInput) bpmInput.value = newBpm;
+            if (popoverBpmDisplay) popoverBpmDisplay.textContent = newBpm;
+
+            if (window.audioEngine) window.audioEngine.updateTransportSettings();
+        });
+    });
+
     if (bpmInput) {
         bpmInput.addEventListener("input", (e) => {
             const val = parseInt(e.target.value, 10);
             if (!isNaN(val) && val >= 40 && val <= 260) {
                 scoreState.bpm = val;
+                if (popoverBpmDisplay) popoverBpmDisplay.textContent = val;
                 if (Tone.Transport) {
                     Tone.Transport.bpm.value = val;
                 }
@@ -382,20 +425,17 @@ export function setupMainMenuEvents() {
 
     if (!btnMenu || !menuDropdown) return;
 
-    // Toggle de visibilidade do menu
     btnMenu.addEventListener("click", (e) => {
         e.stopPropagation();
         menuDropdown.classList.toggle("active");
     });
 
-    // Fecha o menu ao clicar fora dele
     document.addEventListener("click", (e) => {
         if (!menuDropdown.contains(e.target) && e.target !== btnMenu) {
             menuDropdown.classList.remove("active");
         }
     });
 
-    // Ações dos itens do menu
     document.getElementById("menu-opt-new")?.addEventListener("click", () => {
         menuDropdown.classList.remove("active");
         const modal = document.getElementById("new-arrangement-modal");
