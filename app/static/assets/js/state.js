@@ -24,6 +24,7 @@ export const scoreState = {
     timeSignature: "4/4",
     measuresCount: 1,
     selectedSelection: [],
+    autoScroll: false,
     measuresConfig: [
         { timeSignature: "4/4" }
     ],

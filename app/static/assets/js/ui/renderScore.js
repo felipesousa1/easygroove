@@ -505,4 +505,24 @@ export function setupMainMenuEvents() {
     document.getElementById("menu-opt-exit")?.addEventListener("click", () => {
         window.location.href = "/";
     });
+
+    // Auto-Scroll do Playhead
+    const btnAutoScroll = document.getElementById("menu-opt-autoscroll");
+    const autoScrollIcon = document.getElementById("autoscroll-status-icon");
+
+    if (autoScrollIcon) {
+        autoScrollIcon.textContent = scoreState.autoScrollEnabled ? "✓" : "";
+    }
+
+    if (btnAutoScroll) {
+        btnAutoScroll.addEventListener("click", () => {
+            scoreState.autoScrollEnabled = !scoreState.autoScrollEnabled;
+            if (autoScrollIcon) {
+                autoScrollIcon.textContent = scoreState.autoScrollEnabled ? "✓" : "";
+            }
+            if (typeof showToast === "function") {
+                showToast(`Auto-Scroll ${scoreState.autoScrollEnabled ? 'ativado' : 'desativado'}`);
+            }
+        });
+    }
 }

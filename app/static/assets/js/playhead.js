@@ -67,6 +67,24 @@ export function updatePlayheadPosition() {
     const totalX = accumulatedX + beatX;
 
     playhead.style.transform = `translateX(${totalX}px)`;
+
+    // Lógica de auto-scroll da viewport
+    if (scoreState.autoScrollEnabled && window.audioEngine?.isPlaying) {
+        const viewport = document.querySelector(".score-viewport");
+        if (viewport) {
+            const viewportWidth = viewport.clientWidth;
+            const currentScrollLeft = viewport.scrollLeft;
+
+            // Mantém a margem de conforto (300px antes da borda direita da tela)
+            const rightMarginThreshold = currentScrollLeft + viewportWidth - 300;
+
+            if (totalX > rightMarginThreshold) {
+                viewport.scrollLeft = totalX - 150; // Centraliza ligeiramente à frente
+            } else if (totalX < currentScrollLeft) {
+                viewport.scrollLeft = Math.max(0, totalX - 50); // Se voltar pelo loop
+            }
+        }
+    }
 }
 export function animatePlayhead() {
     if (!window.audioEngine || !window.audioEngine.isPlaying) return;
