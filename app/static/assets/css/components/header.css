@@ -241,6 +241,12 @@
   pointer-events: none;
 }
 
+.header-right button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
 .floating-help-btn {
   position: fixed;
   bottom: 24px;

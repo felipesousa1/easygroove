@@ -7,7 +7,7 @@ export function showToast(message, isError = false) {
     }
 
     toast.className = isError ? "toast-error" : "toast-success";
-    toast.textContent = message;
+    toast.innerHTML = message;
 
     const selectedEl = document.querySelector(".measure-container.selected") || document.querySelector(".measure-container.in-clipboard");
 

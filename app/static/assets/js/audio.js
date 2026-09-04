@@ -232,15 +232,23 @@ export const audioEngine = {
         const sequence = [];
         let m = 0;
 
-        while (m < scoreState.measuresCount) {
-            const repeat = scoreState.repeats?.find(r => r.start <= m && r.end >= m);
+        // Garante array ordenado para evitar conflitos de índices
+        const repeats = (scoreState.repeats || []).slice().sort((a, b) => a.start - b.start);
 
-            if (repeat && repeat.end === m) {
-                for (let count = 0; count < (repeat.times || 2); count++) {
+        while (m < scoreState.measuresCount) {
+            // Encontra um ritornelo que COMEÇA exatamente no compasso atual m
+            const repeat = repeats.find(r => r.start === m);
+
+            if (repeat && repeat.end >= repeat.start && repeat.end < scoreState.measuresCount) {
+                const repeatCount = repeat.times || 2;
+
+                // Adiciona a sequência inteira do ritornelo (do start ao end) N vezes
+                for (let count = 0; count < repeatCount; count++) {
                     for (let stepM = repeat.start; stepM <= repeat.end; stepM++) {
                         sequence.push(stepM);
                     }
                 }
+                // Avança o ponteiro principal para logo após o término do ritornelo
                 m = repeat.end + 1;
             } else {
                 sequence.push(m);

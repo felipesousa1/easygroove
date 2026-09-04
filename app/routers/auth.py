@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status, Body
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
+from app.auth.dependencies import get_current_user
 import jwt
 
 from app.auth.security import (
@@ -129,3 +130,7 @@ def reset_password(payload: PasswordResetConfirm, session: Session = Depends(get
     session.commit()
     
     return {"message": "Senha redefinida com sucesso."}
+
+@router.get("/me", response_model=UserRead)
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user

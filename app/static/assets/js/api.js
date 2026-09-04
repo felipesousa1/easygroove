@@ -5,7 +5,53 @@ import { updateLoopBarVisuals } from './ui/loop.js';
 import { historyManager } from './history.js';
 import { setIsDirty } from './state.js';
 
+// Atualiza o destino do link da logo com base no estado de autenticação
+export function updateLogoLink(isLoggedIn) {
+    const logoLink = document.getElementById("header-logo-link");
+    if (!logoLink) return;
+    logoLink.href = isLoggedIn ? "/biblioteca" : "/";
+}
+
+export function updateSaveButtonState(isLoggedIn) {
+    const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
+    if (!saveBtn) return;
+
+    if (isLoggedIn) {
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = "1";
+        saveBtn.style.cursor = "pointer";
+        saveBtn.title = "Salvar Projeto";
+    } else {
+        saveBtn.disabled = true;
+        saveBtn.style.opacity = "0.4";
+        saveBtn.style.cursor = "not-allowed";
+        saveBtn.title = "Faça login para salvar o arranjo";
+    }
+}
+
+export async function checkAuthStatus() {
+    try {
+        const response = await fetch("/api/auth/me", {
+            credentials: "same-origin"
+        });
+        const isLoggedIn = response.ok;
+        
+        updateLogoLink(isLoggedIn);
+        updateSaveButtonState(isLoggedIn);
+        
+        return isLoggedIn;
+    } catch {
+        updateLogoLink(false);
+        updateSaveButtonState(false);
+        return false;
+    }
+}
+
 export async function saveCurrentArrangement() {
+    // Prevenção caso o clique ocorra com o botão desabilitado
+    const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
+    if (saveBtn && saveBtn.disabled) return;
+
     const { loopState, ...scoreDataToSave } = scoreState;
 
     const payload = {
@@ -31,10 +77,7 @@ export async function saveCurrentArrangement() {
         });
 
         if (response.status === 401) {
-            showToast("Você precisa estar logado para salvar.", true);
-            setTimeout(() => {
-                window.location.href = "/login";
-            }, 1500);
+            updateSaveButtonState(false);
             return;
         }
 
@@ -56,7 +99,7 @@ export async function saveCurrentArrangement() {
         showToast("Arranjo salvo com sucesso!");
     } catch (error) {
         console.error("Erro de conexão ao salvar:", error);
-        showToast("Falha de conexão com el servidor.", true);
+        showToast("Falha de conexão com o servidor.", true);
     }
 }
 
@@ -65,6 +108,9 @@ export function setupPersistenceEvents() {
     if (saveBtn) {
         saveBtn.addEventListener("click", saveCurrentArrangement);
     }
+
+    // Inicializa a checagem da logo ao carregar a página
+    checkAuthStatus();
 }
 
 export async function loadArrangementFromURL() {
@@ -79,10 +125,11 @@ export async function loadArrangementFromURL() {
         });
 
         if (response.status === 401) {
-            showToast("Faça login para abrir este arranjo.", true);
-            setTimeout(() => {
-                window.location.href = "/login";
-            }, 1500);
+            if (typeof updateLogoLink === "function") {
+                updateLogoLink(false);
+            }
+            // Exibe o toast informativo mantendo o usuário no editor com as notas salvas na tela
+            showToast("Você precisa estar logado para salvar o arranjo.");
             return;
         }
 

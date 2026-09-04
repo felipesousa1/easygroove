@@ -54,6 +54,16 @@ export function renderRepeats() {
     });
 }
 
+// Função auxiliar para re-sincronizar o motor de áudio quando os ritornelos mudarem
+function syncAudioWithRepeats() {
+    if (window.audioEngine) {
+        window.audioEngine.updateTransportSettings();
+        if (window.audioEngine.isInitialized) {
+            window.audioEngine.schedulePlaybackSequence();
+        }
+    }
+}
+
 export function setupRepeatControlEvents() {
     const measuresTrack = document.getElementById("measures-track");
     if (!measuresTrack) return;
@@ -96,6 +106,7 @@ export function setupRepeatControlEvents() {
         }
 
         renderScore();
+        syncAudioWithRepeats(); // Re-sincroniza o agendamento do Tone.js
     });
 }
 
@@ -129,5 +140,6 @@ export function setupMeasureLoopEvents() {
         }
 
         renderScore();
+        syncAudioWithRepeats(); // Re-sincroniza o agendamento do Tone.js
     });
 }
