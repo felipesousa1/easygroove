@@ -47,9 +47,11 @@ export const audioEngine = {
         }
     },
 
-    createSynthsForInstrument(instId) {
+    createSynthsForInstrument(instId, isOffline = false) {
         const baseType = instId.split("_")[0];
-        const channel = this.channels[instId] || Tone.Destination;
+
+        // Quando offline, ignoramos este.channels (que pertence ao contexto online) e conectamos diretamente em Tone.getDestination()
+        const channel = isOffline ? Tone.getDestination() : (this.channels[instId] || Tone.getDestination());
 
         if (baseType.startsWith("surdo")) {
             const pitch = baseType === "surdo1" ? "C1" : baseType === "surdo2" ? "G1" : "C2";
@@ -199,6 +201,14 @@ export const audioEngine = {
         }
     },
 
+    // Dispara o som de um toque em um tempo específico durante a renderização offline
+    triggerOfflineStroke(inst, stroke, time) {
+        if (!this.isInitialized) {
+            this.init();
+        }
+        this.triggerStroke(inst, stroke, time);
+    },
+
     async previewStroke(instId, strokeType) {
         if (this.isPlaying || !strokeType) return;
 
@@ -281,13 +291,13 @@ export const audioEngine = {
         }
     },
 
-// Função para cortar instantaneamente qualquer som residual (caudas de prato, etc)
+    // Função para cortar instantaneamente qualquer som residual (caudas de prato, etc)
     cutAllSound() {
         Object.values(this.synths).forEach(synthGroup => {
             if (!synthGroup) return;
             Object.values(synthGroup).forEach(synth => {
                 if (synth && typeof synth.releaseAll === 'function') {
-                    try { synth.releaseAll(); } catch (e) {}
+                    try { synth.releaseAll(); } catch (e) { }
                 }
             });
         });
@@ -324,7 +334,7 @@ export const audioEngine = {
                         if (stroke) {
                             // Calcula o tick exato desta nota na linha do tempo global
                             const noteTick = accumulatedTicks + (b * ppq) + Math.round(s * ticksPerSub);
-                            
+
                             // Agenda a nota nativamente no Transport
                             Tone.Transport.schedule((time) => {
                                 this.triggerStroke(inst, stroke, time);
@@ -378,10 +388,10 @@ export const audioEngine = {
 
     pause() {
         if (!this.isPlaying) return;
-        
+
         Tone.Transport.pause(); // Pausa o relógio instantaneamente
         this.cutAllSound();     // Corta caldas sonoras residuais
-        
+
         this.isPlaying = false;
         this.isPaused = true;
         if (window.pausePlayheadAnimation) window.pausePlayheadAnimation();
@@ -390,7 +400,7 @@ export const audioEngine = {
     stop() {
         Tone.Transport.stop();
         this.cutAllSound();
-        
+
         this.isPlaying = false;
         this.isPaused = false;
 

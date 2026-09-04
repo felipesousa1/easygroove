@@ -2,6 +2,7 @@ import { scoreState } from './state.js';
 import { TIME_SIGNATURES } from './constants.js';
 import { createBeamsSVG, getStrokeVisual } from './ui/beams.js';
 import { showToast } from './ui/toast.js';
+import { exportScoreToAudio } from './audioExport.js';
 
 export function exportScoreToJSON() {
     try {
@@ -267,5 +268,10 @@ export function setupExportEvents() {
     document.getElementById("btn-export-json")?.addEventListener("click", () => {
         dropdown.classList.remove("active");
         exportScoreToJSON();
+
+    });
+    document.getElementById("btn-export-audio")?.addEventListener("click", () => {
+        dropdown.classList.remove("active");
+        exportScoreToAudio();
     });
 }
