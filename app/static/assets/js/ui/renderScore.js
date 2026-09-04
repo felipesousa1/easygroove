@@ -238,8 +238,11 @@ export function setupGridEvents() {
     const scoreGrid = document.getElementById("score-grid");
     if (!scoreGrid) return;
 
-    scoreGrid.addEventListener("click", (e) => {
-        const slot = e.target.closest(".note-slot");
+    let isPainting = false;
+    let hasPaintedInDrag = false;
+
+    // Função interna para aplicar a nota no slot
+    function paintSlot(slot) {
         if (!slot) return;
 
         const instIndex = parseInt(slot.dataset.instIndex, 10);
@@ -250,27 +253,57 @@ export function setupGridEvents() {
         const instrument = scoreState.instruments[instIndex];
         if (!instrument || !instrument.pattern[measure] || !instrument.pattern[measure][beat]) return;
 
+        // Ativa o instrumento correspondente na paleta se for diferente
         if (scoreState.activeTool.instrumentId !== instrument.id) {
             selectActiveInstrument(instrument.id);
         }
 
         const currentStroke = instrument.pattern[measure][beat].notes[step];
         const targetStroke = scoreState.activeTool.strokeType;
-        const nextStroke = (currentStroke === targetStroke) ? null : targetStroke;
 
-        if (currentStroke !== nextStroke) {
-            historyManager.pushState();
+        // Durante o drag-to-paint, preenchemos sequencialmente com o toque ativo
+        if (currentStroke !== targetStroke) {
+            // Salva o estado no histórico apenas na primeira nota do arrasto
+            if (!hasPaintedInDrag) {
+                historyManager.pushState();
+                hasPaintedInDrag = true;
+            }
 
-            instrument.pattern[measure][beat].notes[step] = nextStroke;
+            instrument.pattern[measure][beat].notes[step] = targetStroke;
 
-            const visual = getStrokeVisual(nextStroke);
+            const visual = getStrokeVisual(targetStroke);
             slot.className = `note-slot ${visual.className}`;
             slot.innerHTML = visual.content;
 
-            if (nextStroke && window.audioEngine) {
-                audioEngine.previewStroke(instrument.id, nextStroke);
+            if (targetStroke && window.audioEngine) {
+                audioEngine.previewStroke(instrument.id, targetStroke);
             }
         }
+    }
+
+    // 1. Início do clique/arrasto
+    scoreGrid.addEventListener("mousedown", (e) => {
+        const slot = e.target.closest(".note-slot");
+        if (!slot) return;
+
+        isPainting = true;
+        hasPaintedInDrag = false;
+        paintSlot(slot);
+    });
+
+    // 2. Movimento sobre os outros slots enquanto arrasta
+    scoreGrid.addEventListener("mouseover", (e) => {
+        if (!isPainting) return;
+        const slot = e.target.closest(".note-slot");
+        if (slot) {
+            paintSlot(slot);
+        }
+    });
+
+    // 3. Finalização da pintura ao soltar o mouse ou sair da janela
+    window.addEventListener("mouseup", () => {
+        isPainting = false;
+        hasPaintedInDrag = false;
     });
 }
 
