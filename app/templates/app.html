@@ -259,6 +259,37 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Temporário para Preview do HTML da Partitura -->
+    <div id="pdf-preview-modal" class="lib-modal-overlay">
+        <div class="lib-modal-content"
+            style="max-width: 850px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 20px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #cbd5e1; padding-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 1.1rem; color: #31006f;">👁️ Visualização de Impressão</h3>
+
+                <!-- Controles de Layout da Partitura -->
+                <div
+                    style="display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 4px; border-radius: 8px;">
+                    <button type="button" id="btn-layout-system" class="pdf-layout-btn active"
+                        style="border: none; background: #ffffff; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; cursor: pointer; color: #31006f; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        Grade Geral (por Compasso)
+                    </button>
+                    <button type="button" id="btn-layout-instrument" class="pdf-layout-btn"
+                        style="border: none; background: transparent; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; cursor: pointer; color: #64748b;">
+                        Por Instrumento
+                    </button>
+                </div>
+
+                <button type="button" id="btn-close-pdf-preview" class="btn-modal-secondary"
+                    style="background: transparent; border: none; font-size: 1.2rem; cursor: pointer;">✕</button>
+            </div>
+
+            <div id="pdf-preview-body"
+                style="background: #ffffff; border: 1px dashed #cbd5e1; display: flex; justify-content: center; padding: 10px;">
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
