@@ -124,3 +124,219 @@
   font-size: 0.75rem;
   margin-top: 2px;
 }
+
+/* ==========================================
+   ESTILOS DAS ABAS DO MODAL DE AJUDA
+   ========================================== */
+
+.help-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 12px;
+}
+
+.help-tabs-nav {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 16px;
+}
+
+.help-tab-btn {
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.help-tab-btn.active {
+    color: #360566;
+    border-bottom-color: #360566;
+}
+
+.help-tab-panel {
+    display: none;
+}
+
+.help-tab-panel.active {
+    display: block;
+}
+
+/* ==========================================
+   ABA DE ATALHOS DO TECLADO
+   ========================================== */
+
+.shortcuts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 8px 4px;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.key-combo {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.key-combo span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.shortcut-item kbd {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 3px 7px;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* ==========================================
+   TOUR GUIADO MULTI-BALÕES (SPOTLIGHT)
+   ========================================== */
+
+/* Container Principal do Tour */
+.tour-overlay {
+    display: none;
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh;
+    z-index: 9999;
+    pointer-events: auto; /* Impede clique fora no editor */
+}
+
+.tour-overlay.active {
+    display: block;
+}
+
+/* Garante que os balões possuam clique caso precisem */
+.tour-tooltip-card {
+    position: absolute;
+    width: 240px;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    font-size: 0.8rem;
+    color: #1e293b;
+    line-height: 1.35;
+    pointer-events: auto;
+}
+
+.tour-tooltip-title {
+    font-weight: 800;
+    color: #360566;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.tour-tooltip-tip {
+    margin-top: 6px;
+    padding: 4px 6px;
+    background: #f8fafc;
+    border-left: 2px solid #360566;
+    font-size: 0.75rem;
+    color: #475569;
+    border-radius: 0 4px 4px 0;
+}
+
+.tour-navigation-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    padding: 12px 24px;
+    border-radius: 50px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    z-index: 10002;
+}
+
+.tour-nav-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.tour-nav-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #0f172a;
+}
+
+.tour-nav-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #64748b;
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+.tour-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-tour-primary {
+    background: #360566;
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-tour-secondary {
+    background: #f1f5f9;
+    color: #334155;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-tour-link {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: underline;
+}

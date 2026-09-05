@@ -13,6 +13,7 @@ import { setupSubdivisionEvents } from './ui/beams.js';
 import { setupNewArrangementModal } from './ui/newArrangementModal.js';
 import { isDirty } from './state.js';
 import { setupExportEvents } from './export.js';
+import { setupHelpEvents } from './ui/help.js';
 
 window.addEventListener("resize", renderRepeats);
 
@@ -40,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setupLoopEvents();
         setupPersistenceEvents();
         setupExportEvents();
+        setupHelpEvents();
 
         if (window.location.search.includes("id=")) {
             loadArrangementFromURL();

@@ -301,6 +301,169 @@
         </div>
     </div>
 
+    <!-- Overlay do Tour Guiado (SVG Mask Multi-Balões) -->
+    <div id="tour-overlay" class="tour-overlay">
+
+        <!-- Máscara SVG para recortar os destaques -->
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"
+            style="position: absolute; top: 0; left: 0; z-index: 10000; pointer-events: none;">
+            <defs>
+                <mask id="tour-spotlight-mask">
+                    <!-- Fundo branco = Overlay Escuro -->
+                    <rect width="100%" height="100%" fill="white" />
+                    <!-- Formas pretas = Furos transparentes renderizados via JS -->
+                    <g id="tour-mask-holes"></g>
+                </mask>
+            </defs>
+
+            <!-- O overlay escuro com a máscara aplicada -->
+            <rect width="100%" height="100%" fill="rgba(15, 23, 42, 0.75)" mask="url(#tour-spotlight-mask)" />
+
+            <!-- Contornos visuais para os destaques -->
+            <g id="tour-stroke-boxes"></g>
+        </svg>
+
+        <!-- Container dos balões apontadores -->
+        <div id="tour-tooltips-container"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10001; pointer-events: none;">
+        </div>
+
+        <!-- Barra Inferior de Navegação dos 4 Slides -->
+        <div class="tour-navigation-bar">
+            <div class="tour-nav-info">
+                <span id="tour-slide-title" class="tour-nav-title">1. Cabeçalho Principal</span>
+                <span id="tour-slide-badge" class="tour-nav-badge">1 / 4</span>
+            </div>
+            <div class="tour-nav-actions">
+                <button type="button" id="btn-tour-prev" class="btn-tour-secondary">Anterior</button>
+                <button type="button" id="btn-tour-skip" class="btn-tour-link">Sair do Tour</button>
+                <button type="button" id="btn-tour-next" class="btn-tour-primary">Próximo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Principal de Ajuda -->
+    <div id="help-modal" class="lib-modal-overlay">
+        <div class="lib-modal-content" style="max-width: 600px; width: 90%;">
+            <div class="help-modal-header">
+                <h2 class="lib-modal-title" style="margin: 0;">Ajuda & Suporte</h2>
+                <button type="button" id="btn-close-help-modal" class="btn-modal-secondary"
+                    style="border: none; background: transparent; font-size: 1.2rem; cursor: pointer;">✕</button>
+            </div>
+
+            <!-- Abas do Modal -->
+            <div class="help-tabs-nav">
+                <button type="button" class="help-tab-btn active" data-tab="tutorial">Tutorial Guiado</button>
+                <button type="button" class="help-tab-btn" data-tab="shortcuts">Atalhos do Teclado</button>
+                <button type="button" class="help-tab-btn" data-tab="contact">Fale Conosco</button>
+            </div>
+
+            <!-- Conteúdo das Abas -->
+            <div class="help-tabs-content">
+                <!-- ABA 1: TUTORIAL -->
+                <div id="help-tab-tutorial" class="help-tab-panel active">
+                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 16px;">
+                        Aprenda a navegar pelo EasyGroove com um tour interativo tela a tela.
+                    </p>
+                    <button type="button" id="btn-start-interactive-tour" class="btn-modal-primary"
+                        style="width: 100%; justify-content: center; padding: 12px; font-weight: 700;">
+                        Iniciar Tour Interativo pela Interface
+                    </button>
+                </div>
+
+                <!-- ABA 2: ATALHOS -->
+                <div id="help-tab-shortcuts" class="help-tab-panel">
+                    <div class="shortcuts-grid">
+                        <!-- Execução e Transporte -->
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>P</kbd></div>
+                            <span>Tocar / Pausar reprodução</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>S</kbd></div>
+                            <span>Parar e voltar ao início</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>L</kbd></div>
+                            <span>Ativar / Desativar Loop</span>
+                        </div>
+
+                        <!-- Edição e Seleção -->
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Ctrl</kbd><span>+</span><kbd>C</kbd></div>
+                            <span>Copiar compasso selecionado</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Ctrl</kbd><span>+</span><kbd>X</kbd></div>
+                            <span>Recortar compasso selecionado</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Ctrl</kbd><span>+</span><kbd>V</kbd></div>
+                            <span>Colar compasso copiado</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Del</kbd><span>/</span><kbd>Backspace</kbd></div>
+                            <span>Limpar conteúdo da seleção</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Esc</kbd></div>
+                            <span>Limpar seleção e área de transferência</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>1</kbd><span>-</span><kbd>9</kbd></div>
+                            <span>Alternar tipos de toques do instrumento</span>
+                        </div>
+
+                        <!-- Ações do Projeto (Shift) -->
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Ctrl</kbd><span>+</span><kbd>S</kbd></div>
+                            <span>Salvar projeto</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Shift</kbd><span>+</span><kbd>N</kbd></div>
+                            <span>Adicionar novo compasso</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Shift</kbd><span>+</span><kbd>B</kbd></div>
+                            <span>Focar no campo de BPM</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Shift</kbd><span>+</span><kbd>R</kbd></div>
+                            <span>Renomear título do arranjo</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Shift</kbd><span>+</span><kbd>E</kbd></div>
+                            <span>Exportar arranjo</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Shift</kbd><span>+</span><kbd>H</kbd><span>/</span><kbd>?</kbd>
+                            </div>
+                            <span>Abrir modal de ajuda</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA 3: FALE CONOSCO -->
+                <div id="help-tab-contact" class="help-tab-panel">
+                    <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 12px;">
+                        Encontrou um bug ou tem sugestões de melhoria? Envie seu feedback para a nossa equipe!
+                    </p>
+                    <form id="contact-feedback-form" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 600; color: #334155;">Sua Mensagem /
+                                Feedback</label>
+                            <textarea id="feedback-message-input" required rows="4"
+                                style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px; box-sizing: border-box; font-family: inherit;"
+                                placeholder="Conte-nos o que achou ou descreva o problema..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-modal-primary" style="align-self: flex-end;">Enviar
+                            Feedback</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
