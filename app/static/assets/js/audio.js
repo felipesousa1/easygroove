@@ -8,15 +8,19 @@ export const audioEngine = {
     isPaused: false,
     isInitialized: false,
     metronomeEnabled: false,
-    metronomeVolume: 100, // Volume de 0 a 100
+    metronomeVolume: 100,
     loopEventId: null,
 
+    masterLimiter: null,
     channels: {},
     synths: {},
     metronomeSynth: null,
 
     init() {
         if (this.isInitialized) return;
+
+        // Limiter Master para evitar estouro de áudio em rajadas rápidas
+        this.masterLimiter = new Tone.Limiter(-2).toDestination();
 
         scoreState.instruments.forEach(inst => {
             this.initInstrumentChannel(inst);
@@ -28,7 +32,7 @@ export const audioEngine = {
             octaves: 2,
             oscillator: { type: "sine" },
             envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 }
-        }).toDestination();
+        }).connect(this.masterLimiter);
 
         Tone.Transport.bpm.value = scoreState.bpm;
         this.isInitialized = true;
@@ -65,8 +69,10 @@ export const audioEngine = {
     },
 
     initInstrumentChannel(inst) {
+        const destination = this.masterLimiter || Tone.getDestination();
+
         if (!this.channels[inst.id]) {
-            this.channels[inst.id] = new Tone.Volume(this.calculateDb(inst.volume)).toDestination();
+            this.channels[inst.id] = new Tone.Volume(this.calculateDb(inst.volume)).connect(destination);
         } else {
             this.setInstrumentVolume(inst.id, inst.volume);
         }
@@ -85,58 +91,62 @@ export const audioEngine = {
 
     createSynthsForInstrument(instId, isOffline = false) {
         const baseType = instId.split("_")[0];
-        const channel = isOffline ? Tone.getDestination() : (this.channels[instId] || Tone.getDestination());
+        const destination = this.masterLimiter || Tone.getDestination();
+        const channel = isOffline ? destination : (this.channels[instId] || destination);
 
         if (baseType.startsWith("surdo")) {
             const pitch = baseType === "surdo1" ? "C1" : baseType === "surdo2" ? "G1" : "C2";
-            const surdoConfig = {
-                pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" },
-                envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.5 }
-            };
-            const synth = new Tone.PolySynth(Tone.MembraneSynth, surdoConfig).connect(channel);
+            // MembraneSynth monofônico dedicado evita acúmulo de vozes sobrepostas
+            const synth = new Tone.MembraneSynth({
+                pitchDecay: 0.02,
+                octaves: 2.5,
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.04 }
+            }).connect(channel);
+
             return { main: synth, defaultPitch: pitch };
         }
 
         if (baseType === "caixa") {
             const rimshotConfig = {
-                frequency: 320, envelope: { attack: 0.001, decay: 0.06, release: 0.05 },
+                frequency: 320, envelope: { attack: 0.001, decay: 0.05, release: 0.04 },
                 harmonicity: 4.1, modulationIndex: 28, resonance: 2500, octaves: 1.2
             };
             const aroConfig = {
                 pitchDecay: 0.01, octaves: 2, oscillator: { type: "square" },
-                envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.04 }
+                envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.03 }
             };
 
             return {
-                pele: new Tone.PolySynth(Tone.MembraneSynth, {
-                    pitchDecay: 0.02, octaves: 3, oscillator: { type: "triangle" },
-                    envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.15 }
+                pele: new Tone.MembraneSynth({
+                    pitchDecay: 0.02, octaves: 2.5, oscillator: { type: "triangle" },
+                    envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.04 }
                 }).connect(channel),
                 esteira: new Tone.NoiseSynth({
                     noise: { type: "white" },
-                    envelope: { attack: 0.001, decay: 0.14, sustain: 0 }
+                    envelope: { attack: 0.001, decay: 0.06, sustain: 0 }
                 }).connect(channel),
-                aro: new Tone.PolySynth(Tone.MembraneSynth, aroConfig).connect(channel),
+                aro: new Tone.MembraneSynth(aroConfig).connect(channel),
                 rimshot: new Tone.MetalSynth(rimshotConfig).connect(channel)
             };
         }
 
         if (baseType === "repique") {
             const rimshotConfig = {
-                frequency: 320, envelope: { attack: 0.001, decay: 0.06, release: 0.05 },
+                frequency: 320, envelope: { attack: 0.001, decay: 0.05, release: 0.04 },
                 harmonicity: 4.1, modulationIndex: 28, resonance: 2500, octaves: 1.2
             };
             const aroConfig = {
                 pitchDecay: 0.01, octaves: 2, oscillator: { type: "square" },
-                envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.04 }
+                envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.03 }
             };
 
             return {
-                main: new Tone.PolySynth(Tone.MembraneSynth, {
-                    pitchDecay: 0.03, octaves: 5, oscillator: { type: "sine" },
-                    envelope: { attack: 0.001, decay: 0.18, sustain: 0.2 }
+                main: new Tone.MembraneSynth({
+                    pitchDecay: 0.02, octaves: 3, oscillator: { type: "sine" },
+                    envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.04 }
                 }).connect(channel),
-                aro: new Tone.PolySynth(Tone.MembraneSynth, aroConfig).connect(channel),
+                aro: new Tone.MembraneSynth(aroConfig).connect(channel),
                 rimshot: new Tone.MetalSynth(rimshotConfig).connect(channel)
             };
         }
@@ -147,16 +157,16 @@ export const audioEngine = {
                 filter: chocalhoFilter,
                 noise: new Tone.NoiseSynth({
                     noise: { type: "pink" },
-                    envelope: { attack: 0.008, decay: 0.05, sustain: 0 }
+                    envelope: { attack: 0.003, decay: 0.03, sustain: 0 }
                 }).connect(chocalhoFilter)
             };
         }
 
         if (baseType === "tamborim") {
             return {
-                main: new Tone.PolySynth(Tone.MembraneSynth, {
-                    pitchDecay: 0.04, octaves: 4, oscillator: { type: "triangle" },
-                    envelope: { attack: 0.001, decay: 0.09, sustain: 0.01, release: 0.08 }
+                main: new Tone.MembraneSynth({
+                    pitchDecay: 0.02, octaves: 2.5, oscillator: { type: "triangle" },
+                    envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.03 }
                 }).connect(channel)
             };
         }
@@ -175,62 +185,62 @@ export const audioEngine = {
 
         if (baseType.startsWith("surdo")) {
             if (stroke === "pele-aberto") {
-                instSynths.main.triggerAttackRelease(instSynths.defaultPitch, "4n", execTime, 1.0);
+                instSynths.main.triggerAttackRelease(instSynths.defaultPitch, "32n", execTime, 0.9);
             } else if (stroke === "abafado") {
-                instSynths.main.triggerAttackRelease("D1", "16n", execTime, 0.5);
+                instSynths.main.triggerAttackRelease("D1", "32n", execTime, 0.5);
             }
         } else if (baseType === "caixa") {
             if (stroke === "pele-aberto") {
-                instSynths.pele.triggerAttackRelease("F2", "16n", execTime, 0.9);
-                instSynths.esteira.triggerAttackRelease("16n", execTime, 0.6);
+                instSynths.pele.triggerAttackRelease("F2", "32n", execTime, 0.85);
+                instSynths.esteira.triggerAttackRelease("32n", execTime, 0.55);
             } else if (stroke === "fantasma") {
-                instSynths.pele.triggerAttackRelease("E2", "32n", execTime, 0.3);
-                instSynths.esteira.triggerAttackRelease("32n", execTime, 0.15);
+                instSynths.pele.triggerAttackRelease("E2", "32n", execTime, 0.25);
+                instSynths.esteira.triggerAttackRelease("32n", execTime, 0.12);
             } else if (stroke === "aro") {
-                instSynths.aro.triggerAttackRelease("A4", "32n", execTime, 0.6);
+                instSynths.aro.triggerAttackRelease("A4", "32n", execTime, 0.55);
             } else if (stroke === "rimshot") {
-                instSynths.pele.triggerAttackRelease("A2", "16n", execTime, 1.0);
-                instSynths.rimshot.triggerAttackRelease("16n", execTime, 0.85);
+                instSynths.pele.triggerAttackRelease("A2", "32n", execTime, 0.95);
+                instSynths.rimshot.triggerAttackRelease("32n", execTime, 0.8);
             } else if (stroke === "rufo") {
                 for (let r = 0; r < 3; r++) {
-                    const subTime = Tone.Time(execTime).toSeconds() + (r * 0.025);
-                    instSynths.esteira.triggerAttackRelease(0.015, subTime, 0.4 - (r * 0.08));
+                    const subTime = Tone.Time(execTime).toSeconds() + (r * 0.02);
+                    instSynths.esteira.triggerAttackRelease("32n", subTime, 0.35 - (r * 0.07));
                 }
             }
         } else if (baseType === "repique") {
             if (stroke === "pele-aberto") {
-                instSynths.main.triggerAttackRelease("D3", "16n", execTime, 0.95);
+                instSynths.main.triggerAttackRelease("D3", "32n", execTime, 0.9);
             } else if (stroke === "rimshot") {
-                instSynths.main.triggerAttackRelease("F3", "16n", execTime, 1.0);
-                instSynths.rimshot.triggerAttackRelease("32n", execTime, 0.7);
+                instSynths.main.triggerAttackRelease("F3", "32n", execTime, 0.95);
+                instSynths.rimshot.triggerAttackRelease("32n", execTime, 0.65);
             } else if (stroke === "aro") {
-                instSynths.aro.triggerAttackRelease("B4", "32n", execTime, 0.65);
+                instSynths.aro.triggerAttackRelease("B4", "32n", execTime, 0.6);
             } else if (stroke === "slap") {
-                instSynths.main.triggerAttackRelease("G3", "32n", execTime, 1.0);
-                instSynths.aro.triggerAttackRelease("D5", "32n", execTime, 0.5);
+                instSynths.main.triggerAttackRelease("G3", "32n", execTime, 0.95);
+                instSynths.aro.triggerAttackRelease("D5", "32n", execTime, 0.45);
             } else if (stroke === "rufo") {
                 for (let r = 0; r < 3; r++) {
-                    const subTime = Tone.Time(execTime).toSeconds() + (r * 0.022);
-                    instSynths.main.triggerAttackRelease("D3", 0.015, subTime, 0.5);
+                    const subTime = Tone.Time(execTime).toSeconds() + (r * 0.02);
+                    instSynths.main.triggerAttackRelease("D3", "32n", subTime, 0.45);
                 }
             }
         } else if (baseType === "chocalho") {
             if (stroke === "chocalho-frente") {
                 if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(4200, execTime);
-                instSynths.noise.triggerAttackRelease("16n", execTime, 0.85);
+                instSynths.noise.triggerAttackRelease("32n", execTime, 0.8);
             } else if (stroke === "chocalho-tras") {
                 if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(3200, execTime);
-                instSynths.noise.triggerAttackRelease("32n", execTime, 0.5);
+                instSynths.noise.triggerAttackRelease("32n", execTime, 0.45);
             }
         } else if (baseType === "tamborim") {
             if (stroke === "tamborim-chapado") {
-                instSynths.main.triggerAttackRelease("A3", "16n", execTime, 1.0);
+                instSynths.main.triggerAttackRelease("A3", "32n", execTime, 0.9);
             } else if (stroke === "tamborim-ponta") {
-                instSynths.main.triggerAttackRelease("F#3", "16n", execTime, 0.75);
+                instSynths.main.triggerAttackRelease("F#3", "32n", execTime, 0.7);
             } else if (stroke === "abafado") {
-                instSynths.main.triggerAttackRelease("A3", "32n", execTime, 0.4);
+                instSynths.main.triggerAttackRelease("A3", "32n", execTime, 0.35);
             } else if (stroke === "aro") {
-                instSynths.main.triggerAttackRelease("E4", "32n", execTime, 0.6);
+                instSynths.main.triggerAttackRelease("E4", "32n", execTime, 0.55);
             }
         }
     },
