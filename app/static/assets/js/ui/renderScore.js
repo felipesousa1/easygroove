@@ -5,6 +5,7 @@ import { updateToolbarPalettes, selectActiveInstrument } from './toolbar.js';
 import { renderRepeats } from './repeat.js';
 import { updateLoopBarVisuals } from './loop.js';
 import { historyManager } from '../history.js';
+import { saveCurrentArrangement } from '../api.js';
 
 // ==========================================
 // FUNÇÕES AUXILIARES DE RENDERIZAÇÃO
@@ -479,10 +480,11 @@ export function setupMainMenuEvents() {
         window.location.href = "/biblioteca";
     });
 
-    document.getElementById("menu-opt-save")?.addEventListener("click", () => {
+    document.getElementById("menu-opt-save")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         menuDropdown.classList.remove("active");
-        const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
-        if (saveBtn) saveBtn.click();
+        saveCurrentArrangement();
     });
 
     document.getElementById("menu-opt-export-json")?.addEventListener("click", () => {

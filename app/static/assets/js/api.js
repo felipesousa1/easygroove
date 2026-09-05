@@ -13,7 +13,7 @@ export function updateLogoLink(isLoggedIn) {
 }
 
 export function updateSaveButtonState(isLoggedIn) {
-    const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
+    const saveBtn = document.getElementById("btn-save-project");
     if (!saveBtn) return;
 
     if (isLoggedIn) {
@@ -35,10 +35,10 @@ export async function checkAuthStatus() {
             credentials: "same-origin"
         });
         const isLoggedIn = response.ok;
-        
+
         updateLogoLink(isLoggedIn);
         updateSaveButtonState(isLoggedIn);
-        
+
         return isLoggedIn;
     } catch {
         updateLogoLink(false);
@@ -48,8 +48,7 @@ export async function checkAuthStatus() {
 }
 
 export async function saveCurrentArrangement() {
-    // Prevenção caso o clique ocorra com o botão desabilitado
-    const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
+    const saveBtn = document.getElementById("btn-save-project");
     if (saveBtn && saveBtn.disabled) return;
 
     const { loopState, ...scoreDataToSave } = scoreState;
@@ -92,7 +91,8 @@ export async function saveCurrentArrangement() {
 
         if (!currentArrangementId) {
             setCurrentArrangementId(data.id);
-            window.history.replaceState(null, "", `/?id=${data.id}`);
+            // Atualiza a URL cravando a rota /app?id=X
+            window.history.replaceState(null, "", `/app?id=${data.id}`);
         }
 
         setIsDirty(false);
@@ -104,15 +104,26 @@ export async function saveCurrentArrangement() {
 }
 
 export function setupPersistenceEvents() {
-    const saveBtn = document.querySelector('.header-right button[title="Salvar Projeto"]');
+    const saveBtn = document.getElementById("btn-save-project");
     if (saveBtn) {
-        saveBtn.addEventListener("click", saveCurrentArrangement);
+        saveBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            saveCurrentArrangement();
+        });
     }
 
-    // Inicializa a checagem da logo ao carregar a página
+    const menuSaveBtn = document.getElementById("menu-opt-save");
+    if (menuSaveBtn) {
+        menuSaveBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            saveCurrentArrangement();
+        });
+    }
+
     checkAuthStatus();
 }
-
 export async function loadArrangementFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const arrangementId = urlParams.get("id");
