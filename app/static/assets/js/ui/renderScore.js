@@ -582,6 +582,8 @@ export function setupMainMenuEvents() {
     });
 
     // 3. Edição & Visualização
+
+    // Auto-Scroll do Playhead
     const btnAutoScroll = document.getElementById("menu-opt-autoscroll");
     const autoScrollIcon = document.getElementById("autoscroll-status-icon");
 
@@ -592,6 +594,8 @@ export function setupMainMenuEvents() {
     if (btnAutoScroll) {
         btnAutoScroll.addEventListener("click", () => {
             scoreState.autoScrollEnabled = !scoreState.autoScrollEnabled;
+            localStorage.setItem("easygroove_autoscroll", JSON.stringify(scoreState.autoScrollEnabled));
+
             if (autoScrollIcon) {
                 autoScrollIcon.textContent = scoreState.autoScrollEnabled ? "✓" : "";
             }
@@ -601,6 +605,31 @@ export function setupMainMenuEvents() {
         });
     }
 
+
+    // Exibir / Ocultar Toolbar Flutuante
+    const btnToggleToolbar = document.getElementById("menu-opt-toolbar");
+    const toolbarStatusIcon = document.getElementById("toolbar-status-icon");
+    const floatingBar = document.querySelector(".floating-editor-bar");
+
+    if (btnToggleToolbar && floatingBar) {
+        let isToolbarVisible = true;
+
+        btnToggleToolbar.addEventListener("click", () => {
+            isToolbarVisible = !isToolbarVisible;
+            localStorage.setItem("easygroove_toolbar", JSON.stringify(scoreState.toolbarVisible));
+
+            floatingBar.classList.toggle("hidden-bar", !isToolbarVisible);
+            if (toolbarStatusIcon) {
+                toolbarStatusIcon.textContent = isToolbarVisible ? "✓" : "";
+            }
+
+            if (typeof showToast === "function") {
+                showToast(`Barra de ferramentas ${isToolbarVisible ? 'exibida' : 'ocultada'}`);
+            }
+        });
+    }
+
+    // Limpar Partitura
     document.getElementById("menu-opt-clear-score")?.addEventListener("click", () => {
         menuDropdown.classList.remove("active");
         if (confirm("Tem certeza que deseja limpar todas as notas da partitura?")) {

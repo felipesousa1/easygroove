@@ -18,13 +18,17 @@ export function setIsDirty(value) {
     isDirty = value;
 }
 
+const savedAutoScroll = localStorage.getItem("easygroove_autoscroll");
+const savedToolbar = localStorage.getItem("easygroove_toolbar");
+
 export const scoreState = {
     title: "Novo arranjo",
     bpm: 90,
     timeSignature: "4/4",
     measuresCount: 1,
     selectedSelection: [],
-    autoScroll: false,
+    autoScroll: savedAutoScroll !== null ? JSON.parse(savedAutoScroll) : false,
+    toolbarVisible: savedToolbar !== null ? JSON.parse(savedToolbar) : true,
     measuresConfig: [
         { timeSignature: "4/4" }
     ],

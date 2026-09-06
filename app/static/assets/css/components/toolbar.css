@@ -12,6 +12,14 @@
   align-items: center;
   gap: 14px;
   z-index: 90;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+
+.floating-editor-bar.hidden-bar {
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .tool-btn {
