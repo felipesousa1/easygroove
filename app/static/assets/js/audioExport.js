@@ -76,22 +76,25 @@ export async function exportScoreToAudio() {
 
         const bpm = scoreState.bpm || 120;
         const secondsPerBeat = 60 / bpm;
-        let totalBeats = 0;
 
-        for (let m = 0; m < scoreState.measuresCount; m++) {
-            const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+        // 1. Obtém a sequência de execução real considerando os ritornelos
+        const sequence = window.audioEngine ? window.audioEngine.getPlaybackSequence() : Array.from({ length: scoreState.measuresCount }, (_, i) => i);
+
+        // 2. Calcula o número total de batidas (beats) com base na sequência com ritornelos
+        let totalBeats = 0;
+        sequence.forEach(mIdx => {
+            const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
             const config = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
             totalBeats += config.beats;
-        }
+        });
 
-        const durationInSeconds = (totalBeats * secondsPerBeat) + 1.0;
+        const durationInSeconds = (totalBeats * secondsPerBeat) + 1.5; // Margem extra para cauda do som
 
-        // Passamos 'context' na callback do Tone.Offline
-        const renderedBuffer = await Tone.Offline(async (offlineContext) => {
+        // 3. Renderiza o áudio via Tone.Offline
+        const renderedBuffer = await Tone.Offline(async () => {
             const offlineSynths = {};
 
-            // O Tone.Offline define temporariamente o contexto ativo como offlineContext.
-            // Para garantir isolamento completo, instanciamos usando a fábrica do audioEngine.
+            // Instancia os sintetizadores conectados ao novo OfflineAudioContext
             scoreState.instruments.forEach(inst => {
                 if (!inst.hidden && inst.volume > 0 && window.audioEngine) {
                     offlineSynths[inst.id] = window.audioEngine.createSynthsForInstrument(inst.id, true);
@@ -100,8 +103,9 @@ export async function exportScoreToAudio() {
 
             let currentTime = 0;
 
-            for (let m = 0; m < scoreState.measuresCount; m++) {
-                const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+            // Percorre a sequência respeitando a ordem dos ritornelos
+            sequence.forEach(mIdx => {
+                const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
                 const config = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
 
                 for (let b = 0; b < config.beats; b++) {
@@ -110,7 +114,7 @@ export async function exportScoreToAudio() {
                     scoreState.instruments.forEach(inst => {
                         if (inst.hidden || inst.volume === 0) return;
 
-                        const beatData = inst.pattern?.[m]?.[b];
+                        const beatData = inst.pattern?.[mIdx]?.[b];
                         if (!beatData || !beatData.notes) return;
 
                         const subdivs = beatData.subdivisions || config.subdivisions;
@@ -126,7 +130,7 @@ export async function exportScoreToAudio() {
                 }
 
                 currentTime += config.beats * secondsPerBeat;
-            }
+            });
         }, durationInSeconds);
 
         const wavBlob = bufferToWav(renderedBuffer);

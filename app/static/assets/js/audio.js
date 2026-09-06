@@ -92,8 +92,8 @@ export const audioEngine = {
     createSynthsForInstrument(instId, isOffline = false) {
         const baseType = instId.split("_")[0];
         const destination = this.masterLimiter || Tone.getDestination();
-        const channel = isOffline ? destination : (this.channels[instId] || destination);
-
+        const channel = isOffline ? Tone.getDestination() : (this.channels[instId] || onlineDestination);
+        
         if (baseType.startsWith("surdo")) {
             const pitch = baseType === "surdo1" ? "C1" : baseType === "surdo2" ? "G1" : "C2";
             // MembraneSynth monofônico dedicado evita acúmulo de vozes sobrepostas
