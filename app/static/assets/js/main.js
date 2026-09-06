@@ -40,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setupInstrumentControlEvents();
         setupLoopEvents();
         setupPersistenceEvents();
+        setupNewArrangementModal();
         setupExportEvents();
         setupHelpEvents();
 

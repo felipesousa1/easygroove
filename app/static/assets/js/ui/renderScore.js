@@ -7,6 +7,9 @@ import { updateLoopBarVisuals } from './loop.js';
 import { historyManager } from '../history.js';
 import { saveCurrentArrangement } from '../api.js';
 import { setColumnTimeSignature } from './menu.js';
+import { exportScoreToAudio } from '../audioExport.js';
+import { createEmptyMeasureForSig } from '../state.js';
+import { openNewArrangementModal } from './newArrangementModal.js';
 
 // ==========================================
 // FUNÇÕES AUXILIARES DE RENDERIZAÇÃO
@@ -544,10 +547,10 @@ export function setupMainMenuEvents() {
         }
     });
 
+    // 1. Arquivo & Projeto
     document.getElementById("menu-opt-new")?.addEventListener("click", () => {
         menuDropdown.classList.remove("active");
-        const modal = document.getElementById("new-arrangement-modal");
-        if (modal) modal.classList.add("active");
+        openNewArrangementModal();
     });
 
     document.getElementById("menu-opt-library")?.addEventListener("click", () => {
@@ -561,6 +564,12 @@ export function setupMainMenuEvents() {
         saveCurrentArrangement();
     });
 
+    // 2. Importar & Exportar
+    document.getElementById("menu-opt-export-wav")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        exportScoreToAudio();
+    });
+
     document.getElementById("menu-opt-export-json")?.addEventListener("click", () => {
         menuDropdown.classList.remove("active");
         const exportBtn = document.querySelector('.header-right button[title="Exportar Arranjo"]');
@@ -572,17 +581,7 @@ export function setupMainMenuEvents() {
         if (importFileInput) importFileInput.click();
     });
 
-    document.getElementById("menu-opt-help")?.addEventListener("click", () => {
-        menuDropdown.classList.remove("active");
-        const helpBtn = document.querySelector(".floating-help-btn");
-        if (helpBtn) helpBtn.click();
-    });
-
-    document.getElementById("menu-opt-exit")?.addEventListener("click", () => {
-        window.location.href = "/";
-    });
-
-    // Auto-Scroll do Playhead
+    // 3. Edição & Visualização
     const btnAutoScroll = document.getElementById("menu-opt-autoscroll");
     const autoScrollIcon = document.getElementById("autoscroll-status-icon");
 
@@ -601,4 +600,53 @@ export function setupMainMenuEvents() {
             }
         });
     }
+
+    document.getElementById("menu-opt-clear-score")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        if (confirm("Tem certeza que deseja limpar todas as notas da partitura?")) {
+            historyManager.pushState();
+            scoreState.instruments.forEach(inst => {
+                inst.pattern = inst.pattern.map((_, mIdx) => {
+                    const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
+                    return createEmptyMeasureForSig(sig);
+                });
+            });
+            renderScore();
+            if (typeof showToast === "function") showToast("Partitura limpa com sucesso!");
+        }
+    });
+
+    // 4. Suporte, Tour & Atalhos
+    document.getElementById("menu-opt-tour")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        if (window.startInteractiveTour) window.startInteractiveTour();
+    });
+
+    document.getElementById("menu-opt-shortcuts")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        const helpModal = document.getElementById("help-modal");
+        if (helpModal) {
+            helpModal.classList.add("active");
+            // Ativa diretamente a aba de atalhos
+            helpModal.querySelectorAll(".help-tab-btn").forEach(b => b.classList.remove("active"));
+            helpModal.querySelectorAll(".help-tab-panel").forEach(p => p.classList.remove("active"));
+
+            const shortcutTab = helpModal.querySelector('[data-tab="shortcuts"]');
+            const shortcutPanel = document.getElementById("help-tab-shortcuts");
+            if (shortcutTab && shortcutPanel) {
+                shortcutTab.classList.add("active");
+                shortcutPanel.classList.add("active");
+            }
+        }
+    });
+
+    document.getElementById("menu-opt-help")?.addEventListener("click", () => {
+        menuDropdown.classList.remove("active");
+        const helpModal = document.getElementById("help-modal");
+        if (helpModal) helpModal.classList.add("active");
+    });
+
+    document.getElementById("menu-opt-exit")?.addEventListener("click", () => {
+        window.location.href = "/";
+    });
 }

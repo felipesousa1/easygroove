@@ -25,7 +25,7 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  width: 210px;
+  width: 220px;
   background-color: #ffffff;
   border: 1.5px solid var(--color-gray-border);
   border-radius: 8px;
