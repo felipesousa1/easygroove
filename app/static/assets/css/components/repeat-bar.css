@@ -33,8 +33,9 @@
 
 .repeat-control-pill {
   position: absolute;
-  right: 0;
-  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -20px;
   background-color: var(--color-purple-primary, #31006f);
   color: #ffffff;
   border-radius: 20px;

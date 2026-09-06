@@ -247,6 +247,21 @@
   pointer-events: none;
 }
 
+#export-dropdown {
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  right: auto !important;
+  top: calc(100% + 8px) !important;
+  width: 120px !important;
+  padding: 4px !important;
+}
+
+#export-dropdown .dropdown-item {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  justify-content: left;
+}
+
 .header-right button:disabled {
     opacity: 0.4;
     cursor: not-allowed;
