@@ -50,10 +50,13 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 1px 3px;
-  border-radius: 4px;
+  padding: 3px;
+  border-radius: 50%;
   opacity: 0;
   transition: opacity 0.15s ease, background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .instrument-card:hover .btn-inst-menu {
@@ -65,8 +68,8 @@
 }
 
 .btn-inst-menu img {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   display: block;
 }
 
