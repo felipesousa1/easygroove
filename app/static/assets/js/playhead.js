@@ -66,7 +66,10 @@ export function updatePlayheadPosition() {
     const beatX = (targetBeatInMeasure * beatWidth) + ((ticksIntoBeat / ppq) * beatWidth);
     const totalX = accumulatedX + beatX;
 
-    playhead.style.transform = `translateX(${totalX}px)`;
+    // Movimenta a linha vertical
+    if (playhead) {
+        playhead.style.transform = `translate3d(${totalX}px, 0, 0)`;
+    }
 
     // Lógica de auto-scroll da viewport
     if (scoreState.autoScrollEnabled && window.audioEngine?.isPlaying) {
