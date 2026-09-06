@@ -1,4 +1,9 @@
 export const STROKE_DEFINITIONS = {
+    "empty": {
+        label: "Pausa / Apagar Nota",
+iconHTML: `<span style="font-size: 1.1rem; line-height: 1; font-weight: bold; color: currentColor;">✕</span>`,        className: "stroke-empty",
+        renderHTML: ""
+    },
     "pele-aberto": {
         label: "Toque Aberto / Pele",
         iconHTML: `<span class="stroke-dot" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#111827;"></span>`,

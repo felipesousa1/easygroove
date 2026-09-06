@@ -17,7 +17,10 @@ export function updateToolbarPalettes() {
     if (activeIconEl) activeIconEl.src = currentInst.iconSvg;
     if (activeNameEl) activeNameEl.textContent = currentInst.name;
 
-    if (!currentInst.availableStrokes.includes(scoreState.activeTool.strokeType)) {
+    const strokesWithEmpty = ["empty", ...currentInst.availableStrokes.filter(s => s !== "empty")];
+
+    // Se o toque ativo não pertencer ao instrumento E não for a borracha "empty", seleciona o primeiro toque do instrumento
+    if (!strokesWithEmpty.includes(scoreState.activeTool.strokeType)) {
         scoreState.activeTool.strokeType = currentInst.availableStrokes[0];
     }
 
@@ -25,7 +28,7 @@ export function updateToolbarPalettes() {
     if (paletteContainer) {
         paletteContainer.innerHTML = "";
 
-        currentInst.availableStrokes.forEach(strokeKey => {
+        strokesWithEmpty.forEach(strokeKey => {
             const def = STROKE_DEFINITIONS[strokeKey];
             if (!def) return;
 

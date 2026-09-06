@@ -98,13 +98,22 @@ export function setupKeyboardShortcuts() {
                 e.preventDefault();
                 document.getElementById("btn-stop")?.click();
                 break;
+            case "0":
+                e.preventDefault();
+                const paletteContainer = document.getElementById("strokes-palette-container");
+                if (paletteContainer) {
+                    const emptyBtn = paletteContainer.querySelector('.tool-stroke[data-stroke-key="empty"]');
+                    if (emptyBtn) emptyBtn.click();
+                }
+                break;
             default:
                 const num = parseInt(e.key, 10);
                 if (!isNaN(num) && num >= 1 && num <= 9) {
                     const paletteContainer = document.getElementById("strokes-palette-container");
                     if (paletteContainer) {
-                        const buttons = paletteContainer.querySelectorAll(".tool-stroke");
-                        if (buttons[num - 1]) buttons[num - 1].click();
+                        // Busca apenas os botões de toques reais, ignorando a borracha (empty)
+                        const strokeButtons = paletteContainer.querySelectorAll('.tool-stroke:not([data-stroke-key="empty"])');
+                        if (strokeButtons[num - 1]) strokeButtons[num - 1].click();
                     }
                 }
                 break;

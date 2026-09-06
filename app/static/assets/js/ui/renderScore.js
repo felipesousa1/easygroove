@@ -239,11 +239,11 @@ export function setupGridEvents() {
     const scoreGrid = document.getElementById("score-grid");
     if (!scoreGrid) return;
 
-    let isPainting = false;
-    let hasPaintedInDrag = false;
+    let isDragging = false;
+    let dragMode = "paint"; // "paint" ou "erase"
+    let hasPushedHistory = false;
 
-    // Função interna para aplicar a nota no slot
-    function paintSlot(slot) {
+    function applySlotAction(slot) {
         if (!slot) return;
 
         const instIndex = parseInt(slot.dataset.instIndex, 10);
@@ -254,20 +254,20 @@ export function setupGridEvents() {
         const instrument = scoreState.instruments[instIndex];
         if (!instrument || !instrument.pattern[measure] || !instrument.pattern[measure][beat]) return;
 
-        // Ativa o instrumento correspondente na paleta se for diferente
         if (scoreState.activeTool.instrumentId !== instrument.id) {
             selectActiveInstrument(instrument.id);
         }
 
         const currentStroke = instrument.pattern[measure][beat].notes[step];
-        const targetStroke = scoreState.activeTool.strokeType;
+        const activeStroke = scoreState.activeTool.strokeType;
 
-        // Durante o drag-to-paint, preenchemos sequencialmente com o toque ativo
+        // Se a ferramenta ativa for a borracha ("empty"), força o modo para apagar
+        const targetStroke = (dragMode === "erase" || activeStroke === "empty") ? null : activeStroke;
+
         if (currentStroke !== targetStroke) {
-            // Salva o estado no histórico apenas na primeira nota do arrasto
-            if (!hasPaintedInDrag) {
+            if (!hasPushedHistory) {
                 historyManager.pushState();
-                hasPaintedInDrag = true;
+                hasPushedHistory = true;
             }
 
             instrument.pattern[measure][beat].notes[step] = targetStroke;
@@ -282,29 +282,43 @@ export function setupGridEvents() {
         }
     }
 
-    // 1. Início do clique/arrasto
     scoreGrid.addEventListener("mousedown", (e) => {
         const slot = e.target.closest(".note-slot");
         if (!slot) return;
 
-        isPainting = true;
-        hasPaintedInDrag = false;
-        paintSlot(slot);
+        const instIndex = parseInt(slot.dataset.instIndex, 10);
+        const measure = parseInt(slot.dataset.measure, 10);
+        const beat = parseInt(slot.dataset.beat, 10);
+        const step = parseInt(slot.dataset.step, 10);
+
+        const instrument = scoreState.instruments[instIndex];
+        const currentStroke = instrument?.pattern[measure]?.[beat]?.notes[step];
+        const activeStroke = scoreState.activeTool.strokeType;
+
+        isDragging = true;
+        hasPushedHistory = false;
+
+        // Define a intenção do arrasto baseado na célula inicial
+        if (currentStroke === activeStroke && activeStroke !== "empty") {
+            dragMode = "erase"; // Clicou no mesmo toque -> Modo apagar habilitado para o drag
+        } else {
+            dragMode = "paint"; // Clicou em célula diferente/vazia -> Modo pintar
+        }
+
+        applySlotAction(slot);
     });
 
-    // 2. Movimento sobre os outros slots enquanto arrasta
     scoreGrid.addEventListener("mouseover", (e) => {
-        if (!isPainting) return;
+        if (!isDragging) return;
         const slot = e.target.closest(".note-slot");
         if (slot) {
-            paintSlot(slot);
+            applySlotAction(slot);
         }
     });
 
-    // 3. Finalização da pintura ao soltar o mouse ou sair da janela
     window.addEventListener("mouseup", () => {
-        isPainting = false;
-        hasPaintedInDrag = false;
+        isDragging = false;
+        hasPushedHistory = false;
     });
 }
 
