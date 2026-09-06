@@ -6,6 +6,7 @@ import { renderRepeats } from './repeat.js';
 import { updateLoopBarVisuals } from './loop.js';
 import { historyManager } from '../history.js';
 import { saveCurrentArrangement } from '../api.js';
+import { setColumnTimeSignature } from './menu.js';
 
 // ==========================================
 // FUNÇÕES AUXILIARES DE RENDERIZAÇÃO
@@ -38,8 +39,16 @@ function renderMeasuresTrack(trackContainer) {
         const isRepeatEnd = activeRepeat && activeRepeat.end === m;
         const isInsideRepeat = activeRepeat && !isRepeatEnd;
 
+        const [num, den] = currentSig.split("/");
+
         header.innerHTML = `
-          <span>Compasso ${m + 1}</span>
+          <div class="measure-title-group">
+            <button type="button" class="time-sig-badge-btn" data-measure-index="${m}" title="Alterar Métrica">
+              <span class="sig-num">${num}</span>
+              <span class="sig-den">${den}</span>
+            </button>
+            <span class="measure-title-text">Compasso ${m + 1}</span>
+          </div>
           <div style="display: flex; align-items: center; gap: 4px;">
             ${!isInsideRepeat ? `
             <button type="button" class="measure-loop-btn ${isRepeatEnd ? 'active' : ''}" data-measure-index="${m}" title="Ativar/Desativar Ritornelo">
@@ -377,6 +386,57 @@ export function setupHeaderEvents() {
 
         titleInput.addEventListener("blur", saveTitle);
     }
+
+    // Manipulador para o Popover de Métricas ao clicar no badge
+    document.getElementById("measures-track")?.addEventListener("click", (e) => {
+        const badgeBtn = e.target.closest(".time-sig-badge-btn");
+        if (!badgeBtn) return;
+
+        e.stopPropagation();
+        const measureIndex = parseInt(badgeBtn.dataset.measureIndex, 10);
+
+        // Remove popover anterior se houver
+        document.querySelector(".time-sig-popover")?.remove();
+
+        const popover = document.createElement("div");
+        popover.className = "time-sig-popover";
+
+        const currentSig = scoreState.measuresConfig?.[measureIndex]?.timeSignature || scoreState.timeSignature || "4/4";
+
+        Object.keys(TIME_SIGNATURES).forEach(sig => {
+            const [num, den] = sig.split("/");
+            const itemBtn = document.createElement("button");
+            itemBtn.type = "button";
+            itemBtn.className = `time-sig-option ${sig === currentSig ? 'active' : ''}`;
+            itemBtn.innerHTML = `
+            <span class="sig-num">${num}</span>
+            <span class="sig-den">${den}</span>
+        `;
+            itemBtn.title = `Alterar para ${sig}`;
+
+            itemBtn.addEventListener("click", () => {
+                popover.remove();
+                // CHAMA A SUA FUNÇÃO EXISTENTE DO MENU.JS
+                setColumnTimeSignature(measureIndex, sig);
+            });
+
+            popover.appendChild(itemBtn);
+        });
+
+        document.body.appendChild(popover);
+
+        const rect = badgeBtn.getBoundingClientRect();
+        popover.style.top = `${rect.bottom + window.scrollY + 6}px`;
+        popover.style.left = `${rect.left + window.scrollX}px`;
+
+        const closeHandler = (evt) => {
+            if (!popover.contains(evt.target) && !badgeBtn.contains(evt.target)) {
+                popover.remove();
+                document.removeEventListener("click", closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener("click", closeHandler), 0);
+    });
 }
 
 export function setupTransportEvents() {

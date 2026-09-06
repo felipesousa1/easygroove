@@ -9,6 +9,8 @@ export const historyManager = {
     getSnapshot() {
         return {
             measuresCount: scoreState.measuresCount,
+            // 1. Salva uma cópia profunda da métrica de cada compasso
+            measuresConfig: JSON.parse(JSON.stringify(scoreState.measuresConfig || [])),
             instruments: scoreState.instruments.map(inst => ({
                 id: inst.id,
                 pattern: JSON.parse(JSON.stringify(inst.pattern))
@@ -44,15 +46,22 @@ export const historyManager = {
         this.updateButtonsState();
         setIsDirty(true);
     },
-
+    
     applySnapshot(snapshot) {
         scoreState.measuresCount = snapshot.measuresCount;
+
+        // Restaura as configurações de métrica de forma isolada
+        if (snapshot.measuresConfig) {
+            scoreState.measuresConfig = JSON.parse(JSON.stringify(snapshot.measuresConfig));
+        }
+
         snapshot.instruments.forEach(savedInst => {
             const targetInst = scoreState.instruments.find(i => i.id === savedInst.id);
             if (targetInst) {
                 targetInst.pattern = JSON.parse(JSON.stringify(savedInst.pattern));
             }
         });
+
         renderScore();
     },
 

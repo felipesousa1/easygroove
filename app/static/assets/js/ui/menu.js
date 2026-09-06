@@ -197,14 +197,30 @@ export function handleMeasureAction(action, index) {
 
 // Altera a métrica de uma coluna específica
 export function setColumnTimeSignature(measureIndex, newTimeSig) {
+    // 1. Garante que o array de configurações exista e tenha o tamanho correto
+    if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
+    
+    for (let i = 0; i < scoreState.measuresCount; i++) {
+        if (!scoreState.measuresConfig[i]) {
+            scoreState.measuresConfig[i] = { timeSignature: scoreState.timeSignature || "4/4" };
+        }
+    }
+
+    // 2. Salva a foto exata do estado ANTES de aplicar qualquer modificação
     historyManager.pushState();
 
-    if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
+    // 3. Atualiza a métrica do compasso específico
     scoreState.measuresConfig[measureIndex] = { timeSignature: newTimeSig };
 
+    // 4. Zera o conteúdo do compasso para todos os instrumentos na nova métrica
     scoreState.instruments.forEach(inst => {
         inst.pattern[measureIndex] = createEmptyMeasureForSig(newTimeSig);
     });
 
+    // 5. Redesenha a partitura e atualiza a engine de áudio
     renderScore();
+
+    if (window.audioEngine && audioEngine.isInitialized) {
+        audioEngine.updateTransportSettings();
+    }
 }
