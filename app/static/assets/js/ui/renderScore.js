@@ -629,22 +629,6 @@ export function setupMainMenuEvents() {
         });
     }
 
-    // Limpar Partitura
-    document.getElementById("menu-opt-clear-score")?.addEventListener("click", () => {
-        menuDropdown.classList.remove("active");
-        if (confirm("Tem certeza que deseja limpar todas as notas da partitura?")) {
-            historyManager.pushState();
-            scoreState.instruments.forEach(inst => {
-                inst.pattern = inst.pattern.map((_, mIdx) => {
-                    const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
-                    return createEmptyMeasureForSig(sig);
-                });
-            });
-            renderScore();
-            if (typeof showToast === "function") showToast("Partitura limpa com sucesso!");
-        }
-    });
-
     // 4. Suporte, Tour & Atalhos
     document.getElementById("menu-opt-tour")?.addEventListener("click", () => {
         menuDropdown.classList.remove("active");

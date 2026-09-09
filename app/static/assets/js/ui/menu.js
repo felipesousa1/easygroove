@@ -38,12 +38,26 @@ export function setupMeasureMenuEvents() {
 
         const btnMoveLeft = dropdown.querySelector('[data-action="move-left"]');
         const btnMoveRight = dropdown.querySelector('[data-action="move-right"]');
-
-        if (btnMoveLeft) btnMoveLeft.style.display = (activeMeasureIndex === 0) ? "none" : "flex";
-        if (btnMoveRight) btnMoveRight.style.display = (activeMeasureIndex === scoreState.measuresCount - 1) ? "none" : "flex";
-
         const btnPaste = dropdown.querySelector('[data-action="paste"]');
-        if (btnPaste) btnPaste.style.display = copiedMeasureData ? "flex" : "none";
+
+        const isFirst = activeMeasureIndex === 0;
+        const isLast = activeMeasureIndex === scoreState.measuresCount - 1;
+        const hasCopiedData = Boolean(copiedMeasureData);
+
+        if (btnMoveLeft) {
+            btnMoveLeft.disabled = isFirst;
+            btnMoveLeft.classList.toggle("disabled", isFirst);
+        }
+
+        if (btnMoveRight) {
+            btnMoveRight.disabled = isLast;
+            btnMoveRight.classList.toggle("disabled", isLast);
+        }
+
+        if (btnPaste) {
+            btnPaste.disabled = !hasCopiedData;
+            btnPaste.classList.toggle("disabled", !hasCopiedData);
+        }
 
         if (measureTimeSigSelect) {
             const currentSig = scoreState.measuresConfig?.[activeMeasureIndex]?.timeSignature || scoreState.timeSignature || "4/4";
@@ -142,16 +156,6 @@ export function handleMeasureAction(action, index) {
             scoreState.measuresCount++;
             break;
 
-        case "duplicate":
-            const clonedConfig = JSON.parse(JSON.stringify(scoreState.measuresConfig[index] || { timeSignature: currentSig }));
-            scoreState.measuresConfig.splice(index + 1, 0, clonedConfig);
-            scoreState.instruments.forEach(inst => {
-                const clonedPattern = JSON.parse(JSON.stringify(inst.pattern[index]));
-                inst.pattern.splice(index + 1, 0, clonedPattern);
-            });
-            scoreState.measuresCount++;
-            break;
-
         case "clear":
             scoreState.instruments.forEach(inst => {
                 inst.pattern[index] = createEmptyMeasureForSig(currentSig);
@@ -199,7 +203,7 @@ export function handleMeasureAction(action, index) {
 export function setColumnTimeSignature(measureIndex, newTimeSig) {
     // 1. Garante que o array de configurações exista e tenha o tamanho correto
     if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
-    
+
     for (let i = 0; i < scoreState.measuresCount; i++) {
         if (!scoreState.measuresConfig[i]) {
             scoreState.measuresConfig[i] = { timeSignature: scoreState.timeSignature || "4/4" };
