@@ -1,5 +1,5 @@
-import { INSTRUMENT_PRESETS } from '../constants.js';
-import { scoreState } from '../state.js';
+import { INSTRUMENT_PRESETS } from '../core/constants.js';
+import { scoreState } from '../core/state.js';
 import { renderScore } from './renderScore.js';
 import { showToast } from './toast.js';
 

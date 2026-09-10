@@ -1,7 +1,6 @@
-import { scoreState, createEmptyMeasure, setCopiedMeasureData, copiedMeasureData } from '../state.js';
-import { historyManager } from '../history.js';
-import { renderScore } from './renderScore.js';
-import { TIME_SIGNATURES } from '../constants.js';
+import { scoreState, createEmptyMeasure, setCopiedMeasureData, copiedMeasureData } from '../core/state.js';
+import { historyManager } from '../core/history.js';
+import { TIME_SIGNATURES } from '../core/constants.js';
 
 // Função utilitária para criar a estrutura do compasso baseada na métrica
 export function createEmptyMeasureForSig(timeSigKey) {

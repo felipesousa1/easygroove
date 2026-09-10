@@ -1,6 +1,6 @@
-import { scoreState } from '../state.js';
-import { STROKE_DEFINITIONS, INSTRUMENT_PRESETS, sanitizeStrokes } from '../constants.js';
-import { historyManager } from '../history.js';
+import { scoreState } from '../core/state.js';
+import { STROKE_DEFINITIONS, INSTRUMENT_PRESETS, sanitizeStrokes } from '../core/constants.js';
+import { historyManager } from '../core/history.js';
 
 export function updateToolbarPalettes() {
     const currentInst = scoreState.instruments.find(i => i.id === scoreState.activeTool.instrumentId) || scoreState.instruments[0];

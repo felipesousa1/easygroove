@@ -1,7 +1,7 @@
 // assets/js/audio.js - MOTOR DE ÁUDIO (TONE.JS)
 
-import { scoreState } from './state.js';
-import { TIME_SIGNATURES } from './constants.js';
+import { scoreState } from '../core/state.js';
+import { TIME_SIGNATURES } from '../core/constants.js';
 
 export const audioEngine = {
     isPlaying: false,

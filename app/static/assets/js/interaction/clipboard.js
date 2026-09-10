@@ -1,8 +1,8 @@
-import { scoreState, createEmptyMeasure, setSelectionClipboard } from './state.js';
-import { TIME_SIGNATURES } from './constants.js';
-import { showToast } from './ui/toast.js';
-import { historyManager } from './history.js';
-import { renderScore } from './ui/renderScore.js';
+import { scoreState, createEmptyMeasure, setSelectionClipboard } from '../core/state.js';
+import { TIME_SIGNATURES } from '../core/constants.js';
+import { historyManager } from '../core/history.js';
+import { showToast } from '../ui/toast.js';
+import { renderScore } from '../ui/renderScore.js';
 
 export function copySelectedMeasures() {
     if (!scoreState.selectedSelection || scoreState.selectedSelection.length === 0) return false;

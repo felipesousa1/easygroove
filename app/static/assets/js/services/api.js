@@ -1,9 +1,8 @@
-import { scoreState, currentArrangementId, setCurrentArrangementId } from './state.js';
-import { showToast } from './ui/toast.js';
-import { renderScore } from './ui/renderScore.js';
-import { updateLoopBarVisuals } from './ui/loop.js';
-import { historyManager } from './history.js';
-import { setIsDirty } from './state.js';
+import { scoreState, currentArrangementId, setCurrentArrangementId, setIsDirty } from '../core/state.js';
+import { historyManager } from '../core/history.js';
+import { showToast } from '../ui/toast.js';
+import { renderScore } from '../ui/renderScore.js';
+import { updateLoopBarVisuals } from '../ui/loop.js';
 
 // Atualiza o destino do link da logo com base no estado de autenticação
 export function updateLogoLink(isLoggedIn) {

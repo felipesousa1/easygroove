@@ -1,5 +1,5 @@
-import { scoreState } from '../state.js';
-import { TIME_SIGNATURES } from '../constants.js';
+import { scoreState } from '../core/state.js';
+import { TIME_SIGNATURES } from '../core/constants.js';
 
 export function updateLoopBarVisuals() {
     const loopBar = document.getElementById("loop-bar");

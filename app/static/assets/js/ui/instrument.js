@@ -1,8 +1,6 @@
-import { scoreState, createEmptyMeasure } from '../state.js';
-import { INSTRUMENT_PRESETS, getVolumeIcon } from '../constants.js';
-import { historyManager } from '../history.js';
-import { updateToolbarPalettes } from './toolbar.js';
-import { renderScore } from './renderScore.js';
+import { scoreState, createEmptyMeasure } from '../core/state.js';
+import { INSTRUMENT_PRESETS, getVolumeIcon } from '../core/constants.js';
+import { historyManager } from '../core/history.js';
 
 export function setupInstrumentControlEvents() {
     const sidebarList = document.getElementById("instruments-sidebar-list");

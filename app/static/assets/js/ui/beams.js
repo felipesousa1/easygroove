@@ -1,6 +1,6 @@
-import { STROKE_DEFINITIONS } from '../constants.js';
-import { scoreState } from '../state.js';
-import { historyManager } from '../history.js';
+import { STROKE_DEFINITIONS } from '../core/constants.js';
+import { scoreState } from '../core/state.js';
+import { historyManager } from '../core/history.js';
 
 export function createBeamsSVG(subdivisionsCount = 4) {
     // Força a conversão para número para garantir as linhas corretas

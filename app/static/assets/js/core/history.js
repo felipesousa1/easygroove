@@ -1,5 +1,5 @@
 import { scoreState, setIsDirty } from './state.js';
-import { renderScore } from './ui/renderScore.js';
+import { renderScore } from '../ui/renderScore.js';
 
 export const historyManager = {
     undoStack: [],

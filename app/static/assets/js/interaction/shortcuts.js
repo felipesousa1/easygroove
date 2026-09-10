@@ -1,6 +1,6 @@
-import { scoreState, setSelectionClipboard } from './state.js';
+import { scoreState, setSelectionClipboard } from '../core/state.js';
 import { copySelectedMeasures, cutSelectedMeasures, pasteClipboardToTarget, clearSelectedMeasures } from './clipboard.js';
-import { addMeasureToEnd, renderScore } from './ui/renderScore.js';
+import { addMeasureToEnd, renderScore } from '../ui/renderScore.js';
 
 export function setupKeyboardShortcuts() {
     window.addEventListener("keydown", (e) => {

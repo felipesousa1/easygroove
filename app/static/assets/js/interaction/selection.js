@@ -1,5 +1,5 @@
-import { scoreState } from './state.js';
-import { renderScore } from './ui/renderScore.js';
+import { scoreState } from '../core/state.js';
+import { renderScore } from '../ui/renderScore.js';
 
 export function setupSelectionEvents() {
     const scoreGrid = document.getElementById("score-grid");

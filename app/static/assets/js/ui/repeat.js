@@ -1,5 +1,5 @@
-import { scoreState } from '../state.js';
-import { historyManager } from '../history.js';
+import { scoreState } from '../core/state.js';
+import { historyManager } from '../core/history.js';
 import { renderScore } from './renderScore.js';
 
 export function renderRepeats() {
