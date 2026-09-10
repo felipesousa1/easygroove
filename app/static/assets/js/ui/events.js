@@ -1,8 +1,12 @@
 import { scoreState } from '../core/state.js';
 import { historyManager } from '../core/history.js';
-import { TIME_SIGNATURES } from '../core/constants.js';
 import { exportScoreToAudio } from '../services/export.js';
+import { openNewArrangementModal } from './newArrangementModal.js';
 import { saveCurrentArrangement } from '../services/api.js';
+import { setColumnTimeSignature } from './menu.js';
+import { selectActiveInstrument } from './toolbar.js';
+import { getStrokeVisual } from './beams.js';
+import { TIME_SIGNATURES } from '../core/constants.js';
 
 export function setupGridEvents() {
     const scoreGrid = document.getElementById("score-grid");
