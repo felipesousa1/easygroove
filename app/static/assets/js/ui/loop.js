@@ -83,17 +83,37 @@ export function setupLoopEvents() {
 
         if (draggingMode === "body") {
             const deltaX = e.clientX - dragStartX;
-            // Aproximação por largura média de 448px (4 tempos)
-            const measureShift = Math.round(deltaX / 448); 
             const loopLength = initialEnd - initialStart;
 
-            let newStart = initialStart + measureShift;
-            let newEnd = initialEnd + measureShift;
+            // Calcula o deslocamento em compassos baseado nas larguras acumuladas reais
+            let accumulatedX = 0;
+            let startMeasurePx = 0;
+            
+            for (let m = 0; m < initialStart; m++) {
+                const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+                const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+                startMeasurePx += cfg.beats * 112;
+            }
 
-            if (newStart < 0) {
-                newStart = 0;
-                newEnd = Math.min(scoreState.measuresCount, loopLength);
-            } else if (newEnd > scoreState.measuresCount) {
+            const targetPx = startMeasurePx + deltaX;
+
+            let newStart = 0;
+            accumulatedX = 0;
+
+            for (let m = 0; m < scoreState.measuresCount; m++) {
+                const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+                const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+                const w = cfg.beats * 112;
+
+                if (targetPx >= accumulatedX + (w / 2)) {
+                    newStart = m + 1;
+                }
+                accumulatedX += w;
+            }
+
+            let newEnd = newStart + loopLength;
+
+            if (newEnd > scoreState.measuresCount) {
                 newEnd = scoreState.measuresCount;
                 newStart = Math.max(0, scoreState.measuresCount - loopLength);
             }

@@ -83,26 +83,47 @@ export function setupMeasureMenuEvents() {
         const m = activeMeasureIndex;
 
         if (action === "copy") {
-            setCopiedMeasureData(scoreState.instruments.map(inst => {
-                return {
+            const currentSig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+            setCopiedMeasureData({
+                timeSignature: currentSig,
+                instruments: scoreState.instruments.map(inst => ({
                     instrumentId: inst.id,
                     pattern: JSON.parse(JSON.stringify(inst.pattern[m] || []))
-                };
-            }));
+                }))
+            });
         } else if (action === "paste") {
             if (copiedMeasureData) {
                 historyManager.pushState();
-                copiedMeasureData.forEach(copiedItem => {
-                    const inst = scoreState.instruments.find(i => i.id === copiedItem.instrumentId);
-                    if (inst) {
-                        inst.pattern[m] = JSON.parse(JSON.stringify(copiedItem.pattern));
-                    }
-                });
+
+                // 1. Aplica a métrica copiada ao compasso de destino
+                if (copiedMeasureData.timeSignature) {
+                    if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
+                    scoreState.measuresConfig[m] = { timeSignature: copiedMeasureData.timeSignature };
+                }
+
+                // 2. Copia os padrões de notas de cada instrumento
+                const rawItems = Array.isArray(copiedMeasureData) ? copiedMeasureData : copiedMeasureData.instruments;
+                if (rawItems) {
+                    rawItems.forEach(copiedItem => {
+                        const inst = scoreState.instruments.find(i => i.id === copiedItem.instrumentId);
+                        if (inst) {
+                            inst.pattern[m] = JSON.parse(JSON.stringify(copiedItem.pattern));
+                        }
+                    });
+                }
                 renderScore();
             }
         } else if (action === "move-left") {
             if (m > 0) {
                 historyManager.pushState();
+                
+                // Swap no array de métricas
+                if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
+                const tempSig = scoreState.measuresConfig[m] || { timeSignature: scoreState.timeSignature || "4/4" };
+                scoreState.measuresConfig[m] = scoreState.measuresConfig[m - 1] || { timeSignature: scoreState.timeSignature || "4/4" };
+                scoreState.measuresConfig[m - 1] = tempSig;
+
+                // Swap no padrão dos instrumentos
                 scoreState.instruments.forEach(inst => {
                     const temp = inst.pattern[m];
                     inst.pattern[m] = inst.pattern[m - 1];
@@ -113,6 +134,14 @@ export function setupMeasureMenuEvents() {
         } else if (action === "move-right") {
             if (m < scoreState.measuresCount - 1) {
                 historyManager.pushState();
+
+                // Swap no array de métricas
+                if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
+                const tempSig = scoreState.measuresConfig[m] || { timeSignature: scoreState.timeSignature || "4/4" };
+                scoreState.measuresConfig[m] = scoreState.measuresConfig[m + 1] || { timeSignature: scoreState.timeSignature || "4/4" };
+                scoreState.measuresConfig[m + 1] = tempSig;
+
+                // Swap no padrão dos instrumentos
                 scoreState.instruments.forEach(inst => {
                     const temp = inst.pattern[m];
                     inst.pattern[m] = inst.pattern[m + 1];
@@ -201,7 +230,6 @@ export function handleMeasureAction(action, index) {
 
 // Altera a métrica de uma coluna específica
 export function setColumnTimeSignature(measureIndex, newTimeSig) {
-    // 1. Garante que o array de configurações exista e tenha o tamanho correto
     if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
 
     for (let i = 0; i < scoreState.measuresCount; i++) {
@@ -210,18 +238,14 @@ export function setColumnTimeSignature(measureIndex, newTimeSig) {
         }
     }
 
-    // 2. Salva a foto exata do estado ANTES de aplicar qualquer modificação
     historyManager.pushState();
 
-    // 3. Atualiza a métrica do compasso específico
     scoreState.measuresConfig[measureIndex] = { timeSignature: newTimeSig };
 
-    // 4. Zera o conteúdo do compasso para todos os instrumentos na nova métrica
     scoreState.instruments.forEach(inst => {
         inst.pattern[measureIndex] = createEmptyMeasureForSig(newTimeSig);
     });
 
-    // 5. Redesenha a partitura e atualiza a engine de áudio
     renderScore();
 
     if (window.audioEngine && audioEngine.isInitialized) {
