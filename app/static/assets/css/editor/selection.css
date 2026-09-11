@@ -86,3 +86,15 @@
     background: rgba(239, 68, 68, 0.35);
     color: #ffffff;
 }
+
+.quick-action-btn.disabled,
+.quick-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: auto; /* Permite que o evento de hover exiba o atributo title */
+}
+
+.quick-action-btn.disabled:hover {
+    background: transparent;
+    color: #ffffff;
+}

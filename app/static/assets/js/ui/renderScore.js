@@ -5,11 +5,11 @@ import { updateToolbarPalettes } from './toolbar.js';
 import { renderRepeats } from './repeat.js';
 import { updateLoopBarVisuals } from './loop.js';
 import { historyManager } from '../core/history.js';
-import { 
-    copySelectedMeasures, 
-    cutSelectedMeasures, 
-    pasteClipboardToTarget, 
-    clearSelectedMeasures 
+import {
+    copySelectedMeasures,
+    cutSelectedMeasures,
+    pasteClipboardToTarget,
+    clearSelectedMeasures
 } from '../interaction/clipboard.js';
 
 function updateHeader() {
@@ -144,6 +144,8 @@ function renderSidebar(sidebarList) {
 function renderGrid(scoreGrid) {
     scoreGrid.querySelectorAll(".score-row").forEach(el => el.remove());
 
+    const activeClipboard = getClipboard();
+
     scoreState.instruments.forEach((inst, instIndex) => {
         const row = document.createElement("div");
         row.className = `score-row \({inst.id === scoreState.activeTool.instrumentId ? 'active' : ''}\){inst.hidden ? 'hidden-track' : ''}`;
@@ -153,7 +155,15 @@ function renderGrid(scoreGrid) {
             const measureContainer = document.createElement("div");
 
             const isSelected = scoreState.selectedSelection?.some(s => s.instId === inst.id && s.measureIndex === m);
-            const isInClipboard = window.selectionClipboard?.instId === inst.id && window.selectionClipboard?.measures?.includes(m);
+            // Verifica se o compasso está no clipboard multi-instrumento ou de coluna
+            let isInClipboard = false;
+            if (activeClipboard) {
+                if (activeClipboard.type === "column") {
+                    isInClipboard = true;
+                } else if (activeClipboard.items) {
+                    isInClipboard = activeClipboard.items.some(item => item.instId === inst.id && item.measures.includes(m));
+                }
+            }
 
             let classes = ["measure-container"];
             if (isSelected) classes.push("selected");
@@ -222,6 +232,11 @@ export function renderSelectionToolbar() {
         return;
     }
 
+    const scoreGrid = document.getElementById("score-grid");
+    if (!scoreGrid) return;
+
+    const gridRect = scoreGrid.getBoundingClientRect();
+
     let minTop = Infinity;
     let minLeft = Infinity;
     let maxRight = -Infinity;
@@ -236,10 +251,25 @@ export function renderSelectionToolbar() {
     if (!toolbar) {
         toolbar = document.createElement("div");
         toolbar.id = "selection-quick-toolbar";
-        document.body.appendChild(toolbar);
+        scoreGrid.appendChild(toolbar);
+    } else if (toolbar.parentElement !== scoreGrid) {
+        scoreGrid.appendChild(toolbar);
     }
 
     const hasClipboardData = Boolean(getClipboard());
+
+    // Obtém a célula superior esquerda da seleção atual para validar a colagem
+    const sortedSelection = [...scoreState.selectedSelection].sort((a, b) => {
+        if (a.instId !== b.instId) {
+            const idxA = scoreState.instruments.findIndex(i => i.id === a.instId);
+            const idxB = scoreState.instruments.findIndex(i => i.id === b.instId);
+            return idxA - idxB;
+        }
+        return a.measureIndex - b.measureIndex;
+    });
+
+    const targetItem = sortedSelection[0];
+    const pasteStatus = hasClipboardData ? checkPasteCompatibility(targetItem.instId, targetItem.measureIndex) : { compatible: false, reason: "Nenhum conteúdo no clipboard." };
 
     toolbar.innerHTML = `
         <button type="button" class="quick-action-btn" id="quick-btn-copy" title="Copiar (Ctrl+C)">
@@ -251,7 +281,7 @@ export function renderSelectionToolbar() {
             Recortar
         </button>
         ${hasClipboardData ? `
-        <button type="button" class="quick-action-btn" id="quick-btn-paste" title="Colar (Ctrl+V)">
+        <button type="button" class="quick-action-btn \({!pasteStatus.compatible ? 'disabled' : ''}" id="quick-btn-paste" title="\){pasteStatus.compatible ? 'Colar (Ctrl+V)' : pasteStatus.reason}" ${!pasteStatus.compatible ? 'disabled' : ''}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
             Colar
         </button>
@@ -262,11 +292,11 @@ export function renderSelectionToolbar() {
         </button>
     `;
 
-    const selectionCenterX = minLeft + ((maxRight - minLeft) / 2);
-    const topPos = minTop + window.scrollY - 36;
+    const relativeLeft = (minLeft - gridRect.left) + ((maxRight - minLeft) / 2);
+    const relativeTop = (minTop - gridRect.top) - 34;
 
-    toolbar.style.top = `${topPos}px`;
-    toolbar.style.left = `${selectionCenterX}px`;
+    toolbar.style.top = `${relativeTop}px`;
+    toolbar.style.left = `${relativeLeft}px`;
 
     document.getElementById("quick-btn-copy")?.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -280,9 +310,8 @@ export function renderSelectionToolbar() {
 
     document.getElementById("quick-btn-paste")?.addEventListener("click", (e) => {
         e.stopPropagation();
-        const sorted = [...scoreState.selectedSelection].sort((a, b) => a.measureIndex - b.measureIndex);
-        if (sorted.length > 0) {
-            pasteClipboardToTarget(sorted[0].instId, sorted[0].measureIndex);
+        if (pasteStatus.compatible && targetItem) {
+            pasteClipboardToTarget(targetItem.instId, targetItem.measureIndex);
         }
     });
 
@@ -291,7 +320,6 @@ export function renderSelectionToolbar() {
         clearSelectedMeasures();
     });
 }
-
 export function renderScore() {
     const measuresTrack = document.getElementById("measures-track");
     const sidebarList = document.getElementById("instruments-sidebar-list");

@@ -91,10 +91,31 @@ export function setupSelectionEvents() {
         }
     }
 
+    function cancelMarqueeDrag() {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
+
+        isMouseDown = false;
+        isDraggingMarquee = false;
+        initialContainer = null;
+        marquee.style.display = "none";
+    }
+
+    // Cancela o arrasto com a tecla ESC
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && isDraggingMarquee) {
+            e.preventDefault();
+            cancelMarqueeDrag();
+            scoreState.selectedSelection = [];
+            renderScore();
+        }
+    });
+
     document.addEventListener("mousedown", (e) => {
         if (e.button !== 0) return;
 
-        // Ignora cliques em elementos interativos
         if (
             e.target.closest("#selection-quick-toolbar") ||
             e.target.closest(".note-slot") ||
@@ -109,7 +130,6 @@ export function setupSelectionEvents() {
             return;
         }
 
-        // Permite iniciar a seleção no #score-grid ou no seu contêiner pai (.score-content / .score-viewport)
         const isTargetInWorkspace = e.target.closest("#score-grid") || e.target.closest(".score-content") || e.target.closest(".score-viewport");
         if (!isTargetInWorkspace) return;
 
@@ -152,7 +172,7 @@ export function setupSelectionEvents() {
         }
     });
 
-    document.addEventListener("mouseup", () => {
+    document.addEventListener("mouseup", (e) => {
         if (autoScrollInterval) {
             clearInterval(autoScrollInterval);
             autoScrollInterval = null;
@@ -191,9 +211,6 @@ export function setupSelectionEvents() {
             }
         }
 
-        isMouseDown = false;
-        isDraggingMarquee = false;
-        initialContainer = null;
-        marquee.style.display = "none";
+        cancelMarqueeDrag();
     });
 }
