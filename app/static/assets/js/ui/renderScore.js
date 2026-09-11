@@ -1,10 +1,16 @@
-import { scoreState, createEmptyMeasure } from '../core/state.js';
+import { scoreState, createEmptyMeasure, getClipboard } from '../core/state.js';
 import { TIME_SIGNATURES, getVolumeIcon } from '../core/constants.js';
 import { createBeamsSVG, getStrokeVisual } from './beams.js';
 import { updateToolbarPalettes } from './toolbar.js';
 import { renderRepeats } from './repeat.js';
 import { updateLoopBarVisuals } from './loop.js';
 import { historyManager } from '../core/history.js';
+import { 
+    copySelectedMeasures, 
+    cutSelectedMeasures, 
+    pasteClipboardToTarget, 
+    clearSelectedMeasures 
+} from '../interaction/clipboard.js';
 
 function updateHeader() {
     const titleDisplay = document.getElementById("title-display");
@@ -140,7 +146,7 @@ function renderGrid(scoreGrid) {
 
     scoreState.instruments.forEach((inst, instIndex) => {
         const row = document.createElement("div");
-        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
+        row.className = `score-row \({inst.id === scoreState.activeTool.instrumentId ? 'active' : ''}\){inst.hidden ? 'hidden-track' : ''}`;
         row.dataset.instrumentId = inst.id;
 
         for (let m = 0; m < scoreState.measuresCount; m++) {
@@ -203,6 +209,89 @@ function renderGrid(scoreGrid) {
     });
 }
 
+export function renderSelectionToolbar() {
+    let toolbar = document.getElementById("selection-quick-toolbar");
+    if (!scoreState.selectedSelection || scoreState.selectedSelection.length === 0) {
+        if (toolbar) toolbar.remove();
+        return;
+    }
+
+    const selectedEls = document.querySelectorAll(".measure-container.selected");
+    if (selectedEls.length === 0) {
+        if (toolbar) toolbar.remove();
+        return;
+    }
+
+    let minTop = Infinity;
+    let minLeft = Infinity;
+    let maxRight = -Infinity;
+
+    selectedEls.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < minTop) minTop = rect.top;
+        if (rect.left < minLeft) minLeft = rect.left;
+        if (rect.right > maxRight) maxRight = rect.right;
+    });
+
+    if (!toolbar) {
+        toolbar = document.createElement("div");
+        toolbar.id = "selection-quick-toolbar";
+        document.body.appendChild(toolbar);
+    }
+
+    const hasClipboardData = Boolean(getClipboard());
+
+    toolbar.innerHTML = `
+        <button type="button" class="quick-action-btn" id="quick-btn-copy" title="Copiar (Ctrl+C)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copiar
+        </button>
+        <button type="button" class="quick-action-btn" id="quick-btn-cut" title="Recortar (Ctrl+X)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+            Recortar
+        </button>
+        ${hasClipboardData ? `
+        <button type="button" class="quick-action-btn" id="quick-btn-paste" title="Colar (Ctrl+V)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            Colar
+        </button>
+        ` : ''}
+        <button type="button" class="quick-action-btn danger" id="quick-btn-clear" title="Limpar (Del)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Limpar
+        </button>
+    `;
+
+    const selectionCenterX = minLeft + ((maxRight - minLeft) / 2);
+    const topPos = minTop + window.scrollY - 36;
+
+    toolbar.style.top = `${topPos}px`;
+    toolbar.style.left = `${selectionCenterX}px`;
+
+    document.getElementById("quick-btn-copy")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        copySelectedMeasures();
+    });
+
+    document.getElementById("quick-btn-cut")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        cutSelectedMeasures();
+    });
+
+    document.getElementById("quick-btn-paste")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const sorted = [...scoreState.selectedSelection].sort((a, b) => a.measureIndex - b.measureIndex);
+        if (sorted.length > 0) {
+            pasteClipboardToTarget(sorted[0].instId, sorted[0].measureIndex);
+        }
+    });
+
+    document.getElementById("quick-btn-clear")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        clearSelectedMeasures();
+    });
+}
+
 export function renderScore() {
     const measuresTrack = document.getElementById("measures-track");
     const sidebarList = document.getElementById("instruments-sidebar-list");
@@ -215,6 +304,7 @@ export function renderScore() {
     renderSidebar(sidebarList);
     renderGrid(scoreGrid);
     updateToolbarPalettes();
+    renderSelectionToolbar();
 
     if (window.audioEngine && audioEngine.isInitialized) {
         audioEngine.updateTransportSettings();

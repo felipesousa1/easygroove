@@ -1,5 +1,5 @@
 import { scoreState } from '../core/state.js';
-import { renderScore } from '../ui/renderScore.js';
+import { renderScore, renderSelectionToolbar } from '../ui/renderScore.js';
 
 export function setupSelectionEvents() {
     const scoreGrid = document.getElementById("score-grid");
@@ -71,6 +71,8 @@ export function setupSelectionEvents() {
 
             container.classList.toggle("selected", isSelected);
         });
+
+        renderSelectionToolbar();
     }
 
     function checkAndScroll() {
@@ -92,7 +94,9 @@ export function setupSelectionEvents() {
     document.addEventListener("mousedown", (e) => {
         if (e.button !== 0) return;
 
+        // Ignora cliques em elementos interativos
         if (
+            e.target.closest("#selection-quick-toolbar") ||
             e.target.closest(".note-slot") ||
             e.target.closest(".beat-beams") ||
             e.target.closest("button") ||
@@ -105,15 +109,11 @@ export function setupSelectionEvents() {
             return;
         }
 
-        const measureContainer = e.target.closest(".measure-container");
+        // Permite iniciar a seleção no #score-grid ou no seu contêiner pai (.score-content / .score-viewport)
+        const isTargetInWorkspace = e.target.closest("#score-grid") || e.target.closest(".score-content") || e.target.closest(".score-viewport");
+        if (!isTargetInWorkspace) return;
 
-        if (!measureContainer) {
-            if (scoreState.selectedSelection && scoreState.selectedSelection.length > 0) {
-                scoreState.selectedSelection = [];
-                renderScore();
-            }
-            return;
-        }
+        const measureContainer = e.target.closest(".measure-container");
 
         isMouseDown = true;
         isDraggingMarquee = false;
@@ -135,7 +135,7 @@ export function setupSelectionEvents() {
         const deltaX = Math.abs(e.pageX - startX);
         const deltaY = Math.abs(e.clientY - startY);
 
-        if (!isDraggingMarquee && (deltaX > 5 || deltaY > 5)) {
+        if (!isDraggingMarquee && (deltaX > 10 || deltaY > 10)) {
             isDraggingMarquee = true;
             marquee.style.display = "block";
 
@@ -152,7 +152,7 @@ export function setupSelectionEvents() {
         }
     });
 
-    document.addEventListener("mouseup", (e) => {
+    document.addEventListener("mouseup", () => {
         if (autoScrollInterval) {
             clearInterval(autoScrollInterval);
             autoScrollInterval = null;
@@ -160,27 +160,34 @@ export function setupSelectionEvents() {
 
         if (!isMouseDown) return;
 
-        if (!isDraggingMarquee && initialContainer) {
-            const instId = initialContainer.dataset.instId;
-            const measureIndex = parseInt(initialContainer.dataset.measureIndex, 10);
+        if (!isDraggingMarquee) {
+            if (initialContainer) {
+                const instId = initialContainer.dataset.instId;
+                const measureIndex = parseInt(initialContainer.dataset.measureIndex, 10);
 
-            if (instId && !isNaN(measureIndex)) {
-                if (!scoreState.selectedSelection) scoreState.selectedSelection = [];
+                if (instId && !isNaN(measureIndex)) {
+                    if (!scoreState.selectedSelection) scoreState.selectedSelection = [];
 
-                if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                    scoreState.selectedSelection = [{ instId, measureIndex }];
-                } else {
-                    const existsIndex = scoreState.selectedSelection.findIndex(
-                        s => s.instId === instId && s.measureIndex === measureIndex
-                    );
-
-                    if (existsIndex !== -1) {
-                        scoreState.selectedSelection.splice(existsIndex, 1);
+                    if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                        scoreState.selectedSelection = [{ instId, measureIndex }];
                     } else {
-                        scoreState.selectedSelection.push({ instId, measureIndex });
+                        const existsIndex = scoreState.selectedSelection.findIndex(
+                            s => s.instId === instId && s.measureIndex === measureIndex
+                        );
+
+                        if (existsIndex !== -1) {
+                            scoreState.selectedSelection.splice(existsIndex, 1);
+                        } else {
+                            scoreState.selectedSelection.push({ instId, measureIndex });
+                        }
                     }
+                    renderScore();
                 }
-                renderScore();
+            } else {
+                if (scoreState.selectedSelection && scoreState.selectedSelection.length > 0) {
+                    scoreState.selectedSelection = [];
+                    renderScore();
+                }
             }
         }
 
