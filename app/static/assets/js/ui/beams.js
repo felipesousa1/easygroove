@@ -1,9 +1,9 @@
 import { STROKE_DEFINITIONS } from '../core/constants.js';
 import { scoreState } from '../core/state.js';
 import { historyManager } from '../core/history.js';
+import { renderScore } from './renderScore.js';
 
 export function createBeamsSVG(subdivisionsCount = 4) {
-    // Força a conversão para número para garantir as linhas corretas
     const count = Number(subdivisionsCount);
     
     let linesCount = 2; // Padrão: semicolcheia/sextina
@@ -23,7 +23,6 @@ export function createBeamsSVG(subdivisionsCount = 4) {
         linesHTML += `<line x1="${xPercentage}" y1="${yStart}" x2="${xPercentage}" y2="28" stroke="currentColor" stroke-width="1.2"/>`;
     }
 
-    // A trave horizontal vai exatamente do centro da primeira haste até a última
     const xMin = stemsX[0];
     const xMax = stemsX[count - 1];
 
@@ -32,7 +31,6 @@ export function createBeamsSVG(subdivisionsCount = 4) {
         linesHTML += `<line x1="${xMin}" y1="${y}" x2="${xMax}" y2="${y}" stroke="currentColor" stroke-width="2.5"/>`;
     }
 
-    // viewBox estático 0 a 100 mapeia diretamente para a porcentagem
     return `
       <svg class="beat-beams clickable-beam" viewBox="0 0 100 28" preserveAspectRatio="none" style="width: 100%; height: 28px; display: block; cursor: pointer;">
         ${linesHTML}
@@ -48,10 +46,7 @@ export function getStrokeVisual(stroke) {
     return { className: def.className, content: def.renderHTML };
 }
 
-// ==========================================
-// LÓGICA DO POPOVER DE SUBDIVISÃO (NÍVEL 3)
-// ==========================================
-
+// Lógica do popover de subdivisão
 let activePopover = null;
 
 export function setupSubdivisionEvents() {
@@ -127,8 +122,6 @@ function applySubdivision(instId, measureIndex, beatIndex, newSubdivision) {
     currentBeat.subdivisions = newSubdivision;
     currentBeat.notes = new Array(newSubdivision).fill(null);
 
-    // Usa um import dinâmico ou dispara um evento para evitar dependência circular
-    import('./renderScore.js').then(module => {
-        module.renderScore();
-    });
+    // Chamada direta da renderização
+    renderScore();
 }
