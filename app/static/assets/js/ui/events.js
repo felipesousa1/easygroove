@@ -1,7 +1,6 @@
 import { scoreState } from '../core/state.js';
 import { historyManager } from '../core/history.js';
-import { exportScoreToAudio } from '../services/export.js';
-import { openNewArrangementModal } from './newArrangementModal.js';
+import { exportScoreToAudio, exportScoreToJSON } from '../services/export.js'; import { openNewArrangementModal } from './newArrangementModal.js';
 import { saveCurrentArrangement } from '../services/api.js';
 import { setColumnTimeSignature } from './menu.js';
 import { selectActiveInstrument } from './toolbar.js';
@@ -316,8 +315,7 @@ export function setupMainMenuEvents() {
 
     document.getElementById("menu-opt-export-json")?.addEventListener("click", () => {
         menuDropdown.classList.remove("active");
-        const exportBtn = document.querySelector('.header-right button[title="Exportar Arranjo"]');
-        if (exportBtn) exportBtn.click();
+        exportScoreToJSON();
     });
 
     document.getElementById("menu-opt-import-json")?.addEventListener("click", () => {
