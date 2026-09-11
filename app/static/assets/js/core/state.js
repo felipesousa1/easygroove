@@ -3,14 +3,22 @@ import { TIME_SIGNATURES, INSTRUMENT_PRESETS } from './constants.js';
 export let currentArrangementId = null;
 export function setCurrentArrangementId(id) { currentArrangementId = id; }
 
-export let copiedMeasureData = null;
-export function setCopiedMeasureData(data) { copiedMeasureData = data; }
+// Gerenciamento Unificado do Clipboard
+export let clipboard = null;
 
-export let selectionClipboard = null;
-export function setSelectionClipboard(data) {
-    selectionClipboard = data;
+export function setClipboard(data) {
+    clipboard = data;
     window.selectionClipboard = data;
 }
+
+export function getClipboard() {
+    return clipboard;
+}
+
+// Aliases para manter compatibilidade com módulos antigos e shortcuts.js
+export const copiedMeasureData = null;
+export function setCopiedMeasureData(data) { setClipboard(data); }
+export function setSelectionClipboard(data) { setClipboard(data); }
 
 // Controle de alterações não salvas
 export let isDirty = false;

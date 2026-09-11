@@ -1,9 +1,9 @@
-import { scoreState, createEmptyMeasure, setCopiedMeasureData, copiedMeasureData } from '../core/state.js';
+import { scoreState, getClipboard } from '../core/state.js';
 import { historyManager } from '../core/history.js';
 import { TIME_SIGNATURES } from '../core/constants.js';
 import { renderScore } from './renderScore.js';
+import { copyFullColumnMeasure, pasteFullColumnMeasure } from '../interaction/clipboard.js';
 
-// Função utilitária para criar a estrutura do compasso baseada na métrica
 export function createEmptyMeasureForSig(timeSigKey) {
     const config = TIME_SIGNATURES[timeSigKey] || TIME_SIGNATURES["4/4"];
     const measureData = [];
@@ -42,7 +42,7 @@ export function setupMeasureMenuEvents() {
 
         const isFirst = activeMeasureIndex === 0;
         const isLast = activeMeasureIndex === scoreState.measuresCount - 1;
-        const hasCopiedData = Boolean(copiedMeasureData);
+        const hasCopiedData = Boolean(getClipboard());
 
         if (btnMoveLeft) {
             btnMoveLeft.disabled = isFirst;
@@ -83,47 +83,18 @@ export function setupMeasureMenuEvents() {
         const m = activeMeasureIndex;
 
         if (action === "copy") {
-            const currentSig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
-            setCopiedMeasureData({
-                timeSignature: currentSig,
-                instruments: scoreState.instruments.map(inst => ({
-                    instrumentId: inst.id,
-                    pattern: JSON.parse(JSON.stringify(inst.pattern[m] || []))
-                }))
-            });
+            copyFullColumnMeasure(m);
         } else if (action === "paste") {
-            if (copiedMeasureData) {
-                historyManager.pushState();
-
-                // 1. Aplica a métrica copiada ao compasso de destino
-                if (copiedMeasureData.timeSignature) {
-                    if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
-                    scoreState.measuresConfig[m] = { timeSignature: copiedMeasureData.timeSignature };
-                }
-
-                // 2. Copia os padrões de notas de cada instrumento
-                const rawItems = Array.isArray(copiedMeasureData) ? copiedMeasureData : copiedMeasureData.instruments;
-                if (rawItems) {
-                    rawItems.forEach(copiedItem => {
-                        const inst = scoreState.instruments.find(i => i.id === copiedItem.instrumentId);
-                        if (inst) {
-                            inst.pattern[m] = JSON.parse(JSON.stringify(copiedItem.pattern));
-                        }
-                    });
-                }
-                renderScore();
-            }
+            pasteFullColumnMeasure(m);
         } else if (action === "move-left") {
             if (m > 0) {
                 historyManager.pushState();
-                
-                // Swap no array de métricas
+
                 if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
                 const tempSig = scoreState.measuresConfig[m] || { timeSignature: scoreState.timeSignature || "4/4" };
                 scoreState.measuresConfig[m] = scoreState.measuresConfig[m - 1] || { timeSignature: scoreState.timeSignature || "4/4" };
                 scoreState.measuresConfig[m - 1] = tempSig;
 
-                // Swap no padrão dos instrumentos
                 scoreState.instruments.forEach(inst => {
                     const temp = inst.pattern[m];
                     inst.pattern[m] = inst.pattern[m - 1];
@@ -135,13 +106,11 @@ export function setupMeasureMenuEvents() {
             if (m < scoreState.measuresCount - 1) {
                 historyManager.pushState();
 
-                // Swap no array de métricas
                 if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
                 const tempSig = scoreState.measuresConfig[m] || { timeSignature: scoreState.timeSignature || "4/4" };
                 scoreState.measuresConfig[m] = scoreState.measuresConfig[m + 1] || { timeSignature: scoreState.timeSignature || "4/4" };
                 scoreState.measuresConfig[m + 1] = tempSig;
 
-                // Swap no padrão dos instrumentos
                 scoreState.instruments.forEach(inst => {
                     const temp = inst.pattern[m];
                     inst.pattern[m] = inst.pattern[m + 1];
@@ -228,7 +197,6 @@ export function handleMeasureAction(action, index) {
     }
 }
 
-// Altera a métrica de uma coluna específica
 export function setColumnTimeSignature(measureIndex, newTimeSig) {
     if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
 

@@ -1,9 +1,10 @@
-import { scoreState, createEmptyMeasure, setSelectionClipboard } from '../core/state.js';
+import { scoreState, createEmptyMeasure, setClipboard, getClipboard } from '../core/state.js';
 import { TIME_SIGNATURES } from '../core/constants.js';
 import { historyManager } from '../core/history.js';
 import { showToast } from '../ui/toast.js';
 import { renderScore } from '../ui/renderScore.js';
 
+// Cópia de seleção de células por instrumento
 export function copySelectedMeasures() {
     if (!scoreState.selectedSelection || scoreState.selectedSelection.length === 0) return false;
 
@@ -22,13 +23,12 @@ export function copySelectedMeasures() {
         .sort((a, b) => a - b);
 
     const copiedPatterns = sortedMeasures.map(m => JSON.parse(JSON.stringify(inst.pattern[m] || createEmptyMeasure())));
-    
-    // Mapeia a métrica de cada compasso copiado
     const copiedSignatures = sortedMeasures.map(m => {
         return scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
     });
 
-    setSelectionClipboard({
+    setClipboard({
+        type: "selection",
         instId: targetInstId,
         measures: sortedMeasures,
         patterns: copiedPatterns,
@@ -38,6 +38,22 @@ export function copySelectedMeasures() {
     showToast(`${copiedPatterns.length} compasso(s) copiado(s)`);
     renderScore();
     return true;
+}
+
+// Cópia de uma coluna inteira de compasso (menu contextual)
+export function copyFullColumnMeasure(measureIndex) {
+    const currentSig = scoreState.measuresConfig?.[measureIndex]?.timeSignature || scoreState.timeSignature || "4/4";
+
+    setClipboard({
+        type: "column",
+        timeSignature: currentSig,
+        instruments: scoreState.instruments.map(inst => ({
+            instrumentId: inst.id,
+            pattern: JSON.parse(JSON.stringify(inst.pattern[measureIndex] || []))
+        }))
+    });
+
+    showToast(`Compasso ${measureIndex + 1} copiado`);
 }
 
 export function cutSelectedMeasures() {
@@ -57,7 +73,6 @@ export function clearSelectedMeasures(showNotification = true) {
         const inst = scoreState.instruments.find(i => i.id === item.instId);
         if (inst && inst.pattern[item.measureIndex]) {
             const measurePattern = inst.pattern[item.measureIndex];
-            // Apaga o conteúdo das notas preservando o objeto e subdivisões de cada tempo
             measurePattern.forEach(beatObj => {
                 if (beatObj && beatObj.notes) {
                     beatObj.notes = new Array(beatObj.subdivisions).fill(null);
@@ -77,14 +92,20 @@ export function getInstrumentFamily(instId) {
 }
 
 export function pasteClipboardToTarget(targetInstId, targetMeasureIndex) {
-    const clipboard = window.selectionClipboard;
+    const activeClipboard = getClipboard();
 
-    if (!clipboard || !clipboard.patterns || clipboard.patterns.length === 0) {
-        showToast("Nenhum compasso copiado.", true);
+    if (!activeClipboard) {
+        showToast("Nenhum dado no clipboard.", true);
         return;
     }
 
-    const sourceFamily = getInstrumentFamily(clipboard.instId);
+    // Se o clipboard for de uma coluna inteira, realiza a colagem de coluna
+    if (activeClipboard.type === "column" || activeClipboard.instruments) {
+        pasteFullColumnMeasure(targetMeasureIndex);
+        return;
+    }
+
+    const sourceFamily = getInstrumentFamily(activeClipboard.instId);
     const targetFamily = getInstrumentFamily(targetInstId);
 
     if (sourceFamily !== targetFamily) {
@@ -95,13 +116,12 @@ export function pasteClipboardToTarget(targetInstId, targetMeasureIndex) {
     const inst = scoreState.instruments.find(i => i.id === targetInstId);
     if (!inst) return;
 
-    // Validação de Compatibilidade de Métricas
     let incompatible = false;
-    clipboard.patterns.forEach((pattern, offset) => {
+    activeClipboard.patterns.forEach((pattern, offset) => {
         const destMeasure = targetMeasureIndex + offset;
         if (destMeasure < scoreState.measuresCount) {
             const destSig = scoreState.measuresConfig?.[destMeasure]?.timeSignature || scoreState.timeSignature || "4/4";
-            const sourceSig = clipboard.timeSignatures?.[offset] || "4/4";
+            const sourceSig = activeClipboard.timeSignatures?.[offset] || "4/4";
 
             const destBeats = TIME_SIGNATURES[destSig]?.beats || 4;
             const sourceBeats = TIME_SIGNATURES[sourceSig]?.beats || 4;
@@ -119,7 +139,7 @@ export function pasteClipboardToTarget(targetInstId, targetMeasureIndex) {
 
     historyManager.pushState();
 
-    clipboard.patterns.forEach((pattern, offset) => {
+    activeClipboard.patterns.forEach((pattern, offset) => {
         const destMeasure = targetMeasureIndex + offset;
         if (destMeasure < scoreState.measuresCount) {
             inst.pattern[destMeasure] = JSON.parse(JSON.stringify(pattern));
@@ -130,31 +150,27 @@ export function pasteClipboardToTarget(targetInstId, targetMeasureIndex) {
     renderScore();
 }
 
-// Colar a coluna inteira atualizando as métricas dos compassos de destino
-export function pasteColumnClipboard(targetMeasureIndex) {
-    const clipboard = window.selectionClipboard;
-    if (!clipboard || !clipboard.patterns || clipboard.patterns.length === 0) return;
+// Colar a coluna inteira atualizando a métrica do compasso de destino
+export function pasteFullColumnMeasure(targetMeasureIndex) {
+    const activeClipboard = getClipboard();
+    if (!activeClipboard) return;
 
     historyManager.pushState();
 
     if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
 
-    clipboard.patterns.forEach((pattern, offset) => {
-        const destMeasure = targetMeasureIndex + offset;
-        if (destMeasure < scoreState.measuresCount) {
-            const sourceSig = clipboard.timeSignatures?.[offset] || "4/4";
-            
-            // Atualiza a métrica da coluna inteira para a métrica de origem
-            scoreState.measuresConfig[destMeasure] = { timeSignature: sourceSig };
+    if (activeClipboard.timeSignature) {
+        scoreState.measuresConfig[targetMeasureIndex] = { timeSignature: activeClipboard.timeSignature };
+    }
 
-            // Copia para o instrumento correspondente
-            const inst = scoreState.instruments.find(i => i.id === clipboard.instId);
-            if (inst) {
-                inst.pattern[destMeasure] = JSON.parse(JSON.stringify(pattern));
-            }
+    const rawItems = activeClipboard.instruments || [];
+    rawItems.forEach(copiedItem => {
+        const inst = scoreState.instruments.find(i => i.id === copiedItem.instrumentId);
+        if (inst) {
+            inst.pattern[targetMeasureIndex] = JSON.parse(JSON.stringify(copiedItem.pattern));
         }
     });
 
-    showToast("Coluna e métricas coladas com sucesso!");
+    showToast("Coluna e métrica coladas com sucesso!");
     renderScore();
 }
