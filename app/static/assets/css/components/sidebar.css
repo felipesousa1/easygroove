@@ -104,9 +104,6 @@
 }
 
 /* Drag and Drop dos cards */
-.instrument-card[draggable="true"] {
-  cursor: grab;
-}
 
 .instrument-card.dragging {
   opacity: 0.4;

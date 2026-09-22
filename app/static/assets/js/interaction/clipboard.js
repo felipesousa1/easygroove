@@ -10,11 +10,22 @@ export function getInstrumentFamily(instId) {
     return instId.split("_")[0];
 }
 
+// Verifica se uma lista de compassos/padrões está totalmente vazia (apenas pausas/nulos)
+function isPatternEmpty(patterns) {
+    if (!patterns || patterns.length === 0) return true;
+    return patterns.every(measure => {
+        if (!measure) return true;
+        return measure.every(beat => {
+            if (!beat || !beat.notes) return true;
+            return beat.notes.every(note => note === null || note === "empty");
+        });
+    });
+}
+
 // Cópia de seleção (suporta 1 ou mais instrumentos e compassos)
 export function copySelectedMeasures() {
     if (!scoreState.selectedSelection || scoreState.selectedSelection.length === 0) return false;
 
-    // Agrupa os compassos por instrumento
     const selectionByInst = {};
     scoreState.selectedSelection.forEach(item => {
         if (!selectionByInst[item.instId]) {
@@ -23,7 +34,6 @@ export function copySelectedMeasures() {
         selectionByInst[item.instId].push(item.measureIndex);
     });
 
-    // Mantém a ordem dos instrumentos conforme aparecem no scoreState
     const items = [];
     scoreState.instruments.forEach(inst => {
         if (selectionByInst[inst.id]) {
@@ -87,7 +97,6 @@ export function checkPasteCompatibility(targetInstId, targetMeasureIndex) {
     const activeClipboard = getClipboard();
     if (!activeClipboard) return { compatible: false, reason: "Nenhum conteúdo no clipboard." };
 
-    // Clipboard de coluna inteira
     if (activeClipboard.type === "column" || activeClipboard.instruments) {
         return { compatible: true };
     }
@@ -98,7 +107,6 @@ export function checkPasteCompatibility(targetInstId, targetMeasureIndex) {
     const targetInstIndex = scoreState.instruments.findIndex(i => i.id === targetInstId);
     if (targetInstIndex === -1) return { compatible: false, reason: "Instrumento de destino inválido." };
 
-    // 1. Validação de Ordem e Família dos Instrumentos
     for (let i = 0; i < items.length; i++) {
         const sourceItem = items[i];
         const destInst = scoreState.instruments[targetInstIndex + i];
@@ -107,17 +115,22 @@ export function checkPasteCompatibility(targetInstId, targetMeasureIndex) {
             return { compatible: false, reason: "Não há linhas suficientes no destino para colar todos os instrumentos." };
         }
 
-        const sourceFamily = getInstrumentFamily(sourceItem.instId);
-        const destFamily = getInstrumentFamily(destInst.id);
+        // Validação de Família de Instrumentos:
+        // Se o padrão copiado estiver completamente VAZIO (sem notas), a colagem é permitida em qualquer instrumento
+        const isEmpty = isPatternEmpty(sourceItem.patterns);
+        if (!isEmpty) {
+            const sourceFamily = getInstrumentFamily(sourceItem.instId);
+            const destFamily = getInstrumentFamily(destInst.id);
 
-        if (sourceFamily !== destFamily) {
-            return {
-                compatible: false,
-                reason: `Incompatível: ${destInst.name} não é da mesma família do instrumento copiado.`
-            };
+            if (sourceFamily !== destFamily) {
+                return {
+                    compatible: false,
+                    reason: `Incompatível: ${destInst.name} não é da mesma família do instrumento copiado.`
+                };
+            }
         }
 
-        // 2. Validação de Métricas / Quantidade de Tempos
+        // Validação de Métricas / Quantidade de Tempos
         for (let offset = 0; offset < sourceItem.patterns.length; offset++) {
             const destMeasure = targetMeasureIndex + offset;
             if (destMeasure < scoreState.measuresCount) {
@@ -176,7 +189,6 @@ export function pasteClipboardToTarget(targetInstId, targetMeasureIndex) {
     renderScore();
 }
 
-// Cópia de uma coluna inteira de compasso (menu contextual)
 export function copyFullColumnMeasure(measureIndex) {
     const currentSig = scoreState.measuresConfig?.[measureIndex]?.timeSignature || scoreState.timeSignature || "4/4";
 
@@ -192,7 +204,6 @@ export function copyFullColumnMeasure(measureIndex) {
     showToast(`Compasso ${measureIndex + 1} copiado`);
 }
 
-// Colar a coluna inteira atualizando a métrica do compasso de destino
 export function pasteFullColumnMeasure(targetMeasureIndex) {
     const activeClipboard = getClipboard();
     if (!activeClipboard) return;

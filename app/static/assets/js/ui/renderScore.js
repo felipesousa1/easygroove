@@ -9,7 +9,8 @@ import {
     copySelectedMeasures,
     cutSelectedMeasures,
     pasteClipboardToTarget,
-    clearSelectedMeasures
+    clearSelectedMeasures,
+    checkPasteCompatibility
 } from '../interaction/clipboard.js';
 
 function updateHeader() {

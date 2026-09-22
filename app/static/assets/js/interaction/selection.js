@@ -17,19 +17,21 @@ export function setupSelectionEvents() {
     let isMouseDown = false;
     let isDraggingMarquee = false;
 
-    let startX = 0;
-    let startY = 0;
-    let currentX = 0;
-    let currentY = 0;
+    // Coordenadas absolutas (para o retângulo) e relativas (para o scroll)
+    let startPageX = 0;
+    let startPageY = 0;
+    let currentPageX = 0;
+    let currentPageY = 0;
+    let currentClientX = 0;
 
     let initialContainer = null;
     let autoScrollInterval = null;
 
     function updateMarqueeAndSelection() {
-        const rectLeft = Math.min(startX, currentX);
-        const rectTop = Math.min(startY, currentY);
-        const rectWidth = Math.abs(currentX - startX);
-        const rectHeight = Math.abs(currentY - startY);
+        const rectLeft = Math.min(startPageX, currentPageX);
+        const rectTop = Math.min(startPageY, currentPageY);
+        const rectWidth = Math.abs(currentPageX - startPageX);
+        const rectHeight = Math.abs(currentPageY - startPageY);
 
         marquee.style.left = `${rectLeft}px`;
         marquee.style.top = `${rectTop}px`;
@@ -82,10 +84,10 @@ export function setupSelectionEvents() {
         const threshold = 60;
         const speed = 15;
 
-        if (currentX > containerRect.right - threshold) {
+        if (currentClientX > containerRect.right - threshold) {
             scrollContainer.scrollLeft += speed;
             updateMarqueeAndSelection();
-        } else if (currentX < containerRect.left + threshold) {
+        } else if (currentClientX < containerRect.left + threshold) {
             scrollContainer.scrollLeft -= speed;
             updateMarqueeAndSelection();
         }
@@ -103,7 +105,6 @@ export function setupSelectionEvents() {
         marquee.style.display = "none";
     }
 
-    // Cancela o arrasto com a tecla ESC
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && isDraggingMarquee) {
             e.preventDefault();
@@ -125,7 +126,9 @@ export function setupSelectionEvents() {
             e.target.closest("select") ||
             e.target.closest(".dropdown-menu") ||
             e.target.closest(".repeat-control-pill") ||
-            e.target.closest("#loop-bar")
+            e.target.closest("#loop-bar") ||
+            e.target.closest(".instruments-sidebar") ||
+            e.target.closest(".instrument-card")
         ) {
             return;
         }
@@ -138,10 +141,11 @@ export function setupSelectionEvents() {
         isMouseDown = true;
         isDraggingMarquee = false;
 
-        startX = e.pageX;
-        startY = e.pageY;
-        currentX = e.clientX;
-        currentY = e.clientY;
+        startPageX = e.pageX;
+        startPageY = e.pageY;
+        currentPageX = e.pageX;
+        currentPageY = e.pageY;
+        currentClientX = e.clientX;
 
         initialContainer = measureContainer;
     });
@@ -149,13 +153,14 @@ export function setupSelectionEvents() {
     document.addEventListener("mousemove", (e) => {
         if (!isMouseDown) return;
 
-        currentX = e.clientX;
-        currentY = e.clientY;
+        currentPageX = e.pageX;
+        currentPageY = e.pageY;
+        currentClientX = e.clientX;
 
-        const deltaX = Math.abs(e.pageX - startX);
-        const deltaY = Math.abs(e.clientY - startY);
+        const deltaX = Math.abs(currentPageX - startPageX);
+        const deltaY = Math.abs(currentPageY - startPageY);
 
-        if (!isDraggingMarquee && (deltaX > 10 || deltaY > 10)) {
+        if (!isDraggingMarquee && (deltaX > 15 || deltaY > 15)) {
             isDraggingMarquee = true;
             marquee.style.display = "block";
 
@@ -173,11 +178,6 @@ export function setupSelectionEvents() {
     });
 
     document.addEventListener("mouseup", (e) => {
-        if (autoScrollInterval) {
-            clearInterval(autoScrollInterval);
-            autoScrollInterval = null;
-        }
-
         if (!isMouseDown) return;
 
         if (!isDraggingMarquee) {
