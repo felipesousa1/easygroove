@@ -88,6 +88,8 @@ export function updatePlayheadPosition() {
             }
         }
     }
+
+    return totalX;
 }
 export function animatePlayhead() {
     if (!window.audioEngine || !window.audioEngine.isPlaying) return;
@@ -109,7 +111,13 @@ export function pausePlayheadAnimation() {
 export function stopPlayheadAnimation() {
     if (playheadAnimFrameId) cancelAnimationFrame(playheadAnimFrameId);
     playheadAnimFrameId = null;
-    updatePlayheadPosition();
+    const totalX = updatePlayheadPosition();
+
+    // Com auto-scroll, volta a viewport para o início da partitura (ou do loop)
+    if (scoreState.autoScrollEnabled && totalX !== undefined) {
+        const viewport = document.querySelector(".score-viewport");
+        if (viewport) viewport.scrollLeft = Math.max(0, totalX - 50);
+    }
 }
 
 window.updatePlayheadPosition = updatePlayheadPosition;

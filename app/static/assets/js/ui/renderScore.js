@@ -1,4 +1,4 @@
-import { scoreState, createEmptyMeasure, getClipboard } from '../core/state.js';
+import { scoreState, createEmptyMeasure, createEmptyMeasureForSig, getClipboard } from '../core/state.js';
 import { TIME_SIGNATURES, getVolumeIcon } from '../core/constants.js';
 import { createBeamsSVG, getStrokeVisual } from './beams.js';
 import { updateToolbarPalettes } from './toolbar.js';
@@ -343,8 +343,16 @@ export function renderScore() {
 
 export function addMeasureToEnd() {
     historyManager.pushState();
+
+    // Herda a métrica do último compasso
+    const lastIndex = scoreState.measuresCount - 1;
+    const lastSig = scoreState.measuresConfig?.[lastIndex]?.timeSignature || scoreState.timeSignature || "4/4";
+
+    if (!scoreState.measuresConfig) scoreState.measuresConfig = [];
+    scoreState.measuresConfig[scoreState.measuresCount] = { timeSignature: lastSig };
+
     scoreState.instruments.forEach(inst => {
-        inst.pattern.push(createEmptyMeasure());
+        inst.pattern.push(createEmptyMeasureForSig(lastSig));
     });
     scoreState.measuresCount++;
     renderScore();
