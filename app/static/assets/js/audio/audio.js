@@ -336,6 +336,43 @@ export const audioEngine = {
         });
     },
 
+    // Assinatura da estrutura (compassos, métricas e repetições): só ela exige reagendar a reprodução.
+    // Notas, volumes, instrumentos ocultos etc. são lidos do scoreState no momento em que cada tempo toca.
+    getStructureSignature() {
+        const sigs = [];
+        for (let m = 0; m < scoreState.measuresCount; m++) {
+            sigs.push(scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4");
+        }
+        const repeats = (scoreState.repeats || []).map(r => [r.start, r.end, r.times]);
+        return JSON.stringify([scoreState.measuresCount, sigs, repeats]);
+    },
+
+    // Toca um tempo (beat) lendo o estado atual da partitura, o que permite editar durante a reprodução
+    playBeat(mIdx, b, time) {
+        const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
+        const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+        if (b >= cfg.beats) return;
+
+        this.triggerMetronomeClick(b === 0, time);
+
+        const secondsPerBeat = 60 / Tone.Transport.bpm.value;
+
+        scoreState.instruments.forEach(inst => {
+            if (inst.hidden) return;
+            const beatObj = inst.pattern?.[mIdx]?.[b];
+            if (!beatObj) return;
+
+            const secondsPerSub = secondsPerBeat / beatObj.subdivisions;
+            for (let s = 0; s < beatObj.subdivisions; s++) {
+                const stroke = beatObj.notes[s];
+                if (!stroke) continue;
+                // Instrumentos criados/duplicados durante a reprodução ainda não têm canal de áudio
+                if (!this.synths[inst.id]) this.initInstrumentChannel(inst);
+                this.triggerStroke(inst, stroke, time + s * secondsPerSub);
+            }
+        });
+    },
+
     schedulePlaybackSequence() {
         Tone.Transport.cancel(0);
 
@@ -343,47 +380,22 @@ export const audioEngine = {
         const ppq = Tone.Transport.PPQ;
         let accumulatedTicks = 0;
 
+        this.scheduledSequence = [];
+        this.scheduleSignature = this.getStructureSignature();
+
         for (let i = 0; i < sequence.length; i++) {
             const mIdx = sequence[i];
             const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
             const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
             const measureTicks = cfg.beats * ppq;
 
-            // Agendamento do Metrônomo
             for (let b = 0; b < cfg.beats; b++) {
-                const beatTick = accumulatedTicks + (b * ppq);
-                const isFirstBeatOfMeasure = (b === 0);
-
                 Tone.Transport.schedule((time) => {
-                    this.triggerMetronomeClick(isFirstBeatOfMeasure, time);
-                }, beatTick + "i");
+                    this.playBeat(mIdx, b, time);
+                }, (accumulatedTicks + b * ppq) + "i");
             }
 
-            // Agendamento dos Instrumentos
-            scoreState.instruments.forEach(inst => {
-                if (inst.hidden) return;
-                const measureData = inst.pattern && inst.pattern[mIdx];
-                if (!measureData) return;
-
-                for (let b = 0; b < cfg.beats; b++) {
-                    const beatObj = measureData[b];
-                    if (!beatObj) continue;
-
-                    const ticksPerSub = ppq / beatObj.subdivisions;
-
-                    for (let s = 0; s < beatObj.subdivisions; s++) {
-                        const stroke = beatObj.notes[s];
-                        if (stroke) {
-                            const noteTick = accumulatedTicks + (b * ppq) + Math.round(s * ticksPerSub);
-
-                            Tone.Transport.schedule((time) => {
-                                this.triggerStroke(inst, stroke, time);
-                            }, noteTick + "i");
-                        }
-                    }
-                }
-            });
-
+            this.scheduledSequence.push({ mIdx, ticks: measureTicks });
             accumulatedTicks += measureTicks;
         }
 
@@ -398,6 +410,51 @@ export const audioEngine = {
                 }, time);
             }, accumulatedTicks + "i");
         }
+    },
+
+    // Chamado após qualquer alteração na partitura: se a estrutura mudou durante a reprodução (ou pausa),
+    // reagenda e mantém o cursor no mesmo compasso/posição em vez de quebrar ou reiniciar
+    syncWithScore() {
+        if (!this.isInitialized || !(this.isPlaying || this.isPaused)) return;
+        if (this.getStructureSignature() === this.scheduleSignature) return;
+
+        const oldSequence = this.scheduledSequence || [];
+        let oldIdx = -1;
+        let ticksInto = 0;
+        let acc = 0;
+        const currentTicks = Tone.Transport.ticks;
+
+        for (let i = 0; i < oldSequence.length; i++) {
+            if (currentTicks < acc + oldSequence[i].ticks) {
+                oldIdx = i;
+                ticksInto = currentTicks - acc;
+                break;
+            }
+            acc += oldSequence[i].ticks;
+        }
+        const oldMeasure = oldIdx >= 0 ? oldSequence[oldIdx].mIdx : 0;
+
+        this.schedulePlaybackSequence();
+        this.updateTransportSettings();
+
+        const seq = this.scheduledSequence;
+        if (seq.length === 0) return;
+
+        // Prefere a mesma posição na sequência; senão a primeira ocorrência do compasso; senão o mais próximo
+        let newIdx = oldIdx >= 0 && seq[oldIdx]?.mIdx === oldMeasure ? oldIdx : seq.findIndex(s => s.mIdx === oldMeasure);
+        if (newIdx < 0) newIdx = seq.findIndex(s => s.mIdx >= oldMeasure);
+        if (newIdx < 0) newIdx = seq.length - 1;
+
+        let newTicks = seq.slice(0, newIdx).reduce((sum, s) => sum + s.ticks, 0)
+            + Math.min(ticksInto, seq[newIdx].ticks - 1);
+
+        if (scoreState.loopState.active) {
+            const { startTicks, endTicks } = this.getLoopTickLimits();
+            if (endTicks > startTicks && (newTicks < startTicks || newTicks >= endTicks)) newTicks = startTicks;
+        }
+
+        Tone.Transport.ticks = newTicks;
+        if (window.updatePlayheadPosition) window.updatePlayheadPosition();
     },
 
     async start() {

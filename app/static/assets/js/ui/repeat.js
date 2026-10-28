@@ -56,7 +56,7 @@ function syncAudioWithRepeats() {
     if (window.audioEngine) {
         window.audioEngine.updateTransportSettings();
         if (window.audioEngine.isInitialized) {
-            window.audioEngine.schedulePlaybackSequence();
+            window.audioEngine.syncWithScore();
         }
     }
 }

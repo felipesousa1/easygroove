@@ -338,6 +338,7 @@ export function renderScore() {
 
     if (window.audioEngine && audioEngine.isInitialized) {
         audioEngine.updateTransportSettings();
+        audioEngine.syncWithScore();
     }
 }
 
