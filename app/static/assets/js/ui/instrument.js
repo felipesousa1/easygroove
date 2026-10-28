@@ -68,8 +68,18 @@ export function setupInstrumentControlEvents() {
             }
         });
 
+        // Um arrasto do slider = um único passo de desfazer
+        let sliderHistoryPushed = false;
+        sidebarList.addEventListener("change", (e) => {
+            if (e.target.classList.contains("vol-slider")) sliderHistoryPushed = false;
+        });
+
         sidebarList.addEventListener("input", (e) => {
             if (e.target.classList.contains("vol-slider")) {
+                if (!sliderHistoryPushed) {
+                    historyManager.pushState();
+                    sliderHistoryPushed = true;
+                }
                 const instId = e.target.dataset.instId;
                 const val = parseInt(e.target.value, 10);
                 updateInstrumentVolume(instId, val);
@@ -84,6 +94,7 @@ export function setupInstrumentControlEvents() {
                 const inst = scoreState.instruments.find(i => i.id === instId);
                 if (!inst) return;
 
+                historyManager.pushState();
                 if (inst.volume > 0) {
                     inst.previousVolume = inst.volume;
                     updateInstrumentVolume(instId, 0);
@@ -111,6 +122,8 @@ export function setupInstrumentControlEvents() {
                     let val = parseInt(volInput.value, 10);
                     if (isNaN(val)) val = 0;
                     val = Math.max(0, Math.min(100, val));
+                    const volInst = scoreState.instruments.find(i => i.id === instId);
+                    if (volInst && volInst.volume !== val) historyManager.pushState();
                     updateInstrumentVolume(instId, val);
                     volInput.style.display = "none";
                     volPercent.style.display = "none";
@@ -285,6 +298,7 @@ function startRenameInstrument(card, inst) {
         isCommitted = true;
 
         const newName = inputEl.value.trim() || inst.name;
+        if (newName !== inst.name) historyManager.pushState();
         inst.name = newName;
         nameEl.textContent = newName;
         inputEl.style.display = "none";

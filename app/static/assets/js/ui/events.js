@@ -131,6 +131,7 @@ export function setupHeaderEvents() {
 
         function saveTitle() {
             const newTitle = titleInput.value.trim() || "Sem Título";
+            if (newTitle !== scoreState.title) historyManager.pushState();
             scoreState.title = newTitle;
             titleDisplay.textContent = newTitle;
             titleDisplay.style.display = "inline-block";

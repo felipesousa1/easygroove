@@ -11,10 +11,12 @@ export const historyManager = {
             measuresCount: scoreState.measuresCount,
             // 1. Salva uma cópia profunda da métrica de cada compasso
             measuresConfig: JSON.parse(JSON.stringify(scoreState.measuresConfig || [])),
-            instruments: scoreState.instruments.map(inst => ({
-                id: inst.id,
-                pattern: JSON.parse(JSON.stringify(inst.pattern))
-            }))
+            repeats: JSON.parse(JSON.stringify(scoreState.repeats || [])),
+            title: scoreState.title,
+            activeInstrumentId: scoreState.activeTool?.instrumentId,
+            // Cópia profunda de cada instrumento inteiro (nome, volume, oculto, ordem, pattern...),
+            // para que ocultar/duplicar/excluir/reordenar/renomear também sejam desfeitos
+            instruments: JSON.parse(JSON.stringify(scoreState.instruments))
         };
     },
 
@@ -55,12 +57,28 @@ export const historyManager = {
             scoreState.measuresConfig = JSON.parse(JSON.stringify(snapshot.measuresConfig));
         }
 
-        snapshot.instruments.forEach(savedInst => {
-            const targetInst = scoreState.instruments.find(i => i.id === savedInst.id);
-            if (targetInst) {
-                targetInst.pattern = JSON.parse(JSON.stringify(savedInst.pattern));
-            }
-        });
+        scoreState.repeats = JSON.parse(JSON.stringify(snapshot.repeats || []));
+        if (snapshot.title !== undefined) scoreState.title = snapshot.title;
+        scoreState.instruments = JSON.parse(JSON.stringify(snapshot.instruments));
+
+        if (scoreState.instruments.some(i => i.id === snapshot.activeInstrumentId)) {
+            scoreState.activeTool.instrumentId = snapshot.activeInstrumentId;
+        } else if (!scoreState.instruments.some(i => i.id === scoreState.activeTool.instrumentId)) {
+            scoreState.activeTool.instrumentId = scoreState.instruments[0]?.id;
+        }
+
+        // Seleção e loop podem apontar para compassos/instrumentos que não existem mais
+        scoreState.selectedSelection = [];
+        scoreState.loopState.endMeasure = Math.min(scoreState.loopState.endMeasure, scoreState.measuresCount);
+        scoreState.loopState.startMeasure = Math.min(scoreState.loopState.startMeasure, scoreState.loopState.endMeasure);
+
+        // Reconecta o áudio: canais de instrumentos recriados e volumes restaurados
+        if (window.audioEngine && audioEngine.isInitialized) {
+            scoreState.instruments.forEach(inst => {
+                audioEngine.initInstrumentChannel(inst);
+                audioEngine.setInstrumentVolume(inst.id, inst.volume);
+            });
+        }
 
         renderScore();
     },
