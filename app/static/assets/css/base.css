@@ -14,3 +14,11 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
+/* Carregamento suave: a página inteira aparece de uma vez, com fade-in */
+body {
+  transition: opacity 0.3s ease;
+}
+
+.is-loading body {
+  opacity: 0;
+}

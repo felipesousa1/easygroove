@@ -18,6 +18,18 @@ import { setupHelpEvents } from './ui/help.js';
 
 window.addEventListener("resize", renderRepeats);
 
+// Resolve quando CSS, ícones e demais recursos terminaram de carregar
+const pageReady = new Promise(resolve => {
+    if (document.readyState === "complete") resolve();
+    else window.addEventListener("load", resolve, { once: true });
+});
+
+// Remove o estado de carregamento (fade-in); o timeout abaixo evita ficar oculto se algo travar
+function revealPage() {
+    document.documentElement.classList.remove("is-loading");
+}
+setTimeout(revealPage, 4000);
+
 // Previne o fechamento/recarregamento acidental se houver alterações não salvas
 window.addEventListener("beforeunload", (event) => {
     if (isDirty) {
@@ -46,14 +58,16 @@ document.addEventListener("DOMContentLoaded", () => {
         setupHelpEvents();
 
         if (window.location.search.includes("id=")) {
-            loadArrangementFromURL();
+            loadArrangementFromURL().finally(() => pageReady.then(revealPage));
         } else {
             // Abre o modal para configurar o novo arranjo
             setupNewArrangementModal();
         }
 
         setupKeyboardShortcuts();
+        if (!window.location.search.includes("id=")) pageReady.then(revealPage);
     } catch (err) {
         console.error("Erro na inicialização:", err);
+        revealPage();
     }
 });
