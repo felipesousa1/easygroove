@@ -13,8 +13,7 @@ const TOUR_SLIDES = [
                 tip: "Clique para abrir opções rápidas."
             },
             {
-                // Agrupa o texto do título e o botão de editar
-                selector: "#title-display, #btn-edit-title",
+                selector: "#title-display",
                 title: "Título do Arranjo",
                 text: "Edite o nome da sua partitura. Para voltar à biblioteca ou sair, utilize o Menu.",
                 tip: "Atalho: Shift + R para renomear."

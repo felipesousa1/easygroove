@@ -98,10 +98,12 @@ export function setupInstrumentControlEvents() {
                 e.stopPropagation();
                 const volText = volBox.querySelector(".vol-text");
                 const volInput = volBox.querySelector(".vol-direct-input");
+                const volPercent = volBox.querySelector(".vol-percent");
                 const instId = volBox.dataset.instId;
 
                 volText.style.display = "none";
                 volInput.style.display = "block";
+                volPercent.style.display = "inline";
                 volInput.focus();
                 volInput.select();
 
@@ -111,6 +113,7 @@ export function setupInstrumentControlEvents() {
                     val = Math.max(0, Math.min(100, val));
                     updateInstrumentVolume(instId, val);
                     volInput.style.display = "none";
+                    volPercent.style.display = "none";
                     volText.style.display = "block";
                 }
 
@@ -118,6 +121,7 @@ export function setupInstrumentControlEvents() {
                     if (evt.key === "Enter") commitVolume();
                     if (evt.key === "Escape") {
                         volInput.style.display = "none";
+                        volPercent.style.display = "none";
                         volText.style.display = "block";
                     }
                 };

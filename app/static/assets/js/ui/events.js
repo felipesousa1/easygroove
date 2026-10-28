@@ -102,14 +102,29 @@ export function setupHeaderEvents() {
 
     const titleDisplay = document.getElementById("title-display");
     const titleInput = document.getElementById("title-input");
-    const btnEditTitle = document.getElementById("btn-edit-title");
 
-    if (titleDisplay && titleInput && btnEditTitle) {
+    if (titleDisplay && titleInput) {
+        // Fallback para navegadores sem suporte a `field-sizing: content`
+        const supportsFieldSizing = window.CSS?.supports?.("field-sizing", "content");
+        const measureCanvas = document.createElement("canvas").getContext("2d");
+
+        function fitTitleInput() {
+            if (supportsFieldSizing) return;
+            const style = getComputedStyle(titleInput);
+            measureCanvas.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+            const textWidth = measureCanvas.measureText(titleInput.value || " ").width;
+            const extra = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+                + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
+            titleInput.style.width = `${Math.ceil(textWidth + extra + 2)}px`;
+        }
+
+        titleInput.addEventListener("input", fitTitleInput);
+
         function startEditingTitle() {
             titleInput.value = scoreState.title;
             titleDisplay.style.display = "none";
-            btnEditTitle.style.display = "none";
             titleInput.style.display = "inline-block";
+            fitTitleInput();
             titleInput.focus();
             titleInput.select();
         }
@@ -119,17 +134,14 @@ export function setupHeaderEvents() {
             scoreState.title = newTitle;
             titleDisplay.textContent = newTitle;
             titleDisplay.style.display = "inline-block";
-            btnEditTitle.style.display = "inline-flex";
             titleInput.style.display = "none";
         }
 
         function cancelTitleEdit() {
             titleDisplay.style.display = "inline-block";
-            btnEditTitle.style.display = "inline-flex";
             titleInput.style.display = "none";
         }
 
-        btnEditTitle.addEventListener("click", startEditingTitle);
         titleDisplay.addEventListener("dblclick", startEditingTitle);
 
         titleInput.addEventListener("keydown", (e) => {

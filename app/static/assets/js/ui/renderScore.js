@@ -123,6 +123,7 @@ function renderSidebar(sidebarList) {
             <div class="vol-display-box" data-inst-id="${inst.id}" title="Clique para editar valor">
             <span class="vol-text">${inst.volume}%</span>
             <input type="number" class="vol-direct-input" min="0" max="100" value="${inst.volume}" style="display: none;">
+            <span class="vol-percent" style="display: none;">%</span>
             </div>
         </div>
         `;

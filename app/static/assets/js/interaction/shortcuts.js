@@ -70,7 +70,7 @@ export function setupKeyboardShortcuts() {
                     break;
                 case "r":
                     e.preventDefault();
-                    document.getElementById("btn-edit-title")?.click();
+                    document.getElementById("title-display")?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
                     break;
                 case "e":
                     e.preventDefault();

@@ -389,8 +389,7 @@
 }
 
 .player-btn img,
-.tool-btn img,
-.btn-edit-title img {
+.tool-btn img {
   display: block;
   pointer-events: none;
 }

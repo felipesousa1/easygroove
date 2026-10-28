@@ -95,7 +95,8 @@
 }
 
 .instrument-card.hidden-track .inst-name,
-.instrument-card.hidden-track .vol-text {
+.instrument-card.hidden-track .vol-text,
+.instrument-card.hidden-track .vol-percent {
   color: #94a3b8 !important;
 }
 
@@ -189,7 +190,7 @@
 }
 
 .vol-display-box {
-  width: 28px;
+  width: 34px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -210,8 +211,16 @@
   color: var(--color-purple-primary);
 }
 
+.vol-percent {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  line-height: 1;
+  margin-left: 1px;
+}
+
 .vol-direct-input {
-  width: 100%;
+  width: 3ch;
   border: 1px solid var(--color-purple-primary);
   border-radius: 4px;
   padding: 1px 0;
@@ -221,6 +230,14 @@
   outline: none;
   background-color: #ffffff;
   line-height: 1;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.vol-direct-input::-webkit-outer-spin-button,
+.vol-direct-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .btn-add-instrument {
