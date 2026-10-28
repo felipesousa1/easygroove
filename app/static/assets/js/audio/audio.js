@@ -344,9 +344,11 @@ export const audioEngine = {
         Object.values(this.synths).forEach(synthGroup => {
             if (!synthGroup) return;
             Object.values(synthGroup).forEach(synth => {
-                if (synth && typeof synth.releaseAll === 'function') {
-                    try { synth.releaseAll(); } catch (e) { }
-                }
+                if (!synth) return;
+                try {
+                    if (typeof synth.releaseAll === 'function') synth.releaseAll();
+                    else if (typeof synth.triggerRelease === 'function') synth.triggerRelease(Tone.now());
+                } catch (e) { }
             });
         });
     },
@@ -359,32 +361,41 @@ export const audioEngine = {
             sigs.push(scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4");
         }
         const repeats = (scoreState.repeats || []).map(r => [r.start, r.end, r.times]);
-        return JSON.stringify([scoreState.measuresCount, sigs, repeats, this.isLoopActive()]);
+        // Quantas subdivisões cada tempo usa define em quais ticks os eventos são agendados
+        const subdivisions = sigs.map((_, m) => this.getBeatSubdivisionOptions(m).map(opts => opts.join("")).join(","));
+        return JSON.stringify([scoreState.measuresCount, sigs, repeats, subdivisions, this.isLoopActive()]);
     },
 
-    // Toca um tempo (beat) lendo o estado atual da partitura, o que permite editar durante a reprodução
-    playBeat(mIdx, b, time) {
+    // Para cada tempo do compasso, a lista de subdivisões distintas usadas pelos instrumentos
+    getBeatSubdivisionOptions(mIdx) {
         const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
         const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
-        if (b >= cfg.beats) return;
+        const result = [];
+        for (let b = 0; b < cfg.beats; b++) {
+            const subs = new Set();
+            scoreState.instruments.forEach(inst => {
+                const beatObj = inst.pattern?.[mIdx]?.[b];
+                if (beatObj?.subdivisions) subs.add(beatObj.subdivisions);
+            });
+            result.push([...subs].sort((a, c) => a - c));
+        }
+        return result;
+    },
 
-        this.triggerMetronomeClick(b === 0, time);
-
-        const secondsPerBeat = 60 / Tone.Transport.bpm.value;
-
+    // Toca uma posição (subdivisão) lendo o estado atual da partitura no instante em que ela soa,
+    // o que permite editar durante a reprodução. Cada posição tem seu próprio evento no Transport
+    // (nada é agendado para o futuro no áudio), então pausar/parar corta o som imediatamente.
+    playSlot(mIdx, b, subdivisions, s, time) {
         scoreState.instruments.forEach(inst => {
             if (inst.hidden) return;
             const beatObj = inst.pattern?.[mIdx]?.[b];
-            if (!beatObj) return;
+            if (!beatObj || beatObj.subdivisions !== subdivisions) return;
 
-            const secondsPerSub = secondsPerBeat / beatObj.subdivisions;
-            for (let s = 0; s < beatObj.subdivisions; s++) {
-                const stroke = beatObj.notes[s];
-                if (!stroke) continue;
-                // Instrumentos criados/duplicados durante a reprodução ainda não têm canal de áudio
-                if (!this.synths[inst.id]) this.initInstrumentChannel(inst);
-                this.triggerStroke(inst, stroke, time + s * secondsPerSub);
-            }
+            const stroke = beatObj.notes[s];
+            if (!stroke) return;
+            // Instrumentos criados/duplicados durante a reprodução ainda não têm canal de áudio
+            if (!this.synths[inst.id]) this.initInstrumentChannel(inst);
+            this.triggerStroke(inst, stroke, time);
         });
     },
 
@@ -404,10 +415,23 @@ export const audioEngine = {
             const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
             const measureTicks = cfg.beats * ppq;
 
+            const subdivisionOptions = this.getBeatSubdivisionOptions(mIdx);
+
             for (let b = 0; b < cfg.beats; b++) {
+                const beatTick = accumulatedTicks + b * ppq;
+
                 Tone.Transport.schedule((time) => {
-                    this.playBeat(mIdx, b, time);
-                }, (accumulatedTicks + b * ppq) + "i");
+                    this.triggerMetronomeClick(b === 0, time);
+                }, beatTick + "i");
+
+                subdivisionOptions[b].forEach(subdivisions => {
+                    for (let slot = 0; slot < subdivisions; slot++) {
+                        const slotTick = beatTick + Math.round(slot * ppq / subdivisions);
+                        Tone.Transport.schedule((time) => {
+                            this.playSlot(mIdx, b, subdivisions, slot, time);
+                        }, slotTick + "i");
+                    }
+                });
             }
 
             this.scheduledSequence.push({ mIdx, ticks: measureTicks });
