@@ -194,6 +194,7 @@ export function copyFullColumnMeasure(measureIndex) {
 
     setClipboard({
         type: "column",
+        measureIndex: measureIndex,
         timeSignature: currentSig,
         instruments: scoreState.instruments.map(inst => ({
             instrumentId: inst.id,
@@ -202,6 +203,7 @@ export function copyFullColumnMeasure(measureIndex) {
     });
 
     showToast(`Compasso ${measureIndex + 1} copiado`);
+    renderScore();
 }
 
 export function pasteFullColumnMeasure(targetMeasureIndex) {

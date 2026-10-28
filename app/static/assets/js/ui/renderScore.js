@@ -149,7 +149,7 @@ function renderGrid(scoreGrid) {
 
     scoreState.instruments.forEach((inst, instIndex) => {
         const row = document.createElement("div");
-        row.className = `score-row \({inst.id === scoreState.activeTool.instrumentId ? 'active' : ''}\){inst.hidden ? 'hidden-track' : ''}`;
+        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
         row.dataset.instrumentId = inst.id;
 
         for (let m = 0; m < scoreState.measuresCount; m++) {
@@ -160,7 +160,7 @@ function renderGrid(scoreGrid) {
             let isInClipboard = false;
             if (activeClipboard) {
                 if (activeClipboard.type === "column") {
-                    isInClipboard = true;
+                    isInClipboard = activeClipboard.measureIndex === m;
                 } else if (activeClipboard.items) {
                     isInClipboard = activeClipboard.items.some(item => item.instId === inst.id && item.measures.includes(m));
                 }
