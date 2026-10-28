@@ -155,8 +155,12 @@ export async function loadArrangementFromURL() {
             Object.assign(scoreState, arrangement.score_data);
             scoreState.loopState = {
                 active: false,
+                mode: scoreState.loopState?.mode || "measures",
+                empty: false,
                 startMeasure: 0,
-                endMeasure: scoreState.measuresCount
+                endMeasure: scoreState.measuresCount,
+                startUnit: 0,
+                endUnit: 0
             };
 
             const btnLoop = document.getElementById("btn-loop");

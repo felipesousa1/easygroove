@@ -125,19 +125,43 @@
   display: flex;
   justify-content: space-between;
   opacity: 0;
+  /* A barra não captura cliques: assim nunca cobre os botões dos compassos.
+     Só as alças e a faixa de arrasto (.loop-grab) recebem eventos. */
   pointer-events: none;
   transition: opacity 0.2s ease;
   box-sizing: border-box;
-  cursor: grab;
 }
 
 .loop-bar-container.active {
   opacity: 1;
+}
+
+.loop-grab {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 8px;
+  cursor: grab;
   pointer-events: auto;
 }
 
-.loop-bar-container.dragging-body {
+.loop-bar-container:not(.active) .loop-handle,
+.loop-bar-container:not(.active) .loop-grab {
+  pointer-events: none;
+}
+
+.loop-bar-container.dragging-body .loop-grab {
   cursor: grabbing;
+}
+
+/* Escolha de compasso para o loop (após zerar) */
+.loop-picking .measure-header {
+  cursor: pointer;
+}
+
+.loop-picking .measure-header:hover {
+  background-color: var(--color-purple-light);
 }
 
 .loop-handle {

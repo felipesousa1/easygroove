@@ -71,6 +71,7 @@ export const historyManager = {
         scoreState.selectedSelection = [];
         scoreState.loopState.endMeasure = Math.min(scoreState.loopState.endMeasure, scoreState.measuresCount);
         scoreState.loopState.startMeasure = Math.min(scoreState.loopState.startMeasure, scoreState.loopState.endMeasure);
+        // updateLoopBarVisuals (no renderScore) normaliza as subdivisões fora do intervalo
 
         // Reconecta o áudio: canais de instrumentos recriados e volumes restaurados
         if (window.audioEngine && audioEngine.isInitialized) {

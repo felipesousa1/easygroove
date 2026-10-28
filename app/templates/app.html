@@ -149,9 +149,42 @@
 
         <!-- Player Centralizado -->
         <div class="header-center">
-            <button type="button" id="btn-loop" class="player-btn" title="Loop Ativo/Inativo">
-                <img src="assets/icons/loop.svg" alt="Loop">
-            </button>
+            <div class="loop-control">
+                <button type="button" id="btn-loop" class="player-btn" title="Loop Ativo/Inativo">
+                    <img src="assets/icons/loop.svg" alt="Loop">
+                </button>
+                <button type="button" id="btn-loop-options" class="btn-loop-options" title="Opções do Loop">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                        stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+
+                <div id="loop-popover" class="metronome-popover loop-popover">
+                    <div class="popover-header">
+                        <span class="popover-title">Loop</span>
+                        <label class="toggle-switch" title="Ativar/Desativar Loop">
+                            <input type="checkbox" id="popover-loop-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="popover-section">
+                        <label class="popover-label">Modo</label>
+                        <div class="loop-mode-toggle">
+                            <button type="button" class="loop-mode-btn active" data-mode="measures"
+                                title="O loop acompanha compassos inteiros">Compassos</button>
+                            <button type="button" class="loop-mode-btn" data-mode="free"
+                                title="O loop pode começar e terminar no meio dos compassos">Livre</button>
+                        </div>
+                    </div>
+
+                    <div class="popover-section">
+                        <button type="button" id="btn-loop-reset" class="btn-loop-reset" title="Remove o loop dos compassos atuais">
+                            <span>Zerar loop</span>
+                            <span class="key-combo"><kbd>Shift</kbd><span>+</span><kbd>L</kbd></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
             <button type="button" id="btn-play" class="player-btn primary" title="Tocar / Pausar">
                 <img src="assets/icons/play.svg" id="play-icon-img" alt="Play">
             </button>
@@ -533,6 +566,10 @@
                         <div class="shortcut-item">
                             <div class="key-combo"><kbd>L</kbd></div>
                             <span>Ativar / Desativar Loop</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <div class="key-combo"><kbd>Shift</kbd><span>+</span><kbd>L</kbd></div>
+                            <span>Zerar loop</span>
                         </div>
 
                         <!-- Edição e Seleção -->

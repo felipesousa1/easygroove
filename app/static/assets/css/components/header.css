@@ -440,3 +440,106 @@ input:checked + .toggle-slider:before {
     accent-color: #360566;
     cursor: pointer;
 }
+/* Loop: botão + setinha + box de opções */
+.loop-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.btn-loop-options {
+  background: none;
+  border: none;
+  width: 16px;
+  height: 28px;
+  margin-left: 2px;
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.btn-loop-options:hover {
+  background-color: var(--color-gray-hover);
+  color: var(--color-purple-primary);
+}
+
+.loop-popover {
+  left: 0;
+  transform: none;
+}
+
+.loop-mode-toggle {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.loop-mode-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.loop-mode-btn.active {
+  background-color: #ffffff;
+  color: var(--color-purple-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.btn-loop-reset {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-loop-reset:hover:not(:disabled) {
+  border-color: var(--color-purple-primary);
+  color: var(--color-purple-primary);
+}
+
+.btn-loop-reset:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-loop-reset .key-combo {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.btn-loop-reset kbd {
+  font-family: inherit;
+  font-size: 0.68rem;
+  background-color: #f1f5f9;
+  border: 1px solid var(--color-gray-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}

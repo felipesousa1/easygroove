@@ -76,9 +76,10 @@ function renderMeasuresTrack(trackContainer) {
 
     const loopBar = document.createElement("div");
     loopBar.id = "loop-bar";
-    loopBar.className = `loop-bar-container ${scoreState.loopState.active ? 'active' : ''}`;
+    loopBar.className = `loop-bar-container ${scoreState.loopState.active && !scoreState.loopState.empty ? 'active' : ''}`;
     loopBar.innerHTML = `
         <div class="loop-handle left" data-handle="left"></div>
+        <div class="loop-grab" title="Arrastar loop"></div>
         <div class="loop-handle right" data-handle="right"></div>
     `;
     trackContainer.appendChild(loopBar);

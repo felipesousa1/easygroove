@@ -289,6 +289,11 @@ export const audioEngine = {
         return sequence;
     },
 
+    // Loop "armado" (ativo, mas ainda sem intervalo escolhido) não repete nada
+    isLoopActive() {
+        return scoreState.loopState.active && !scoreState.loopState.empty;
+    },
+
     getLoopTickLimits() {
         const ppq = Tone.Transport.PPQ;
         let startTicks = 0;
@@ -306,6 +311,16 @@ export const audioEngine = {
             if (mIdx < scoreState.loopState.endMeasure) endTicks += measureTicks;
         }
 
+        // Modo livre: soma o deslocamento (em subdivisões) dentro do compasso inicial/final
+        const unitTicks = (m) => {
+            const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+            const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+            return ppq / cfg.subdivisions;
+        };
+        const { startMeasure, endMeasure, startUnit = 0, endUnit = 0 } = scoreState.loopState;
+        if (sequence.includes(startMeasure)) startTicks += Math.round(startUnit * unitTicks(startMeasure));
+        if (sequence.includes(endMeasure)) endTicks += Math.round(endUnit * unitTicks(endMeasure));
+
         return { startTicks, endTicks };
     },
 
@@ -313,7 +328,7 @@ export const audioEngine = {
         if (!this.isInitialized) return;
         Tone.Transport.bpm.value = scoreState.bpm;
 
-        if (scoreState.loopState.active) {
+        if (this.isLoopActive()) {
             const { startTicks, endTicks } = this.getLoopTickLimits();
             if (endTicks > startTicks) {
                 Tone.Transport.loop = true;
@@ -344,7 +359,7 @@ export const audioEngine = {
             sigs.push(scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4");
         }
         const repeats = (scoreState.repeats || []).map(r => [r.start, r.end, r.times]);
-        return JSON.stringify([scoreState.measuresCount, sigs, repeats]);
+        return JSON.stringify([scoreState.measuresCount, sigs, repeats, this.isLoopActive()]);
     },
 
     // Toca um tempo (beat) lendo o estado atual da partitura, o que permite editar durante a reprodução
@@ -399,7 +414,7 @@ export const audioEngine = {
             accumulatedTicks += measureTicks;
         }
 
-        if (!scoreState.loopState.active) {
+        if (!this.isLoopActive()) {
             Tone.Transport.schedule((time) => {
                 Tone.Draw.schedule(() => {
                     this.stop();
@@ -448,7 +463,7 @@ export const audioEngine = {
         let newTicks = seq.slice(0, newIdx).reduce((sum, s) => sum + s.ticks, 0)
             + Math.min(ticksInto, seq[newIdx].ticks - 1);
 
-        if (scoreState.loopState.active) {
+        if (this.isLoopActive()) {
             const { startTicks, endTicks } = this.getLoopTickLimits();
             if (endTicks > startTicks && (newTicks < startTicks || newTicks >= endTicks)) newTicks = startTicks;
         }
@@ -466,7 +481,7 @@ export const audioEngine = {
         if (!this.isPaused) {
             this.schedulePlaybackSequence();
 
-            if (scoreState.loopState.active) {
+            if (this.isLoopActive()) {
                 const { startTicks } = this.getLoopTickLimits();
                 Tone.Transport.ticks = startTicks;
             } else {
@@ -499,7 +514,7 @@ export const audioEngine = {
         this.isPlaying = false;
         this.isPaused = false;
 
-        if (scoreState.loopState.active) {
+        if (this.isLoopActive()) {
             const { startTicks } = this.getLoopTickLimits();
             Tone.Transport.ticks = startTicks;
         } else {

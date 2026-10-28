@@ -450,6 +450,8 @@
 
 /* Botão de Métrica (Fundo Roxo, Texto Branco) */
 .time-sig-badge-btn {
+  position: relative;
+  z-index: 50;
   display: inline-flex;
   flex-direction: column;
   align-items: center;

@@ -1,4 +1,5 @@
 import { scoreState, setSelectionClipboard } from '../core/state.js';
+import { resetLoop, cancelLoopPicking } from '../ui/loop.js';
 import { copySelectedMeasures, cutSelectedMeasures, pasteClipboardToTarget, clearSelectedMeasures } from './clipboard.js';
 import { addMeasureToEnd, renderScore } from '../ui/renderScore.js';
 
@@ -52,6 +53,9 @@ export function setupKeyboardShortcuts() {
                 needsRender = true;
             }
 
+            // Cancela a escolha de compasso do loop (após "zerar loop")
+            cancelLoopPicking();
+
             if (needsRender) {
                 renderScore();
             }
@@ -67,6 +71,10 @@ export function setupKeyboardShortcuts() {
                 case "b":
                     e.preventDefault();
                     document.getElementById("bpm-input")?.focus();
+                    break;
+                case "l":
+                    e.preventDefault();
+                    resetLoop();
                     break;
                 case "r":
                     e.preventDefault();

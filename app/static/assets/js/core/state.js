@@ -42,8 +42,12 @@ export const scoreState = {
     ],
     loopState: {
         active: false,
+        mode: "measures", // "measures" (travado em compassos) | "free" (encaixe por subdivisão)
+        empty: false, // true = loop zerado, sem intervalo definido
         startMeasure: 0,
-        endMeasure: 1
+        endMeasure: 1, // exclusivo; === measuresCount com endUnit 0 = fim da partitura
+        startUnit: 0, // deslocamento em subdivisões dentro do compasso inicial (modo livre)
+        endUnit: 0 // deslocamento em subdivisões dentro do compasso final (modo livre)
     },
     activeTool: {
         instrumentId: "surdo1",

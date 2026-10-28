@@ -1,76 +1,281 @@
 import { scoreState } from '../core/state.js';
 import { TIME_SIGNATURES } from '../core/constants.js';
+import { showToast } from './toast.js';
+
+const BEAT_WIDTH = 112;
+
+function getMeasureConfig(m) {
+    const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
+    return TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+}
+
+function getMeasureWidth(m) {
+    return getMeasureConfig(m).beats * BEAT_WIDTH;
+}
+
+// Largura de uma subdivisão (menor unidade do modo livre) no compasso m
+function getUnitWidth(m) {
+    return BEAT_WIDTH / getMeasureConfig(m).subdivisions;
+}
+
+function getUnitsInMeasure(m) {
+    const cfg = getMeasureConfig(m);
+    return cfg.beats * cfg.subdivisions;
+}
+
+function measureX(m) {
+    let x = 0;
+    for (let i = 0; i < m; i++) x += getMeasureWidth(i);
+    return x;
+}
+
+function positionToX(measure, unit) {
+    if (measure >= scoreState.measuresCount) return measureX(scoreState.measuresCount);
+    return measureX(measure) + unit * getUnitWidth(measure);
+}
+
+// Converte uma posição em px na pista de compassos para {measure, unit}.
+// Livre: encaixa na subdivisão mais próxima. Travado: encaixa na fronteira de compasso mais próxima.
+function xToPosition(x, free) {
+    // Arrastar além das bordas da partitura trava no início/fim
+    x = Math.max(0, Math.min(x, measureX(scoreState.measuresCount)));
+
+    let accumulatedX = 0;
+    for (let m = 0; m < scoreState.measuresCount; m++) {
+        const w = getMeasureWidth(m);
+
+        if (x < accumulatedX + w) {
+            if (!free) {
+                return { measure: x >= accumulatedX + (w / 2) ? m + 1 : m, unit: 0 };
+            }
+            const unitWidth = getUnitWidth(m);
+            const unit = Math.round((x - accumulatedX) / unitWidth);
+            return unit >= getUnitsInMeasure(m) ? { measure: m + 1, unit: 0 } : { measure: m, unit };
+        }
+        accumulatedX += w;
+    }
+    return { measure: scoreState.measuresCount, unit: 0 };
+}
+
+// Posição absoluta em subdivisões "virtuais" para comparar início/fim (qualquer métrica)
+function comparablePosition(measure, unit) {
+    return measure * 1000 + unit;
+}
+
+// Mantém o loop consistente após mudanças de estrutura (remover compasso, trocar métrica...)
+function normalizeLoop() {
+    const loop = scoreState.loopState;
+    loop.endMeasure = Math.min(loop.endMeasure, scoreState.measuresCount);
+
+    if (loop.mode !== "free") {
+        loop.startUnit = 0;
+        loop.endUnit = 0;
+    } else {
+        if (loop.startMeasure >= scoreState.measuresCount) loop.startMeasure = scoreState.measuresCount - 1;
+        loop.startUnit = Math.min(loop.startUnit || 0, getUnitsInMeasure(loop.startMeasure) - 1);
+        loop.endUnit = loop.endMeasure >= scoreState.measuresCount
+            ? 0
+            : Math.min(loop.endUnit || 0, getUnitsInMeasure(loop.endMeasure) - 1);
+    }
+
+    if (comparablePosition(loop.startMeasure, loop.startUnit) >= comparablePosition(loop.endMeasure, loop.endUnit)) {
+        loop.startUnit = 0;
+        loop.startMeasure = Math.max(0, loop.endMeasure - 1);
+        if (loop.endMeasure <= loop.startMeasure) loop.endMeasure = loop.startMeasure + 1;
+        loop.endUnit = 0;
+    }
+}
 
 export function updateLoopBarVisuals() {
     const loopBar = document.getElementById("loop-bar");
+    const btnLoop = document.getElementById("btn-loop");
+    const loop = scoreState.loopState;
+
+    if (btnLoop) btnLoop.classList.toggle("active", loop.active);
+    syncLoopPopover();
+
     if (!loopBar) return;
 
-    if (scoreState.loopState.endMeasure > scoreState.measuresCount) {
-        scoreState.loopState.endMeasure = scoreState.measuresCount;
-    }
-    if (scoreState.loopState.startMeasure >= scoreState.loopState.endMeasure) {
-        scoreState.loopState.startMeasure = Math.max(0, scoreState.loopState.endMeasure - 1);
+    if (loop.empty) {
+        loopBar.classList.remove("active");
+        return;
     }
 
-    // Calcula o deslocamento X até o compasso inicial
-    let startX = 0;
-    for (let m = 0; m < scoreState.loopState.startMeasure; m++) {
-        const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
-        const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
-        startX += cfg.beats * 112;
-    }
+    normalizeLoop();
 
-    // Calcula a largura cobrindo os compassos do loop
-    let loopWidth = 0;
-    for (let m = scoreState.loopState.startMeasure; m < scoreState.loopState.endMeasure; m++) {
-        const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
-        const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
-        loopWidth += cfg.beats * 112;
-    }
+    const startX = positionToX(loop.startMeasure, loop.startUnit);
+    const endX = positionToX(loop.endMeasure, loop.endUnit);
 
     loopBar.style.left = `${startX}px`;
-    loopBar.style.width = `${loopWidth}px`;
+    loopBar.style.width = `${endX - startX}px`;
+    loopBar.classList.toggle("active", loop.active);
+}
 
-    if (scoreState.loopState.active) {
-        loopBar.classList.add("active");
+function applyLoopToAudio() {
+    if (!window.audioEngine) return;
+    audioEngine.updateTransportSettings();
+    audioEngine.syncWithScore();
+}
+
+function setPickingMode(enabled) {
+    document.body.classList.toggle("loop-picking", enabled);
+}
+
+export function isLoopPicking() {
+    return document.body.classList.contains("loop-picking");
+}
+
+export function cancelLoopPicking() {
+    if (!isLoopPicking()) return false;
+    setPickingMode(false);
+    scoreState.loopState.active = false;
+    updateLoopBarVisuals();
+    applyLoopToAudio();
+    return true;
+}
+
+// Liga/desliga o loop. Se o loop foi zerado, pede para escolher um compasso
+export function toggleLoop() {
+    const loop = scoreState.loopState;
+
+    if (loop.active) {
+        loop.active = false;
+        setPickingMode(false);
     } else {
-        loopBar.classList.remove("active");
+        loop.active = true;
+        if (loop.empty) {
+            setPickingMode(true);
+            showToast("Clique em um compasso para definir o loop");
+        }
     }
+
+    updateLoopBarVisuals();
+    applyLoopToAudio();
+}
+
+// Remove o loop dos compassos atuais e o desativa
+export function resetLoop() {
+    const loop = scoreState.loopState;
+    loop.empty = true;
+    loop.active = false;
+    loop.startMeasure = 0;
+    loop.endMeasure = Math.min(1, scoreState.measuresCount);
+    loop.startUnit = 0;
+    loop.endUnit = 0;
+
+    setPickingMode(false);
+    updateLoopBarVisuals();
+    applyLoopToAudio();
+    showToast("Loop zerado");
+}
+
+export function setLoopMode(mode) {
+    const loop = scoreState.loopState;
+    if (loop.mode === mode) return;
+    loop.mode = mode;
+
+    // Livre -> travado: encaixa "para fora", cobrindo os compassos tocados pelo trecho
+    if (mode === "measures") {
+        if (loop.endUnit > 0) loop.endMeasure = Math.min(loop.endMeasure + 1, scoreState.measuresCount);
+        loop.startUnit = 0;
+        loop.endUnit = 0;
+    }
+
+    updateLoopBarVisuals();
+    applyLoopToAudio();
+}
+
+function syncLoopPopover() {
+    const loop = scoreState.loopState;
+    const toggle = document.getElementById("popover-loop-toggle");
+    if (toggle) toggle.checked = loop.active;
+
+    document.querySelectorAll(".loop-mode-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.mode === loop.mode);
+    });
+
+    const btnReset = document.getElementById("btn-loop-reset");
+    if (btnReset) btnReset.disabled = loop.empty;
 }
 
 export function setupLoopEvents() {
     const btnLoop = document.getElementById("btn-loop");
+    const btnOptions = document.getElementById("btn-loop-options");
+    const popover = document.getElementById("loop-popover");
     const measuresTrack = document.getElementById("measures-track");
     let draggingMode = null;
     let dragStartX = 0;
-    let initialStart = 0;
-    let initialEnd = 0;
+    let initialStartX = 0;
+    let initialEndX = 0;
 
     if (btnLoop) {
-        btnLoop.addEventListener("click", () => {
-            scoreState.loopState.active = !scoreState.loopState.active;
-            btnLoop.classList.toggle("active", scoreState.loopState.active);
-            updateLoopBarVisuals();
-            if (window.audioEngine) audioEngine.updateTransportSettings();
+        btnLoop.addEventListener("click", toggleLoop);
+    }
+
+    if (btnOptions && popover) {
+        btnOptions.addEventListener("click", (e) => {
+            e.stopPropagation();
+            document.getElementById("metronome-popover")?.classList.remove("active");
+            popover.classList.toggle("active");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!popover.contains(e.target) && !btnOptions.contains(e.target)) {
+                popover.classList.remove("active");
+            }
+        });
+
+        document.getElementById("popover-loop-toggle")?.addEventListener("change", (e) => {
+            if (e.target.checked !== scoreState.loopState.active) toggleLoop();
+        });
+
+        popover.querySelectorAll(".loop-mode-btn").forEach(btn => {
+            btn.addEventListener("click", () => setLoopMode(btn.dataset.mode));
+        });
+
+        document.getElementById("btn-loop-reset")?.addEventListener("click", () => {
+            resetLoop();
+            popover.classList.remove("active");
         });
     }
 
-    document.addEventListener("mousedown", (e) => {
-        if (e.target.closest(".measure-menu-btn") || e.target.closest(".measure-dropdown-menu")) {
-            return;
-        }
+    // Modo de escolha: clique no cabeçalho de um compasso define o loop nele
+    measuresTrack?.addEventListener("click", (e) => {
+        if (!isLoopPicking()) return;
+        if (e.target.closest("button")) return;
 
+        const header = e.target.closest(".measure-header");
+        if (!header) return;
+
+        const index = Array.from(measuresTrack.querySelectorAll(".measure-header")).indexOf(header);
+        if (index === -1) return;
+
+        const loop = scoreState.loopState;
+        loop.empty = false;
+        loop.startMeasure = index;
+        loop.endMeasure = index + 1;
+        loop.startUnit = 0;
+        loop.endUnit = 0;
+
+        setPickingMode(false);
+        updateLoopBarVisuals();
+        applyLoopToAudio();
+    });
+
+    document.addEventListener("mousedown", (e) => {
         const loopBar = document.getElementById("loop-bar");
-        if (!loopBar || !scoreState.loopState.active) return;
+        if (!loopBar || !scoreState.loopState.active || scoreState.loopState.empty) return;
+
+        const loop = scoreState.loopState;
 
         if (e.target.classList.contains("loop-handle")) {
             draggingMode = e.target.dataset.handle;
             document.body.style.cursor = "ew-resize";
-        } else if (e.target === loopBar) {
+        } else if (e.target.classList.contains("loop-grab")) {
             draggingMode = "body";
             dragStartX = e.clientX;
-            initialStart = scoreState.loopState.startMeasure;
-            initialEnd = scoreState.loopState.endMeasure;
+            initialStartX = positionToX(loop.startMeasure, loop.startUnit);
+            initialEndX = positionToX(loop.endMeasure, loop.endUnit);
             loopBar.classList.add("dragging-body");
             document.body.style.cursor = "grabbing";
         }
@@ -79,74 +284,41 @@ export function setupLoopEvents() {
     document.addEventListener("mousemove", (e) => {
         if (!draggingMode || !measuresTrack) return;
 
+        const loop = scoreState.loopState;
+        const free = loop.mode === "free";
         const rect = measuresTrack.getBoundingClientRect();
 
         if (draggingMode === "body") {
-            const deltaX = e.clientX - dragStartX;
-            const loopLength = initialEnd - initialStart;
+            // Mantém a duração (em px) e encaixa o novo início
+            const length = initialEndX - initialStartX;
+            const totalWidth = measureX(scoreState.measuresCount);
+            const targetX = Math.max(0, Math.min(initialStartX + (e.clientX - dragStartX), totalWidth - length));
 
-            // Calcula o deslocamento em compassos baseado nas larguras acumuladas reais
-            let accumulatedX = 0;
-            let startMeasurePx = 0;
-            
-            for (let m = 0; m < initialStart; m++) {
-                const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
-                const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
-                startMeasurePx += cfg.beats * 112;
-            }
+            const newStart = xToPosition(targetX, free);
+            const newEnd = xToPosition(positionToX(newStart.measure, newStart.unit) + length, free);
 
-            const targetPx = startMeasurePx + deltaX;
+            if (newEnd.measure > scoreState.measuresCount) return;
 
-            let newStart = 0;
-            accumulatedX = 0;
-
-            for (let m = 0; m < scoreState.measuresCount; m++) {
-                const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
-                const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
-                const w = cfg.beats * 112;
-
-                if (targetPx >= accumulatedX + (w / 2)) {
-                    newStart = m + 1;
-                }
-                accumulatedX += w;
-            }
-
-            let newEnd = newStart + loopLength;
-
-            if (newEnd > scoreState.measuresCount) {
-                newEnd = scoreState.measuresCount;
-                newStart = Math.max(0, scoreState.measuresCount - loopLength);
-            }
-
-            scoreState.loopState.startMeasure = newStart;
-            scoreState.loopState.endMeasure = newEnd;
+            loop.startMeasure = newStart.measure;
+            loop.startUnit = newStart.unit;
+            loop.endMeasure = newEnd.measure;
+            loop.endUnit = newEnd.unit;
             updateLoopBarVisuals();
             return;
         }
 
-        // Seleção de bordas (handles)
-        const x = e.clientX - rect.left;
-        
-        let accumulatedX = 0;
-        let targetMeasure = 0;
-        for (let m = 0; m < scoreState.measuresCount; m++) {
-            const sig = scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4";
-            const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
-            const w = cfg.beats * 112;
-            
-            if (x >= accumulatedX + (w / 2)) {
-                targetMeasure = m + 1;
-            }
-            accumulatedX += w;
-        }
+        // Alças das bordas
+        const target = xToPosition(e.clientX - rect.left, free);
 
         if (draggingMode === "left") {
-            if (targetMeasure < scoreState.loopState.endMeasure) {
-                scoreState.loopState.startMeasure = targetMeasure;
+            if (comparablePosition(target.measure, target.unit) < comparablePosition(loop.endMeasure, loop.endUnit)) {
+                loop.startMeasure = target.measure;
+                loop.startUnit = target.unit;
             }
         } else if (draggingMode === "right") {
-            if (targetMeasure > scoreState.loopState.startMeasure) {
-                scoreState.loopState.endMeasure = targetMeasure;
+            if (comparablePosition(target.measure, target.unit) > comparablePosition(loop.startMeasure, loop.startUnit)) {
+                loop.endMeasure = target.measure;
+                loop.endUnit = target.unit;
             }
         }
 
@@ -160,7 +332,7 @@ export function setupLoopEvents() {
 
             draggingMode = null;
             document.body.style.cursor = "default";
-            if (window.audioEngine) audioEngine.updateTransportSettings();
+            applyLoopToAudio();
         }
     });
 }

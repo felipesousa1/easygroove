@@ -23,7 +23,7 @@ const TOUR_SLIDES = [
                 selector: ".header-center",
                 title: "Player, Metrônomo & BPM",
                 text: "Controles de reprodução (Loop, Play/Pause, Stop) e ajuste de andamento. Clique no metrônomo para abrir o painel de volume.",
-                tip: "Atalhos: P (Play), S (Stop), L (Loop) e Shift + B (focar BPM)."
+                tip: "Atalhos: P (Play), S (Stop), L (Loop), Shift + L (zerar loop) e Shift + B (focar BPM). A setinha ao lado do loop abre as opções."
             },
             {
                 // Agrupa os botões de salvar e exportar

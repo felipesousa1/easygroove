@@ -17,7 +17,7 @@ export function updatePlayheadPosition() {
     let currentTicks = Tone.Transport.ticks;
 
     // Normaliza os ticks visuais para o ciclo do loop
-    if (scoreState.loopState.active && window.audioEngine?.getLoopTickLimits) {
+    if (window.audioEngine?.isLoopActive?.() && window.audioEngine?.getLoopTickLimits) {
         const { startTicks, endTicks } = window.audioEngine.getLoopTickLimits();
         const loopDuration = endTicks - startTicks;
         if (loopDuration > 0 && currentTicks >= startTicks) {
