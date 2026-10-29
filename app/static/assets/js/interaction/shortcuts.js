@@ -12,7 +12,7 @@ export function setupKeyboardShortcuts() {
 
             if (key === "s") {
                 e.preventDefault();
-                document.querySelector('button[title="Salvar Projeto"]')?.click();
+                document.querySelector('button[title="Salvar Arranjo"]')?.click();
             } else if (key === "c") {
                 e.preventDefault();
                 copySelectedMeasures();
@@ -79,6 +79,38 @@ export function setupKeyboardShortcuts() {
                 case "r":
                     e.preventDefault();
                     document.getElementById("title-display")?.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+                    break;
+                case "a":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-new")?.click();
+                    break;
+                case "m":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-library")?.click();
+                    break;
+                case "w":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-export-wav")?.click();
+                    break;
+                case "j":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-export-json")?.click();
+                    break;
+                case "i":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-import-json")?.click();
+                    break;
+                case "s":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-autoscroll")?.click();
+                    break;
+                case "t":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-toolbar")?.click();
+                    break;
+                case "q":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-exit")?.click();
                     break;
                 case "e":
                     e.preventDefault();

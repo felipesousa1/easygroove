@@ -252,6 +252,16 @@
   background-color: transparent !important;
 }
 
+/* Atalho de teclado exibido à direita da opção do menu (texto simples e apagado) */
+.menu-shortcut {
+  margin-left: auto;
+  padding-left: 16px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
 .dropdown-item.danger {
   color: #dc2626;
 }

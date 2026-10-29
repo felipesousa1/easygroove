@@ -27,7 +27,7 @@ const TOUR_SLIDES = [
             },
             {
                 // Agrupa os botões de salvar e exportar
-                selector: "button[title='Salvar Projeto'], button[title='Exportar Arranjo']",
+                selector: "button[title='Salvar Arranjo'], button[title='Exportar Arranjo']",
                 title: "Salvar & Exportar",
                 text: "Salve o progresso na sua conta ou exporte o arranjo final em áudio WAV / arquivo JSON.",
                 tip: "Atalhos: Ctrl + S (Salvar) e Shift + E (Exportar)."

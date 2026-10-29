@@ -19,7 +19,7 @@ export function updateSaveButtonState(isLoggedIn) {
         saveBtn.disabled = false;
         saveBtn.style.opacity = "1";
         saveBtn.style.cursor = "pointer";
-        saveBtn.title = "Salvar Projeto";
+        saveBtn.title = "Salvar Arranjo";
     } else {
         saveBtn.disabled = true;
         saveBtn.style.opacity = "0.4";
