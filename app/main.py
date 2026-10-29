@@ -1,7 +1,9 @@
+import os
 from contextlib import asynccontextmanager
 from typing import Optional
 from fastapi import Cookie, Depends, FastAPI, Request, status
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, SQLModel, select
@@ -16,6 +18,7 @@ from app.score_meta import get_arrangement_meta, render_score_preview
 from typing import Optional
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy.orm import selectinload
 from sqlmodel import col, desc, func, select
 from datetime import datetime, timezone
 
@@ -28,8 +31,27 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="EasyGroove", lifespan=lifespan)
 
-app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Compressão gzip de HTML, JSON da API e estáticos (HTML 400 KB -> ~25 KB, JS 260 KB -> ~55 KB)
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# Em produção os estáticos podem ficar alguns minutos em cache (ETag continua valendo depois);
+# em desenvolvimento sempre revalidam, para o navegador nunca mostrar JS/CSS desatualizado.
+ASSET_CACHE_CONTROL = (
+    "public, max-age=600"
+    if os.getenv("EASYGROOVE_ENV") == "production"
+    else "no-cache"
+)
+
+
+class CachedStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code in (200, 304):
+            response.headers["Cache-Control"] = ASSET_CACHE_CONTROL
+        return response
+
+
+app.mount("/assets", CachedStaticFiles(directory="app/static/assets"), name="assets")
 templates = Jinja2Templates(directory="app/templates")
 
 app.include_router(arrangements.router)
@@ -63,6 +85,12 @@ async def get_index(
         return RedirectResponse(url="/biblioteca", status_code=status.HTTP_303_SEE_OTHER)
     # Se não estiver logado, exibe a página de login por padrão
     return templates.TemplateResponse(request=request, name="login.html")
+
+
+@app.get("/healthz", include_in_schema=False)
+async def healthz():
+    # Verificação de saúde leve para o provedor de hospedagem (sem tocar no banco)
+    return {"status": "ok"}
 
 
 @app.get("/app")
@@ -127,7 +155,12 @@ def query_user_arrangements(
     Critérios: "edited" (edição, mais recente primeiro), "created" (criação, mais recente primeiro)
     e "az" (nome, A-Z). `reverse` inverte a ordem de qualquer um deles.
     """
-    statement = select(Arrangement).where(Arrangement.user_id == user.id)
+    # selectinload: carrega as coleções de todos os arranjos em 1 consulta extra (evita N+1)
+    statement = (
+        select(Arrangement)
+        .options(selectinload(Arrangement.collections))
+        .where(Arrangement.user_id == user.id)
+    )
 
     # Filtro por texto na busca
     if q and q.strip():
@@ -155,6 +188,17 @@ def query_user_arrangements(
     return session.exec(statement).all()
 
 
+def collection_counts(session: Session, user: User) -> dict:
+    """Quantidade de arranjos por coleção, em uma consulta agregada (sem carregar os arranjos)."""
+    rows = session.exec(
+        select(ArrangementCollectionLink.collection_id, func.count())
+        .join(Collection, Collection.id == ArrangementCollectionLink.collection_id)
+        .where(Collection.user_id == user.id)
+        .group_by(ArrangementCollectionLink.collection_id)
+    ).all()
+    return {collection_id: total for collection_id, total in rows}
+
+
 @app.get("/biblioteca")
 async def get_biblioteca(
     request: Request,
@@ -179,7 +223,7 @@ async def get_biblioteca(
             "user": current_user,
             "arrangements": user_arrangements,
             "collections": user_collections,
-            "collection_counts": {c.id: len(c.arrangements) for c in user_collections},
+            "collection_counts": collection_counts(session, current_user),
             "has_any": bool(user_arrangements),
             "q": "",
             "stats": {
@@ -247,6 +291,6 @@ async def list_collections_partial(
         name="partials/collections_list.html",
         context={
             "collections": user_collections,
-            "collection_counts": {c.id: len(c.arrangements) for c in user_collections},
+            "collection_counts": collection_counts(session, current_user),
         },
     )

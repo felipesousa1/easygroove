@@ -21,9 +21,12 @@ __pycache__/
 *.pyd
 
 # Banco de Dados
+# Legado: capas foram removidas do app; a pasta local pode ser apagada
 app/static/uploads/
 *.sqlite3
 *.db
 
 # Variáveis de Ambiente
 .env
+*.db-wal
+*.db-shm

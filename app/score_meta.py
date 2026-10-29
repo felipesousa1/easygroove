@@ -66,8 +66,17 @@ def get_arrangement_meta(score_data: Any) -> Dict[str, Any]:
     }
 
 
+def _fmt(value: float) -> str:
+    """Número curto para o SVG (sem zeros inúteis): 12.0 -> "12", 10.5 -> "10.5"."""
+    return f"{value:.1f}".rstrip("0").rstrip(".")
+
+
 def render_score_preview(score_data: Any) -> Markup:
-    """Mini-grade em SVG: uma linha por instrumento, um ponto por nota (primeiros compassos)."""
+    """Mini-grade em SVG: uma linha por instrumento, um ponto por nota (primeiros compassos).
+
+    Todas as notas vão em um único <path> (pontos "M x y h0" com traço arredondado) e as linhas-guia
+    em outro: o HTML fica ~6x menor que com um <circle> por nota (a biblioteca lista vários arranjos).
+    """
     data = _as_dict(score_data)
     instruments = [i for i in (data.get("instruments") or []) if isinstance(i, dict)][:PREVIEW_MAX_ROWS]
     if not instruments:
@@ -77,19 +86,18 @@ def render_score_preview(score_data: Any) -> Markup:
     signatures = _measure_signatures(data, count)
 
     step_w, row_h = 4, 8
-    shapes: List[str] = []
+    height = len(instruments) * row_h
+    dots: List[str] = []
+    separators: List[str] = []
     x_offset = 0
     for m, sig in enumerate(signatures):
         beats, subs = DEFAULT_SUBDIVISIONS.get(sig, (4, 4))
-        measure_steps = beats * subs
         if m > 0:
-            shapes.append(
-                f'<line x1="{x_offset * step_w}" y1="0" x2="{x_offset * step_w}" '
-                f'y2="{len(instruments) * row_h}" stroke="currentColor" stroke-opacity=".18"/>'
-            )
+            separators.append(f"M{x_offset * step_w} 0V{height}")
         for r, inst in enumerate(instruments):
             pattern = inst.get("pattern") or []
             measure = pattern[m] if m < len(pattern) and isinstance(pattern[m], list) else []
+            cy = _fmt(r * row_h + row_h / 2)
             for b in range(beats):
                 beat = measure[b] if b < len(measure) and isinstance(measure[b], dict) else None
                 beat_subs = (beat or {}).get("subdivisions") or subs
@@ -97,21 +105,24 @@ def render_score_preview(score_data: Any) -> Markup:
                 for s, stroke in enumerate(notes[:beat_subs]):
                     if stroke and stroke != "empty":
                         cx = (x_offset + b * subs + s * subs / beat_subs) * step_w + step_w / 2
-                        cy = r * row_h + row_h / 2
-                        shapes.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="1.6" fill="currentColor"/>')
-        x_offset += measure_steps
+                        dots.append(f"M{_fmt(cx)} {cy}h0")
+        x_offset += beats * subs
 
     width = max(x_offset * step_w, 1)
-    height = len(instruments) * row_h
 
     # Linhas-guia (uma por instrumento) para a miniatura não ficar vazia em arranjos sem notas
-    guides = "".join(
-        f'<line x1="0" y1="{r * row_h + row_h / 2}" x2="{width}" y2="{r * row_h + row_h / 2}" '
-        f'stroke="currentColor" stroke-opacity=".14"/>'
-        for r in range(len(instruments))
-    )
-    shapes.insert(0, guides)
+    guides = "".join(f"M0 {_fmt(r * row_h + row_h / 2)}H{width}" for r in range(len(instruments)))
+
+    parts = [f'<path d="{guides}" stroke="currentColor" stroke-opacity=".14" fill="none"/>']
+    if separators:
+        parts.append(f'<path d="{"".join(separators)}" stroke="currentColor" stroke-opacity=".18" fill="none"/>')
+    if dots:
+        parts.append(
+            f'<path d="{"".join(dots)}" stroke="currentColor" stroke-width="3.2" '
+            f'stroke-linecap="round" fill="none"/>'
+        )
+
     return Markup(
         f'<svg class="lib-card-preview" viewBox="0 0 {width} {height}" '
-        f'preserveAspectRatio="xMidYMid meet" aria-hidden="true">{"".join(shapes)}</svg>'
+        f'preserveAspectRatio="xMidYMid meet" aria-hidden="true">{"".join(parts)}</svg>'
     )

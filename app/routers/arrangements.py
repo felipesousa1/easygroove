@@ -2,7 +2,7 @@ import copy
 import re
 from datetime import datetime, timezone
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Response, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlmodel import Session, select, func, text
 
 from app.auth.dependencies import get_current_user
@@ -14,14 +14,6 @@ from app.models.schemas import (
     ArrangementUpdate,
 )
 from pydantic import BaseModel
-
-import os
-import shutil
-import uuid
-
-ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
-COVERS_DIR = os.path.join("app", "static", "uploads", "covers")
-os.makedirs(COVERS_DIR, exist_ok=True)
 
 
 router = APIRouter(prefix="/api/arrangements", tags=["arrangements"])
@@ -247,79 +239,6 @@ def delete_arrangement(
     session.delete(arrangement)
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-@router.post("/{arrangement_id}/cover", response_model=ArrangementRead)
-def upload_arrangement_cover(
-    arrangement_id: int,
-    file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    arrangement = session.get(Arrangement, arrangement_id)
-    if not arrangement or arrangement.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Arranjo não encontrado.",
-        )
-
-    ext = os.path.splitext(file.filename)[1].lower()
-    if ext not in ALLOWED_IMAGE_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Formato de imagem inválido. Use PNG, JPG, JPEG ou WEBP.",
-        )
-
-    filename = f"cover_{arrangement_id}_{uuid.uuid4().hex[:8]}{ext}"
-    filepath = os.path.join(COVERS_DIR, filename)
-
-    # Salva o arquivo em disco
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Remove imagem antiga se existir
-    if arrangement.cover_url:
-        old_path = os.path.join("app", arrangement.cover_url.lstrip("/"))
-        if os.path.exists(old_path):
-            try:
-                os.remove(old_path)
-            except OSError:
-                pass
-
-    arrangement.cover_url = f"/static/uploads/covers/{filename}"
-    arrangement.updated_at = datetime.now(timezone.utc)
-    session.add(arrangement)
-    session.commit()
-    session.refresh(arrangement)
-    return arrangement
-
-@router.delete("/{arrangement_id}/cover", response_model=ArrangementRead)
-def delete_arrangement_cover(
-    arrangement_id: int,
-    current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session),
-):
-    """Remove a capa enviada pelo usuário (o arranjo volta a mostrar a prévia das notas)."""
-    arrangement = session.get(Arrangement, arrangement_id)
-    if not arrangement or arrangement.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Arranjo não encontrado.",
-        )
-
-    if arrangement.cover_url:
-        cover_path = os.path.join("app", arrangement.cover_url.lstrip("/"))
-        if os.path.exists(cover_path):
-            try:
-                os.remove(cover_path)
-            except OSError:
-                pass
-
-    arrangement.cover_url = None
-    session.add(arrangement)
-    session.commit()
-    session.refresh(arrangement)
-    return arrangement
-
 
 class CollectionSyncRequest(BaseModel):
     collection_ids: List[int]

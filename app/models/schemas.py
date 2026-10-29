@@ -1,11 +1,24 @@
 from datetime import datetime
 from typing import Any, Dict, Optional
-from pydantic import BaseModel
+import json
+
+from pydantic import BaseModel, field_validator
+
+
+MAX_SCORE_DATA_BYTES = 500_000  # um arranjo real tem ~6 KB; o limite só barra abuso em hospedagem gratuita
+
+
+def _check_score_size(value):
+    if value is not None and len(json.dumps(value, separators=(",", ":"))) > MAX_SCORE_DATA_BYTES:
+        raise ValueError("O arranjo é grande demais.")
+    return value
 
 
 class ArrangementCreate(BaseModel):
     name: str
     score_data: Dict[str, Any]
+
+    _validate_score = field_validator("score_data")(_check_score_size)
     
 class ArrangementRead(BaseModel):
     id: int
@@ -13,7 +26,6 @@ class ArrangementRead(BaseModel):
     score_data: Dict[str, Any]
     created_at: datetime
     updated_at: datetime
-    cover_url: Optional[str] = None
     user_id: int
 
     class Config:
@@ -23,7 +35,8 @@ class ArrangementRead(BaseModel):
 class ArrangementUpdate(BaseModel):
     name: Optional[str] = None
     score_data: Optional[Dict[str, Any]] = None
-    cover_url: Optional[str] = None
+
+    _validate_score = field_validator("score_data")(_check_score_size)
        
  
 class UserCreate(BaseModel):

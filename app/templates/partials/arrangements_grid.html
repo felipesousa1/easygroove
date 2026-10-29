@@ -8,9 +8,7 @@
     </label>
 
     <div class="lib-card-img-placeholder">
-        {% if arr.cover_url %}
-        <img src="{{ arr.cover_url }}" alt="Capa" class="lib-card-cover-img">
-        {% elif meta.instrumentos %}
+        {% if meta.instrumentos %}
         {{ arr.score_data | score_preview }}
         {% else %}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -62,11 +60,7 @@
             <a href="/app?id={{ arr.id }}" class="btn-action-edit" style="text-decoration: none; color: inherit; display: block;">Editar Arranjo</a>
             <button type="button" class="btn-action-rename-card" data-id="{{ arr.id }}">Renomear</button>
             <button type="button" class="btn-action-duplicate" data-id="{{ arr.id }}">Duplicar</button>
-            <button type="button" class="btn-action-change-cover" data-id="{{ arr.id }}">Alterar Capa</button>
             <button type="button" class="btn-action-manage-cols" data-id="{{ arr.id }}">Gerenciar Coleções</button>
-            {% if arr.cover_url %}
-            <button type="button" class="btn-action-remove-cover" data-id="{{ arr.id }}">Remover Capa</button>
-            {% endif %}
             <button type="button" class="btn-action-export-wav" data-id="{{ arr.id }}">Exportar .wav</button>
             <button type="button" class="btn-action-export" data-id="{{ arr.id }}">Exportar .json</button>
 

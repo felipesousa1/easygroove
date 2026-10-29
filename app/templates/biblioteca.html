@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EasyGroove — Biblioteca</title>
-    <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" type="image/png" href="assets/icons/logo.png">
+    {% include "partials/styles.html" %}
     <!-- Inclusão do HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js" defer></script>
 </head>
 
 <body class="lib-body">
@@ -17,7 +17,7 @@
     <header class="lib-header">
         <div class="lib-header-left">
             <a href="/biblioteca" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
-                <img src="assets/icons/logo.svg" alt="EasyGroove Logo" class="lib-logo">
+                <img src="assets/icons/logo.png" alt="EasyGroove Logo" class="lib-logo">
                 <span class="lib-brand">EasyGroove</span>
             </a>
         </div>

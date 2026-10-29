@@ -8,41 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Input invisível para upload de capa
-    const coverFileInput = document.createElement("input");
-    coverFileInput.type = "file";
-    coverFileInput.accept = "image/png, image/jpeg, image/webp";
-    coverFileInput.style.display = "none";
-    document.body.appendChild(coverFileInput);
-
     let navTimer = null;
-    let activeArrangementIdForCover = null;
     let activeArrangementForModal = null;
     const modalCols = document.getElementById("manage-cols-modal");
     const modalColList = document.getElementById("modal-col-list");
-
-    coverFileInput.addEventListener("change", async () => {
-        if (!coverFileInput.files || !coverFileInput.files[0] || !activeArrangementIdForCover) return;
-        const formData = new FormData();
-        formData.append("file", coverFileInput.files[0]);
-        try {
-            const res = await fetch(`/api/arrangements/${activeArrangementIdForCover}/cover`, {
-                method: "POST",
-                body: formData
-            });
-            if (res.ok) {
-                htmx.trigger("#lib-search-input", "search");
-            } else {
-                const err = await res.json().catch(() => ({}));
-                alert(err.detail || "Erro ao fazer upload.");
-            }
-        } catch (e) {
-            alert("Erro de conexão.");
-        } finally {
-            coverFileInput.value = "";
-            activeArrangementIdForCover = null;
-        }
-    });
 
     // Função para edição inline do título do card
     function startInlineRename(card) {
@@ -142,15 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Exclusão de arranjo: tratada em biblioteca-actions.js (com opção de desfazer)
-
-        const coverBtn = e.target.closest(".btn-action-change-cover");
-        if (coverBtn) {
-            e.stopPropagation();
-            activeArrangementIdForCover = coverBtn.dataset.id;
-            document.querySelectorAll(".lib-card-dropdown.active").forEach(d => d.classList.remove("active"));
-            coverFileInput.click();
-            return;
-        }
 
         // 3. Ações de Coleções
         // Exclusão de coleção: tratada em biblioteca-actions.js (com opção de desfazer)

@@ -243,23 +243,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Remover a capa enviada pelo usuário
-    document.addEventListener("click", async (e) => {
-        const removeCoverBtn = e.target.closest(".btn-action-remove-cover");
-        if (!removeCoverBtn) return;
-        e.stopPropagation();
-        document.querySelectorAll(".lib-card-dropdown.active").forEach(d => d.classList.remove("active"));
-
-        try {
-            const res = await fetch(`/api/arrangements/${removeCoverBtn.dataset.id}/cover`, { method: "DELETE" });
-            if (!res.ok) throw new Error();
-            refreshGrid();
-            showToast("Capa removida.");
-        } catch (err) {
-            showToast("Não foi possível remover a capa.", { isError: true });
-        }
-    });
-
     // ==========================================
     // EXCLUSÃO COM DESFAZER (o DELETE só ocorre ao fim do prazo)
     // ==========================================

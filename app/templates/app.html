@@ -5,8 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EasyGroove</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
+    {% include "partials/styles.html" %}
+    <!-- Tone.js baixa em paralelo (defer) e executa antes dos módulos do editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" defer></script>
+    <link rel="icon" type="image/png" href="assets/icons/logo.png">
     <script>
         // Oculta a página inteira até tudo carregar (CSS, ícones, arranjo do ?id=) para um fade-in único
         document.documentElement.classList.add("is-loading");
@@ -145,7 +147,7 @@
 
             <a href="/" id="header-logo-link" style="text-decoration: none;">
                 <div class="brand-logo">
-                    <img src="assets/icons/logo.svg" alt="Logo" class="ui-icon-logo">
+                    <img src="assets/icons/logo.png" alt="Logo" class="ui-icon-logo">
                     <span>EasyGroove</span>
                 </div>
             </a>
@@ -397,7 +399,6 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <script>window.SITE_EMAIL = {{ site.email | tojson }};</script>
     <script src="assets/js/services/feedback.js"></script>
     <script type="module" src="assets/js/main.js"></script>

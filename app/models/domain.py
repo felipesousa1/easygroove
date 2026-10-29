@@ -36,7 +36,6 @@ class Arrangement(SQLModel, table=True):
     score_data: Any = Field(default_factory=dict, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    cover_url: Optional[str] = Field(default=None)
     user_id: int = Field(foreign_key="user.id")
     
     user: Optional["User"] = Relationship()
