@@ -44,7 +44,7 @@
 
         <!-- Saudação (fundo padrão da página) -->
         <section class="lib-greeting">
-            <h1 class="lib-title">Olá, @{{ user.username }}</h1>
+            <h1 class="lib-title">Olá, {{ user.username }}</h1>
             <p class="lib-greeting-sub">
                 Seus arranjos de percussão, organizados em um só lugar ·
                 <span data-stat="arranjos"><strong>{{ stats.arranjos }}</strong> <span class="lib-stat-label">{{ 'arranjo' if stats.arranjos == 1 else 'arranjos' }}</span></span> ·
@@ -56,13 +56,6 @@
 
             <!-- Barra Lateral (Coleções) -->
             <aside class="lib-sidebar">
-                {% if stats.ultimo %}
-                <a href="/app?id={{ stats.ultimo.id }}" class="lib-resume" title="Abrir o último arranjo editado">
-                    <span class="lib-resume-label">Continuar de onde parou</span>
-                    <span class="lib-resume-name">{{ stats.ultimo.name }}</span>
-                </a>
-                {% endif %}
-
                 <button type="button" class="lib-btn-primary active" id="btn-all-arrangements"
                     hx-get="/biblioteca/search" hx-vals='{"collection_id": ""}' hx-target="#arrangements-grid"
                     hx-include=".lib-query">
@@ -99,19 +92,28 @@
                     </div>
 
                     <div class="lib-toolbar-actions">
-                        <label class="lib-sort">
-                            <span class="lib-sort-label">Ordenar por</span>
+                        <div class="lib-sort">
+                            <label class="lib-sort-label" for="lib-sort-select">Ordenar por</label>
                             <select class="lib-sort-select lib-query" name="sort_by" id="lib-sort-select"
                                 hx-get="/biblioteca/search" hx-trigger="change" hx-target="#arrangements-grid"
                                 hx-include=".lib-query">
-                                <option value="edited_desc">Edição mais recente</option>
-                                <option value="edited_asc">Edição mais antiga</option>
-                                <option value="created_desc">Criação mais recente</option>
-                                <option value="created_asc">Criação mais antiga</option>
-                                <option value="az">Nome (A-Z)</option>
-                                <option value="za">Nome (Z-A)</option>
+                                <option value="edited">Edição</option>
+                                <option value="created">Criação</option>
+                                <option value="az">Nome</option>
                             </select>
-                        </label>
+
+                            <!-- Inverte a ordem do critério escolhido (fora da lista de opções) -->
+                            <input type="hidden" name="sort_reverse" id="lib-sort-reverse" class="lib-query" value="0">
+                            <button type="button" class="lib-sort-dir" id="btn-sort-dir" title="Mais recentes primeiro"
+                                aria-label="Inverter ordem" hx-get="/biblioteca/search" hx-trigger="sortdir"
+                                hx-target="#arrangements-grid" hx-include=".lib-query">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <polyline points="19 12 12 19 5 12"></polyline>
+                                </svg>
+                            </button>
+                        </div>
 
                         <div class="lib-view-toggle" role="group" aria-label="Modo de exibição">
                             <button type="button" class="lib-view-btn active" data-view="grid" title="Grade">
@@ -145,28 +147,24 @@
                 <!-- Barra de ações do modo de seleção -->
                 <div class="lib-batch-bar" id="lib-batch-bar" hidden>
                     <span class="lib-batch-count" id="lib-batch-count">0 selecionados</span>
-                    <select id="lib-batch-collection" class="lib-sort-select" aria-label="Coleção de destino">
+                    <select id="lib-batch-collection" class="lib-sort-select" aria-label="Adicionar à coleção">
                         <option value="">Adicionar à coleção...</option>
                     </select>
-                    <button type="button" class="lib-tool-btn" id="btn-batch-add" disabled>Adicionar</button>
                     <button type="button" class="lib-tool-btn danger" id="btn-batch-delete" disabled>Excluir</button>
-                    <button type="button" class="lib-tool-btn" id="btn-batch-cancel" title="Cancelar seleção (Esc)">Cancelar</button>
-                </div>
-
-                <!-- Container flutuante que trava o botão no rodapé do box -->
-                <div class="lib-fab-wrapper">
-                    <button class="lib-fab" onclick="window.location.href='/app'">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 5v14M5 12h14"></path>
-                        </svg>
-                        Criar
-                    </button>
                 </div>
 
             </section>
         </div>
     </main>
+
+    <!-- Botão fixo na tela (não pertence à box dos arranjos) -->
+    <a href="/app" class="lib-fab" title="Criar um novo arranjo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14"></path>
+        </svg>
+        Criar
+    </a>
 
     <input type="file" id="lib-import-input" accept=".json,application/json" hidden>
 
@@ -174,13 +172,13 @@
     <div class="lib-modal-overlay" id="manage-cols-modal">
         <div class="lib-modal-content">
             <h3 class="lib-modal-title">Gerenciar Coleções</h3>
+            <p class="lib-modal-text lib-modal-subtitle" id="manage-cols-subtitle"></p>
             <div class="col-checkbox-list" id="modal-col-list">
-                <!-- Checkboxes inseridos via JS -->
+                <!-- Opções inseridas via JS -->
             </div>
             <div class="lib-modal-actions">
-                <button type="button" class="lib-btn-add-dashed" id="btn-cancel-modal"
-                    style="border: none;">Cancelar</button>
-                <button type="button" class="lib-btn-primary" id="btn-save-modal">Salvar</button>
+                <button type="button" class="lib-modal-cancel" id="btn-cancel-modal">Cancelar</button>
+                <button type="button" class="lib-btn-hero" id="btn-save-modal" style="align-items: center;">Salvar</button>
             </div>
         </div>
     </div>

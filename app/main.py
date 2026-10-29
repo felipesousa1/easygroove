@@ -118,10 +118,15 @@ def query_user_arrangements(
     session: Session,
     user: User,
     q: str = "",
-    sort_by: str = "edited_desc",
+    sort_by: str = "edited",
     collection_id: Optional[int] = None,
+    reverse: bool = False,
 ):
-    """Arranjos do usuário com busca, coleção e ordenação."""
+    """Arranjos do usuário com busca, coleção e ordenação.
+
+    Critérios: "edited" (edição, mais recente primeiro), "created" (criação, mais recente primeiro)
+    e "az" (nome, A-Z). `reverse` inverte a ordem de qualquer um deles.
+    """
     statement = select(Arrangement).where(Arrangement.user_id == user.id)
 
     # Filtro por texto na busca
@@ -137,18 +142,16 @@ def query_user_arrangements(
 
     # Ordenação
     if sort_by == "az":
-        statement = statement.order_by(func.lower(Arrangement.name).asc())
-    elif sort_by == "za":
-        statement = statement.order_by(func.lower(Arrangement.name).desc())
-    elif sort_by == "edited_asc":
-        statement = statement.order_by(Arrangement.updated_at.asc())
-    elif sort_by == "created_desc":
-        statement = statement.order_by(desc(Arrangement.created_at))
-    elif sort_by == "created_asc":
-        statement = statement.order_by(Arrangement.created_at.asc())
-    else:  # "edited_desc": edição mais recente primeiro
-        statement = statement.order_by(desc(Arrangement.updated_at))
+        order = func.lower(Arrangement.name)
+        descending = reverse
+    elif sort_by == "created":
+        order = Arrangement.created_at
+        descending = not reverse
+    else:  # "edited"
+        order = Arrangement.updated_at
+        descending = not reverse
 
+    statement = statement.order_by(desc(order) if descending else order.asc())
     return session.exec(statement).all()
 
 
@@ -191,7 +194,8 @@ async def get_biblioteca(
 async def search_arrangements(
     request: Request,
     q: Optional[str] = Query(default=""),
-    sort_by: Optional[str] = Query(default="edited_desc"),
+    sort_by: Optional[str] = Query(default="edited"),
+    sort_reverse: Optional[str] = Query(default="0"),
     collection_id: Optional[str] = Query(default=""),
     current_user: Optional[User] = Depends(get_user_from_cookie),
     session: Session = Depends(get_session),
@@ -206,7 +210,7 @@ async def search_arrangements(
     collection_id = int(collection_id) if collection_id and collection_id.isdigit() else None
 
     arrangements = query_user_arrangements(
-        session, current_user, q or "", sort_by or "edited_desc", collection_id
+        session, current_user, q or "", sort_by or "edited", collection_id, sort_reverse == "1"
     )
     total = session.exec(
         select(func.count()).select_from(Arrangement).where(Arrangement.user_id == current_user.id)

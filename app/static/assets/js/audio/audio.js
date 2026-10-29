@@ -7,6 +7,7 @@ export const audioEngine = {
     isPlaying: false,
     isPaused: false,
     hasSeekPosition: false, // playhead posicionado manualmente enquanto parado
+    runId: 0, // identifica cada execução; eventos agendados por uma execução antiga não afetam a nova
     isInitialized: false,
     metronomeEnabled: false,
     metronomeVolume: 100,
@@ -37,6 +38,33 @@ export const audioEngine = {
 
         Tone.Transport.bpm.value = scoreState.bpm;
         this.isInitialized = true;
+    },
+
+    // Descarta todo o grafo de áudio e o estado do Transport. Depois do reset, o próximo init()/start()
+    // reconstrói tudo do zero (idêntico à primeira reprodução após carregar a página).
+    reset() {
+        this.runId++;
+        try {
+            Tone.Transport.stop();
+            Tone.Transport.cancel(0);
+            Tone.Transport.ticks = 0;
+            Tone.Transport.loop = false;
+        } catch (e) { }
+
+        const dispose = (node) => { try { node?.dispose?.(); } catch (e) { } };
+        Object.values(this.synths).forEach(group => group && Object.values(group).forEach(dispose));
+        Object.values(this.channels).forEach(dispose);
+        dispose(this.metronomeSynth);
+        dispose(this.masterLimiter);
+
+        this.synths = {};
+        this.channels = {};
+        this.metronomeSynth = null;
+        this.masterLimiter = null;
+        this.isInitialized = false;
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.hasSeekPosition = false;
     },
 
     toggleMetronome() {
@@ -409,6 +437,7 @@ export const audioEngine = {
 
         this.scheduledSequence = [];
         this.scheduleSignature = this.getStructureSignature();
+        const runId = this.runId;
 
         for (let i = 0; i < sequence.length; i++) {
             const mIdx = sequence[i];
@@ -442,6 +471,8 @@ export const audioEngine = {
         if (!this.isLoopActive()) {
             Tone.Transport.schedule((time) => {
                 Tone.Draw.schedule(() => {
+                    // Se outra execução já começou (troca rápida), este fim não pode parar a nova
+                    if (runId !== this.runId) return;
                     this.stop();
                     const btnPlay = document.getElementById("btn-play");
                     const playIconImg = document.getElementById("play-icon-img");
@@ -554,6 +585,7 @@ export const audioEngine = {
 
     async start() {
         if (!this.isInitialized) this.init();
+        if (!this.isPaused) this.runId++; // retomar após pausa continua a mesma execução
         await Tone.start();
 
         this.updateTransportSettings();
@@ -574,7 +606,8 @@ export const audioEngine = {
             this.hasSeekPosition = false;
         }
 
-        Tone.Transport.start();
+        // Um pequeno adiantamento evita que o primeiro tempo seja agendado "no passado"
+        Tone.Transport.start("+0.05");
         this.isPlaying = true;
         this.isPaused = false;
 
@@ -593,6 +626,7 @@ export const audioEngine = {
     },
 
     stop() {
+        this.runId++;
         Tone.Transport.stop();
         this.cutAllSound();
 

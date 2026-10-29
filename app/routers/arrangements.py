@@ -292,6 +292,35 @@ def upload_arrangement_cover(
     session.refresh(arrangement)
     return arrangement
 
+@router.delete("/{arrangement_id}/cover", response_model=ArrangementRead)
+def delete_arrangement_cover(
+    arrangement_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Remove a capa enviada pelo usuário (o arranjo volta a mostrar a prévia das notas)."""
+    arrangement = session.get(Arrangement, arrangement_id)
+    if not arrangement or arrangement.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Arranjo não encontrado.",
+        )
+
+    if arrangement.cover_url:
+        cover_path = os.path.join("app", arrangement.cover_url.lstrip("/"))
+        if os.path.exists(cover_path):
+            try:
+                os.remove(cover_path)
+            except OSError:
+                pass
+
+    arrangement.cover_url = None
+    session.add(arrangement)
+    session.commit()
+    session.refresh(arrangement)
+    return arrangement
+
+
 class CollectionSyncRequest(BaseModel):
     collection_ids: List[int]
 

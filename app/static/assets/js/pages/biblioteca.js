@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     coverFileInput.style.display = "none";
     document.body.appendChild(coverFileInput);
 
+    let navTimer = null;
     let activeArrangementIdForCover = null;
     let activeArrangementForModal = null;
     const modalCols = document.getElementById("manage-cols-modal");
@@ -173,16 +174,32 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = manageColsBtn.closest(".lib-card");
             const currentCols = JSON.parse(card.dataset.collections || "[]");
 
+            const subtitle = document.getElementById("manage-cols-subtitle");
+            if (subtitle) subtitle.textContent = card.querySelector(".lib-card-title")?.textContent.trim() || "";
+
             modalColList.innerHTML = "";
             const sideCols = document.querySelectorAll(".lib-btn-collection[data-collection-id]");
             if (sideCols.length === 0) {
-                modalColList.innerHTML = "<p style='color: #64748b; font-size: 0.9rem;'>Nenhuma coleção criada.</p>";
+                const empty = document.createElement("p");
+                empty.className = "col-checkbox-empty";
+                empty.textContent = "Nenhuma coleção criada ainda.";
+                modalColList.appendChild(empty);
             } else {
                 sideCols.forEach(sc => {
                     const id = parseInt(sc.dataset.collectionId);
-                    const name = sc.querySelector(".col-name-text").textContent;
-                    const checked = currentCols.includes(id) ? "checked" : "";
-                    modalColList.innerHTML += `<label class="col-checkbox-item"><input type="checkbox" value="${id}" ${checked}> ${name}</label>`;
+                    const label = document.createElement("label");
+                    label.className = "col-checkbox-item";
+
+                    const input = document.createElement("input");
+                    input.type = "checkbox";
+                    input.value = id;
+                    input.checked = currentCols.includes(id);
+
+                    const name = document.createElement("span");
+                    name.textContent = sc.querySelector(".col-name-text").textContent;
+
+                    label.append(input, name);
+                    modalColList.appendChild(label);
                 });
             }
             modalCols.classList.add("active");
@@ -224,7 +241,15 @@ document.addEventListener("DOMContentLoaded", () => {
         // Clicar no corpo do card (abrir editor)
         const card = e.target.closest(".lib-card");
         if (card && !e.target.closest(".lib-card-menu-wrapper") && !e.target.closest(".lib-card-title-input")) {
-            window.location.href = `/app?id=${card.dataset.cardId}`;
+            const url = `/app?id=${card.dataset.cardId}`;
+            clearTimeout(navTimer);
+
+            // No título, espera um instante: um duplo clique deve renomear em vez de abrir o editor
+            if (e.target.closest(".lib-card-title")) {
+                navTimer = setTimeout(() => { window.location.href = url; }, 280);
+            } else {
+                window.location.href = url;
+            }
         }
     });
 
@@ -234,8 +259,24 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("dragstart", (e) => {
         const card = e.target.closest(".lib-card");
         if (card) {
-            e.dataTransfer.setData("text/plain", card.dataset.cardId);
+            // Arrastar um card selecionado leva todos os selecionados; senão, só o próprio card
+            const selected = Array.from(document.querySelectorAll(".lib-card.is-selected"));
+            const ids = card.classList.contains("is-selected") && selected.length > 0
+                ? selected.map(c => c.dataset.cardId)
+                : [card.dataset.cardId];
+
+            e.dataTransfer.setData("text/plain", ids[0]);
+            e.dataTransfer.setData("application/x-easygroove-ids", JSON.stringify(ids));
             e.dataTransfer.effectAllowed = "copy";
+
+            // Em vez da imagem do card inteiro, arrasta só uma etiqueta com o nome do arranjo
+            const name = card.querySelector(".lib-card-title")?.textContent.trim() || "Arranjo";
+            const ghost = document.createElement("div");
+            ghost.className = "lib-drag-ghost";
+            ghost.textContent = ids.length > 1 ? `${ids.length} arranjos` : name;
+            document.body.appendChild(ghost);
+            e.dataTransfer.setDragImage(ghost, 12, 16);
+            setTimeout(() => ghost.remove(), 0);
         }
     });
 
@@ -257,12 +298,26 @@ document.addEventListener("DOMContentLoaded", () => {
         if (colBtn) {
             e.preventDefault();
             colBtn.classList.remove("drag-over");
-            const arrId = e.dataTransfer.getData("text/plain");
+            let ids = [];
+            try { ids = JSON.parse(e.dataTransfer.getData("application/x-easygroove-ids") || "[]"); } catch (err) { }
+            if (ids.length === 0) {
+                const single = e.dataTransfer.getData("text/plain");
+                if (single) ids = [single];
+            }
             const colId = colBtn.dataset.collectionId;
-            if (arrId && colId) {
-                await fetch(`/api/arrangements/${arrId}/collections/${colId}`, { method: "POST" });
+
+            if (ids.length > 0 && colId) {
+                await Promise.all(ids.map(id =>
+                    fetch(`/api/arrangements/${id}/collections/${colId}`, { method: "POST" }).catch(() => null)
+                ));
+                window.libActions?.clearSelection();
                 htmx.trigger("#lib-search-input", "search");
                 window.libActions?.refreshCollections();
+
+                const colName = colBtn.querySelector(".col-name-text")?.textContent || "coleção";
+                window.libActions?.showToast(
+                    ids.length === 1 ? `Arranjo adicionado a “${colName}”.` : `${ids.length} arranjos adicionados a “${colName}”.`
+                );
             }
         }
     });
@@ -271,6 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const titleSpan = e.target.closest(".lib-card-title");
         if (titleSpan) {
             e.stopPropagation();
+            clearTimeout(navTimer);
             startInlineRename(titleSpan.closest(".lib-card"));
         }
     });

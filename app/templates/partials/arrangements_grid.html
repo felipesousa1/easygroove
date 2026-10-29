@@ -31,18 +31,21 @@
         <span class="lib-card-date">{{ arr.updated_at | relative_time }}</span>
 
         <div class="lib-card-meta">
-            {% if meta.bpm %}<span>&#9833; {{ meta.bpm }} BPM</span>{% endif %}
-            <span>{{ meta.metrica }}</span>
-            <span>{{ meta.compassos }} {{ 'compasso' if meta.compassos == 1 else 'compassos' }}</span>
+            <span class="meta-bpm">{% if meta.bpm %}&#9833; {{ meta.bpm }} BPM{% endif %}</span>
+            <span class="meta-sig">{{ meta.metrica }}</span>
+            <span class="meta-measures">{{ meta.compassos }} {{ 'compasso' if meta.compassos == 1 else 'compassos' }}</span>
         </div>
 
         {% if meta.instrumentos %}
         <div class="lib-card-chips">
-            {% for inst in meta.instrumentos %}
+            {% for inst in meta.instrumentos[:8] %}
             <span class="lib-chip" title="{{ inst.nome }}">
                 {% if inst.icone %}<img src="{{ inst.icone }}" alt="{{ inst.nome }}">{% else %}{{ inst.nome[:1] }}{% endif %}
             </span>
             {% endfor %}
+            {% if meta.instrumentos | length > 8 %}
+            <span class="lib-chip lib-chip-more" title="Mais {{ meta.instrumentos | length - 8 }}: {{ meta.instrumentos[8:] | map(attribute='nome') | join(', ') }}">+</span>
+            {% endif %}
         </div>
         {% endif %}
     </div>
@@ -61,6 +64,10 @@
             <button type="button" class="btn-action-duplicate" data-id="{{ arr.id }}">Duplicar</button>
             <button type="button" class="btn-action-change-cover" data-id="{{ arr.id }}">Alterar Capa</button>
             <button type="button" class="btn-action-manage-cols" data-id="{{ arr.id }}">Gerenciar Coleções</button>
+            {% if arr.cover_url %}
+            <button type="button" class="btn-action-remove-cover" data-id="{{ arr.id }}">Remover Capa</button>
+            {% endif %}
+            <button type="button" class="btn-action-export-wav" data-id="{{ arr.id }}">Exportar .wav</button>
             <button type="button" class="btn-action-export" data-id="{{ arr.id }}">Exportar .json</button>
 
             {% if current_collection_id %}
