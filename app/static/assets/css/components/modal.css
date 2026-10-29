@@ -240,30 +240,31 @@
 /* Garante que os balões possuam clique caso precisem */
 .tour-tooltip-card {
     position: absolute;
-    width: 240px;
+    width: 300px;
     background: #ffffff;
-    border-radius: 10px;
-    padding: 12px;
+    border-radius: 12px;
+    padding: 14px 16px;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     color: #1e293b;
-    line-height: 1.35;
+    line-height: 1.5;
     pointer-events: auto;
 }
 
 .tour-tooltip-title {
     font-weight: 800;
+    font-size: 0.98rem;
     color: #360566;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     display: block;
 }
 
 .tour-tooltip-tip {
-    margin-top: 6px;
-    padding: 4px 6px;
+    margin-top: 10px;
+    padding: 6px 8px;
     background: #f8fafc;
-    border-left: 2px solid #360566;
-    font-size: 0.75rem;
+    border-left: 3px solid #360566;
+    font-size: 0.8rem;
     color: #475569;
     border-radius: 0 4px 4px 0;
 }

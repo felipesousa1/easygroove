@@ -8,90 +8,90 @@ const TOUR_SLIDES = [
         targets: [
             {
                 selector: "#btn-main-menu",
-                title: "Menu",
-                text: "Acesse gerenciamento de arquivos, biblioteca de arranjos, auto-scroll e opção de sair.",
-                tip: "Clique para abrir opções rápidas."
+                title: "Menu Principal",
+                text: "Crie um novo arranjo, abra sua biblioteca, importe e exporte arquivos e ajuste as opções do editor.",
+                tip: "Cada opção do menu mostra o seu atalho ao lado do nome."
             },
             {
                 selector: "#title-display",
                 title: "Título do Arranjo",
-                text: "Edite o nome da sua partitura. Para voltar à biblioteca ou sair, utilize o Menu.",
-                tip: "Atalho: Shift + R para renomear."
+                text: "Dê um nome ao seu arranjo. Dê um duplo clique no título para renomear.",
+                tip: "Atalho: Shift + R."
             },
             {
-                // Pega a área inteira do player + metrônomo
                 selector: ".header-center",
-                title: "Player, Metrônomo & BPM",
-                text: "Controles de reprodução (Loop, Play/Pause, Stop) e ajuste de andamento. Clique no metrônomo para abrir o painel de volume.",
-                tip: "Atalhos: P (Play), S (Stop), L (Loop), Shift + L (zerar loop) e Shift + B (focar BPM). A setinha ao lado do loop abre as opções."
+                title: "Reprodução e Metrônomo",
+                text: "Toque, pause e pare o arranjo, ative o loop e ajuste o metrônomo. A setinha ao lado do loop abre as opções do trecho repetido: modo livre e zerar loop.",
+                tip: "Atalhos: P (play), S (stop), L (loop) e Shift + L (zerar loop)."
             },
             {
-                // Agrupa os botões de salvar e exportar
                 selector: "button[title='Salvar Arranjo'], button[title='Exportar Arranjo']",
-                title: "Salvar & Exportar",
-                text: "Salve o progresso na sua conta ou exporte o arranjo final em áudio WAV / arquivo JSON.",
-                tip: "Atalhos: Ctrl + S (Salvar) e Shift + E (Exportar)."
+                title: "Salvar e Exportar",
+                text: "Salve o arranjo na sua conta ou exporte em áudio (.wav) ou arquivo (.json).",
+                tip: "Atalhos: Ctrl + S (salvar) e Shift + E (exportar)."
             }
         ]
     },
 
     // SLIDE 2: TOOLBAR
     {
-        title: "2. Barra de Ferramentas (Toolbar)",
-        navPosition: "top", // <--- Move a barra de navegação para o TOPO da tela neste slide
+        title: "2. Barra de Ferramentas",
+        navPosition: "top", // Move a barra de navegação para o topo, já que a toolbar fica embaixo
         targets: [
             {
                 selector: ".floating-editor-bar",
-                title: "Paleta de Toques",
-                text: "Selecione o instrumento ativo e escolha a variação de toque (pele, abafado, aro, rimshot, etc.).",
-                tip: "Atalho: use as teclas numéricas de 1 a 9 para trocar o toque instantaneamente."
+                title: "Instrumento, Toques e Histórico",
+                text: "Escolha o instrumento ativo e o tipo de toque (pele, abafado, aro, rimshot...). Use desfazer e refazer para voltar atrás em qualquer edição.",
+                tip: "Teclas 1 a 9 trocam o toque, 0 apaga a nota. Ctrl + Z desfaz e Ctrl + Y refaz."
             }
         ]
     },
 
     // SLIDE 3: ESTRUTURA EXTERNA DA GRADE
     {
-        title: "3. Estrutura Externa da Grade",
+        title: "3. Instrumentos e Compassos",
         navPosition: "bottom",
         targets: [
             {
                 selector: "#instruments-sidebar-list",
-                title: "Cards dos Instrumentos",
-                text: "Gerencie cada linha: controle volume, botão Mute/Desmutar e reordenação vertical dos instrumentos.",
-                tip: "Clique e arraste um card verticalmente para reorganizar as linhas."
+                title: "Instrumentos",
+                text: "Cada card controla uma linha: volume, mudo, ocultar, duplicar e renomear. Arraste um card para reordenar as linhas.",
+                tip: "Clique no valor do volume para digitar a porcentagem."
             },
             {
-                selector: "#measures-track",
-                title: "Compassos e Ritornelos",
-                text: "Acompanhe a numeração dos compassos, configure repetições (ritornelos) e abra o menu do compasso.",
-                tip: "Atalho: Shift + N para adicionar um novo compasso ao final."
+                selector: "#measures-track, .playhead-lane",
+                title: "Compassos e Playhead",
+                text: "Veja a numeração e a métrica de cada compasso, crie ritornelos e abra o menu do compasso. Clique ou arraste a cabeça do playhead abaixo deles para mover o ponto de reprodução.",
+                tip: "Shift + N adiciona um compasso ao final."
             }
         ]
     },
 
     // SLIDE 4: GRADE INTERNA DE EDIÇÃO
     {
-        title: "4. Grade Interna de Edição",
+        title: "4. Edição das Notas",
         navPosition: "bottom",
         targets: [
             {
                 selector: "#score-grid",
-                title: "Inserção e Seleção",
-                text: "Clique ou use Drag-to-Paint (clique e arraste) para desenhar notas sequencialmente. Clique nos compassos para selecionar.",
-                tip: "Atalhos: Ctrl+C (copiar), Ctrl+V (colar) e Del (limpar seleção).",
-                offsetX: 150 // Puxa o balão mais pro meio da tela
+                title: "Escrevendo e Selecionando",
+                text: "Clique ou arraste sobre as notas para desenhar com o toque escolhido. Arraste em uma área vazia para selecionar vários compassos.",
+                tip: "Ctrl + C copia, Ctrl + X recorta, Ctrl + V cola e Del limpa a seleção."
             },
             {
                 selector: ".beat-group",
-                title: "Subdivisão de Tempo",
-                text: "Clique nas traves/hastes superiores de qualquer tempo para alterar sua subdivisão (2, 3, 4, 6 ou 8 notas).",
-                tip: "Ajuste métricas individuais através do menu de cada compasso.",
-                offsetX: 250,
-                offsetY: 100
+                first: true,
+                title: "Subdivisão do Tempo",
+                text: "Clique nas traves acima de um tempo para mudar a sua subdivisão (2, 3, 4, 6 ou 8 notas).",
+                tip: "A métrica de cada compasso pode ser alterada no seu menu."
             }
         ]
     }
 ];
+
+const TOUR_MARGIN = 16; // distância mínima das bordas da tela
+const TOUR_GAP = 18; // distância mínima entre o destaque e o balão
+const TOUR_SAMPLE_STEP = 30; // passo da busca de posições para os balões
 
 let currentSlideIndex = 0;
 
@@ -119,6 +119,11 @@ export function setupHelpEvents() {
     document.getElementById("btn-start-interactive-tour")?.addEventListener("click", () => {
         helpModal.classList.remove("active");
         startTour();
+    });
+
+    // Reposiciona os balões se a janela mudar de tamanho durante o tour
+    window.addEventListener("resize", () => {
+        if (document.getElementById("tour-overlay")?.classList.contains("active")) renderSlide();
     });
 
     document.getElementById("btn-tour-next")?.addEventListener("click", nextSlide);
@@ -175,92 +180,230 @@ function renderSlide() {
     }
 
     const svgNS = "http://www.w3.org/2000/svg";
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight;
 
+    // 1) Calcula e desenha os destaques de todos os alvos do slide
+    const entries = [];
     slide.targets.forEach(target => {
-        // Seleciona todos os elementos do seletor e filtra apenas os visíveis
-        const els = Array.from(document.querySelectorAll(target.selector)).filter(el => {
+        let els = Array.from(document.querySelectorAll(target.selector)).filter(el => {
             const r = el.getBoundingClientRect();
             return r.width > 0 && r.height > 0;
         });
-
+        if (target.first) els = els.slice(0, 1);
         if (els.length === 0) return;
 
-        // Calcula uma única caixa delimitadora que engloba todos os elementos encontrados
-        let top = els[0].getBoundingClientRect().top;
-        let left = els[0].getBoundingClientRect().left;
-        let bottom = els[0].getBoundingClientRect().bottom;
-        let right = els[0].getBoundingClientRect().right;
+        // Caixa que engloba todos os elementos do alvo, recortada para caber na tela
+        let box = els.map(el => el.getBoundingClientRect()).reduce((acc, r) => ({
+            left: Math.min(acc.left, r.left),
+            top: Math.min(acc.top, r.top),
+            right: Math.max(acc.right, r.right),
+            bottom: Math.max(acc.bottom, r.bottom)
+        }));
 
-        for (let i = 1; i < els.length; i++) {
-            const r = els[i].getBoundingClientRect();
-            top = Math.min(top, r.top);
-            left = Math.min(left, r.left);
-            bottom = Math.max(bottom, r.bottom);
-            right = Math.max(right, r.right);
-        }
-
-        const rect = {
-            top: top,
-            left: left,
-            bottom: bottom,
-            right: right,
-            width: right - left,
-            height: bottom - top
-        };
-        
         const padding = 6;
-        const x = rect.left - padding;
-        const y = rect.top - padding;
-        const w = rect.width + (padding * 2);
-        const h = rect.height + (padding * 2);
+        const highlight = makeRect(
+            Math.max(0, box.left - padding),
+            Math.max(0, box.top - padding),
+            Math.min(viewW, box.right + padding),
+            Math.min(viewH, box.bottom + padding)
+        );
 
         const hole = document.createElementNS(svgNS, "rect");
-        hole.setAttribute("x", x);
-        hole.setAttribute("y", y);
-        hole.setAttribute("width", w);
-        hole.setAttribute("height", h);
+        hole.setAttribute("x", highlight.left);
+        hole.setAttribute("y", highlight.top);
+        hole.setAttribute("width", highlight.width);
+        hole.setAttribute("height", highlight.height);
         hole.setAttribute("fill", "black");
         hole.setAttribute("rx", "8");
         maskHoles.appendChild(hole);
 
-        const stroke = document.createElementNS(svgNS, "rect");
-        stroke.setAttribute("x", x);
-        stroke.setAttribute("y", y);
-        stroke.setAttribute("width", w);
-        stroke.setAttribute("height", h);
+        const stroke = hole.cloneNode();
         stroke.setAttribute("fill", "none");
-        stroke.setAttribute("stroke", "#360566");
+        stroke.setAttribute("stroke", "#ffffff");
         stroke.setAttribute("stroke-width", "2");
-        stroke.setAttribute("rx", "8");
         strokeBoxes.appendChild(stroke);
 
+        entries.push({ target, highlight });
+    });
+
+    // 2) Posiciona os balões sem sobrepor destaques, barra de navegação ou outros balões
+    const obstacles = entries.map(e => e.highlight);
+    if (navBar) {
+        const nav = navBar.getBoundingClientRect();
+        obstacles.push(makeRect(nav.left - 12, nav.top - 12, nav.right + 12, nav.bottom + 12));
+    }
+    const placedCards = [];
+
+    entries.forEach(({ target, highlight }) => {
         const card = document.createElement("div");
         card.className = "tour-tooltip-card";
         card.innerHTML = `
             <span class="tour-tooltip-title">${target.title}</span>
-            <div>${target.text}</div>
+            <div class="tour-tooltip-text">${target.text}</div>
             ${target.tip ? `<div class="tour-tooltip-tip"><strong>💡 Dica:</strong> ${target.tip}</div>` : ''}
         `;
-
-        let cardTop = rect.bottom + 14;
-        let cardLeft = rect.left;
-
-        if (cardTop + 140 > window.innerHeight) {
-            cardTop = Math.max(10, rect.top - 150);
-        }
-        
-        if (cardLeft + 250 > window.innerWidth) {
-            cardLeft = window.innerWidth - 260;
-        }
-
-        if (target.offsetX) cardLeft += target.offsetX;
-        if (target.offsetY) cardTop += target.offsetY;
-
-        card.style.top = `${cardTop}px`;
-        card.style.left = `${Math.max(10, cardLeft)}px`;
-
+        card.style.visibility = "hidden";
         tooltipsContainer.appendChild(card);
+
+        const placement = findCardPlacement(card.offsetWidth, card.offsetHeight, highlight, obstacles, placedCards, viewW, viewH);
+        card.style.left = `${placement.rect.left}px`;
+        card.style.top = `${placement.rect.top}px`;
+        card.style.visibility = "visible";
+
+        placedCards.push(placement.rect);
+        drawConnector(svgNS, strokeBoxes, placement.rect, highlight);
     });
+}
+
+function makeRect(left, top, right, bottom) {
+    return { left, top, right, bottom, width: right - left, height: bottom - top };
+}
+
+function rectsOverlap(a, b) {
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function overlapArea(a, b) {
+    const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+    const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    return w > 0 && h > 0 ? w * h : 0;
+}
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
+// Escolhe a melhor posição para o balão: ao redor do destaque (ou dentro dele, se for enorme),
+// sem sobreposição e o mais próximo possível do centro da tela
+function findCardPlacement(w, h, target, obstacles, placedCards, viewW, viewH) {
+    const centerX = viewW / 2;
+    const centerY = viewH / 2;
+    const minOverlap = Math.min(60, target.width, target.height);
+    const bounds = makeRect(TOUR_MARGIN, TOUR_MARGIN, viewW - TOUR_MARGIN, viewH - TOUR_MARGIN);
+    const candidates = [];
+
+    const addCandidate = (left, top, kind, gap) => {
+        candidates.push({ rect: makeRect(left, top, left + w, top + h), kind, gap });
+    };
+
+    // Valores de 0 a max em passos fixos, mais o valor mais próximo do alvo ideal
+    const sample = (min, max, ideal) => {
+        if (min > max) return [];
+        const values = [clamp(ideal, min, max)];
+        for (let v = min; v <= max; v += TOUR_SAMPLE_STEP) values.push(v);
+        return values;
+    };
+
+    // Ao redor do destaque, em várias distâncias e deslocamentos ao longo da borda
+    const xs = sample(
+        Math.max(bounds.left, target.left - w + minOverlap),
+        Math.min(bounds.right - w, target.right - minOverlap),
+        centerX - w / 2
+    );
+    const ys = sample(
+        Math.max(bounds.top, target.top - h + minOverlap),
+        Math.min(bounds.bottom - h, target.bottom - minOverlap),
+        centerY - h / 2
+    );
+
+    for (let gap = TOUR_GAP; gap <= Math.max(viewW, viewH); gap += TOUR_SAMPLE_STEP) {
+        const below = target.bottom + gap;
+        const above = target.top - gap - h;
+        const right = target.right + gap;
+        const left = target.left - gap - w;
+
+        if (below + h <= bounds.bottom) xs.forEach(x => addCandidate(x, below, "below", gap));
+        if (above >= bounds.top) xs.forEach(x => addCandidate(x, above, "above", gap));
+        if (right + w <= bounds.right) ys.forEach(y => addCandidate(right, y, "right", gap));
+        if (left >= bounds.left) ys.forEach(y => addCandidate(left, y, "left", gap));
+    }
+
+    // Destaques muito grandes: balão dentro deles, na parte visível
+    if (target.width > w + 40 && target.height > h + 40) {
+        const insideXs = sample(target.left + 20, target.right - w - 20, target.left + target.width / 2 - w / 2);
+        const insideYs = sample(target.top + 20, target.bottom - h - 20, target.top + target.height / 2 - h / 2);
+        insideXs.forEach(x => insideYs.forEach(y => {
+            if (x >= bounds.left && x + w <= bounds.right && y >= bounds.top && y + h <= bounds.bottom) {
+                addCandidate(x, y, "inside", 0);
+            }
+        }));
+    }
+
+    const others = obstacles.filter(o => o !== target);
+    const taken = [...others, ...placedCards];
+
+    let best = null;
+    candidates.forEach(c => {
+        // Fora dos limites após o ajuste, ou ainda encostado no próprio destaque (exceto "inside")
+        const overlapsTarget = c.kind !== "inside" && rectsOverlap(c.rect, target);
+        const overlap = taken.reduce((sum, o) => sum + overlapArea(c.rect, o), 0) + (overlapsTarget ? w * h : 0);
+
+        const cx = c.rect.left + w / 2;
+        const cy = c.rect.top + h / 2;
+        const distanceToCenter = Math.hypot(cx - centerX, cy - centerY);
+        let penalty = (c.kind === "inside" ? 80 : 0) + c.gap * 0.25;
+
+        // Evita que a linha de ligação atravesse outro balão já posicionado
+        const connector = c.kind === "inside" ? null : getConnector(c.rect, target);
+        if (connector) {
+            const [x1, y1] = connector.from;
+            const [x2, y2] = connector.to;
+            const line = makeRect(Math.min(x1, x2) - 1, Math.min(y1, y2) - 1, Math.max(x1, x2) + 1, Math.max(y1, y2) + 1);
+            if (placedCards.some(card => rectsOverlap(line, card))) penalty += 400;
+        }
+
+        // Qualquer sobreposição pesa muito mais que a distância ao centro
+        c.score = overlap * 1000 + distanceToCenter + penalty;
+        if (!best || c.score < best.score) best = c;
+    });
+
+    return best;
+}
+
+// Pontos da linha que liga o balão ao destaque (null quando estão encostados ou na diagonal)
+function getConnector(card, target) {
+    const overlapX = [Math.max(card.left, target.left), Math.min(card.right, target.right)];
+    const overlapY = [Math.max(card.top, target.top), Math.min(card.bottom, target.bottom)];
+    let from = null;
+    let to = null;
+
+    if (overlapX[0] < overlapX[1]) {
+        const x = (overlapX[0] + overlapX[1]) / 2;
+        if (card.top >= target.bottom) { from = [x, target.bottom]; to = [x, card.top]; }
+        else if (card.bottom <= target.top) { from = [x, target.top]; to = [x, card.bottom]; }
+    } else if (overlapY[0] < overlapY[1]) {
+        const y = (overlapY[0] + overlapY[1]) / 2;
+        if (card.left >= target.right) { from = [target.right, y]; to = [card.left, y]; }
+        else if (card.right <= target.left) { from = [target.left, y]; to = [card.right, y]; }
+    }
+
+    if (!from || Math.hypot(to[0] - from[0], to[1] - from[1]) < TOUR_GAP + 8) return null;
+    return { from, to };
+}
+
+// Linha ligando o balão ao destaque quando há distância entre eles
+function drawConnector(svgNS, container, card, target) {
+    const connector = getConnector(card, target);
+    if (!connector) return;
+    const { from, to } = connector;
+
+    const line = document.createElementNS(svgNS, "line");
+    line.setAttribute("x1", from[0]);
+    line.setAttribute("y1", from[1]);
+    line.setAttribute("x2", to[0]);
+    line.setAttribute("y2", to[1]);
+    line.setAttribute("stroke", "#ffffff");
+    line.setAttribute("stroke-width", "2");
+    line.setAttribute("stroke-dasharray", "4 4");
+    container.appendChild(line);
+
+    const dot = document.createElementNS(svgNS, "circle");
+    dot.setAttribute("cx", from[0]);
+    dot.setAttribute("cy", from[1]);
+    dot.setAttribute("r", "4");
+    dot.setAttribute("fill", "#ffffff");
+    container.appendChild(dot);
 }
 
 function nextSlide() {
