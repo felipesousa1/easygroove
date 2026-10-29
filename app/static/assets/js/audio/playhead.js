@@ -71,6 +71,12 @@ export function updatePlayheadPosition() {
         playhead.style.transform = `translate3d(${totalX}px, 0, 0)`;
     }
 
+    // Cabeça do playhead (na régua acima dos compassos)
+    const playheadHead = document.getElementById("playhead-head");
+    if (playheadHead) {
+        playheadHead.style.transform = `translate3d(${totalX}px, 0, 0)`;
+    }
+
     // Lógica de auto-scroll da viewport
     if (scoreState.autoScrollEnabled && window.audioEngine?.isPlaying) {
         const viewport = document.querySelector(".score-viewport");

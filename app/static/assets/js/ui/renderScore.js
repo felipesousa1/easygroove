@@ -84,8 +84,22 @@ function renderMeasuresTrack(trackContainer) {
     `;
     trackContainer.appendChild(loopBar);
 
+    // Régua clicável abaixo dos compassos, por onde passa a cabeça do playhead
+    const playheadLane = document.createElement("div");
+    playheadLane.className = "playhead-lane";
+    playheadLane.title = "Clique ou arraste para mover o playhead";
+    let lanePx = 0;
+    for (let m = 0; m < scoreState.measuresCount; m++) {
+        const cfg = TIME_SIGNATURES[scoreState.measuresConfig?.[m]?.timeSignature || scoreState.timeSignature || "4/4"] || TIME_SIGNATURES["4/4"];
+        lanePx += cfg.beats * 112;
+    }
+    playheadLane.style.width = `${lanePx}px`;
+    playheadLane.innerHTML = `<div id="playhead-head" class="playhead-head"><span class="playhead-grip"></span></div>`;
+    trackContainer.appendChild(playheadLane);
+
     updateLoopBarVisuals();
     renderRepeats();
+    if (window.updatePlayheadPosition) window.updatePlayheadPosition();
 }
 
 function renderSidebar(sidebarList) {

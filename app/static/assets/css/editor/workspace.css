@@ -21,7 +21,7 @@
   top: 0;
   z-index: 100;
   background-color: var(--color-gray-bg);
-  padding: 16px 40px 8px 24px;
+  padding: 16px 40px 16px 24px;
   width: max-content;
 }
 
@@ -41,7 +41,7 @@
 
 .workspace-body {
   display: flex;
-  padding: 4px 40px 140px 24px;
+  padding: 0 40px 140px 24px;
   width: max-content;
 }
 
@@ -58,17 +58,58 @@
   will-change: transform;
 }
 
-/* Bolinha na extremidade superior da linha */
-.playhead::before {
+/* Régua abaixo do menu dos compassos por onde passa a cabeça do playhead (clicável) */
+.playhead-lane {
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 0;
+  height: 16px;
+  cursor: pointer;
+  z-index: 30;
+}
+
+.playhead-head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* Cabeça arrastável (substitui a bolinha) */
+.playhead-grip {
+  position: absolute;
+  top: 0;
+  left: -6px;
+  width: 14px;
+  height: 14px;
+  background-color: var(--color-purple-loop);
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+  border-radius: 3px 3px 0 0;
+  cursor: grab;
+  pointer-events: auto;
+  transition: filter 0.15s ease;
+}
+
+.playhead-grip:hover {
+  filter: brightness(1.25);
+}
+
+/* Prolonga a ponta da cabeça até a linha da grade */
+.playhead-head::after {
   content: '';
   position: absolute;
-  top: -5px; /* Centraliza no topo da grade */
-  left: -4px; /* Centraliza em relação à linha de 2px */
-  width: 10px;
-  height: 10px;
+  top: 13px;
+  left: 0;
+  width: 2px;
+  height: 3px;
   background-color: var(--color-purple-loop);
-  border: 1.5px solid #ffffff;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.playhead-dragging,
+.playhead-dragging * {
+  cursor: grabbing !important;
 }

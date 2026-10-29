@@ -127,6 +127,7 @@ export function setupSelectionEvents() {
             e.target.closest(".dropdown-menu") ||
             e.target.closest(".repeat-control-pill") ||
             e.target.closest("#loop-bar") ||
+            e.target.closest(".playhead-lane") ||
             e.target.closest(".instruments-sidebar") ||
             e.target.closest(".instrument-card")
         ) {

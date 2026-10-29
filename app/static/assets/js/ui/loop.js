@@ -23,7 +23,7 @@ function getUnitsInMeasure(m) {
     return cfg.beats * cfg.subdivisions;
 }
 
-function measureX(m) {
+export function measureX(m) {
     let x = 0;
     for (let i = 0; i < m; i++) x += getMeasureWidth(i);
     return x;
@@ -36,7 +36,7 @@ function positionToX(measure, unit) {
 
 // Converte uma posição em px na pista de compassos para {measure, unit}.
 // Livre: encaixa na subdivisão mais próxima. Travado: encaixa na fronteira de compasso mais próxima.
-function xToPosition(x, free) {
+export function xToPosition(x, free) {
     // Arrastar além das bordas da partitura trava no início/fim
     x = Math.max(0, Math.min(x, measureX(scoreState.measuresCount)));
 

@@ -8,6 +8,7 @@ import { setupMeasureLoopEvents, setupRepeatControlEvents, renderRepeats } from 
 import { setupSelectionEvents } from './interaction/selection.js';
 import { setupInstrumentControlEvents } from './ui/instrument.js';
 import { setupLoopEvents } from './ui/loop.js';
+import { setupPlayheadDragEvents } from './interaction/playheadDrag.js';
 import { setupPersistenceEvents, loadArrangementFromURL } from './services/api.js';
 import { setupKeyboardShortcuts } from './interaction/shortcuts.js';
 import { setupSubdivisionEvents } from './ui/beams.js';
@@ -52,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setupSelectionEvents();
         setupInstrumentControlEvents();
         setupLoopEvents();
+        setupPlayheadDragEvents();
         setupPersistenceEvents();
         setupNewArrangementModal();
         setupExportEvents();

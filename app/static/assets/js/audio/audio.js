@@ -6,6 +6,7 @@ import { TIME_SIGNATURES } from '../core/constants.js';
 export const audioEngine = {
     isPlaying: false,
     isPaused: false,
+    hasSeekPosition: false, // playhead posicionado manualmente enquanto parado
     isInitialized: false,
     metronomeEnabled: false,
     metronomeVolume: 100,
@@ -496,6 +497,61 @@ export const audioEngine = {
         if (window.updatePlayheadPosition) window.updatePlayheadPosition();
     },
 
+    // Limites (em ticks) em que o playhead pode ficar: dentro do loop ativo ou do arranjo inteiro
+    getSeekLimits() {
+        if (this.isLoopActive()) {
+            const { startTicks, endTicks } = this.getLoopTickLimits();
+            return { min: startTicks, max: Math.max(startTicks, endTicks - 1) };
+        }
+        const total = this.getPlaybackSequence().length
+            ? this.scheduledSequenceTotalTicks()
+            : 0;
+        return { min: 0, max: Math.max(0, total - 1) };
+    },
+
+    scheduledSequenceTotalTicks() {
+        const ppq = Tone.Transport.PPQ;
+        return this.getPlaybackSequence().reduce((sum, mIdx) => {
+            const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
+            return sum + (TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"]).beats * ppq;
+        }, 0);
+    },
+
+    // Converte {compasso, subdivisão} em ticks; com repetições, usa a passada mais próxima do cursor
+    getTickForPosition(measure, unit) {
+        const ppq = Tone.Transport.PPQ;
+        const current = Tone.Transport.ticks;
+        let acc = 0;
+        let best = null;
+
+        this.getPlaybackSequence().forEach(mIdx => {
+            const sig = scoreState.measuresConfig?.[mIdx]?.timeSignature || scoreState.timeSignature || "4/4";
+            const cfg = TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"];
+            const measureTicks = cfg.beats * ppq;
+
+            if (mIdx === measure) {
+                const distance = current < acc ? acc - current : Math.max(0, current - (acc + measureTicks));
+                if (!best || distance < best.distance) {
+                    best = { distance, tick: acc + Math.round(unit * ppq / cfg.subdivisions) };
+                }
+            }
+            acc += measureTicks;
+        });
+
+        return best ? best.tick : null;
+    },
+
+    // Move o cursor de reprodução (tocando, pausado ou parado), respeitando loop e limites do arranjo
+    seekToTicks(ticks) {
+        const { min, max } = this.getSeekLimits();
+        const target = Math.min(Math.max(Math.round(ticks), min), max);
+
+        Tone.Transport.ticks = target;
+        if (!this.isPlaying && !this.isPaused) this.hasSeekPosition = true;
+
+        if (window.updatePlayheadPosition) window.updatePlayheadPosition();
+    },
+
     async start() {
         if (!this.isInitialized) this.init();
         await Tone.start();
@@ -505,12 +561,17 @@ export const audioEngine = {
         if (!this.isPaused) {
             this.schedulePlaybackSequence();
 
-            if (this.isLoopActive()) {
+            if (this.hasSeekPosition) {
+                // Começa de onde o playhead foi posicionado manualmente (dentro dos limites atuais)
+                const { min, max } = this.getSeekLimits();
+                Tone.Transport.ticks = Math.min(Math.max(Tone.Transport.ticks, min), max);
+            } else if (this.isLoopActive()) {
                 const { startTicks } = this.getLoopTickLimits();
                 Tone.Transport.ticks = startTicks;
             } else {
                 Tone.Transport.ticks = 0;
             }
+            this.hasSeekPosition = false;
         }
 
         Tone.Transport.start();
@@ -537,6 +598,7 @@ export const audioEngine = {
 
         this.isPlaying = false;
         this.isPaused = false;
+        this.hasSeekPosition = false;
 
         if (this.isLoopActive()) {
             const { startTicks } = this.getLoopTickLimits();
