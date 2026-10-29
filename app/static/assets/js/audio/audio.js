@@ -3,6 +3,10 @@
 import { scoreState } from '../core/state.js';
 import { TIME_SIGNATURES } from '../core/constants.js';
 
+// MetalSynth (rimshot) usa a assinatura (nota, duração, tempo, velocidade); sem a nota, "tempo" e
+// "velocidade" eram lidos como duração/tempo e os disparos lançavam "Start time must be strictly greater..."
+const RIMSHOT_NOTE = 320;
+
 export const audioEngine = {
     isPlaying: false,
     isPaused: false,
@@ -14,6 +18,7 @@ export const audioEngine = {
     loopEventId: null,
 
     masterLimiter: null,
+    masterBus: null,
     channels: {},
     synths: {},
     metronomeSynth: null,
@@ -22,7 +27,9 @@ export const audioEngine = {
         if (this.isInitialized) return;
 
         // Limiter Master para evitar estouro de áudio em rajadas rápidas
-        this.masterLimiter = new Tone.Limiter(-2).toDestination();
+        this.masterLimiter = new Tone.Limiter(-3).toDestination();
+        // Bus mestre antes do limitador: a soma de vários instrumentos tocando juntos passava de 0 dB
+        this.masterBus = new Tone.Volume(0).connect(this.masterLimiter);
 
         scoreState.instruments.forEach(inst => {
             this.initInstrumentChannel(inst);
@@ -37,7 +44,15 @@ export const audioEngine = {
         }).connect(this.masterLimiter);
 
         Tone.Transport.bpm.value = scoreState.bpm;
+        this.updateMasterGain();
         this.isInitialized = true;
+    },
+
+    // Compensa a soma dos instrumentos audíveis (≈ -5 dB por década de instrumentos: 7 => -4 dB; 1 => 0 dB)
+    updateMasterGain() {
+        if (!this.masterBus) return;
+        const audible = scoreState.instruments.filter(i => !i.hidden && i.volume > 0).length;
+        this.masterBus.volume.rampTo(-5 * Math.log10(Math.max(1, audible)), 0.05);
     },
 
     // Descarta todo o grafo de áudio e o estado do Transport. Depois do reset, o próximo init()/start()
@@ -55,11 +70,13 @@ export const audioEngine = {
         Object.values(this.synths).forEach(group => group && Object.values(group).forEach(dispose));
         Object.values(this.channels).forEach(dispose);
         dispose(this.metronomeSynth);
+        dispose(this.masterBus);
         dispose(this.masterLimiter);
 
         this.synths = {};
         this.channels = {};
         this.metronomeSynth = null;
+        this.masterBus = null;
         this.masterLimiter = null;
         this.isInitialized = false;
         this.isPlaying = false;
@@ -98,7 +115,7 @@ export const audioEngine = {
     },
 
     initInstrumentChannel(inst) {
-        const destination = this.masterLimiter || Tone.getDestination();
+        const destination = this.masterBus || this.masterLimiter || Tone.getDestination();
 
         if (!this.channels[inst.id]) {
             this.channels[inst.id] = new Tone.Volume(this.calculateDb(inst.volume)).connect(destination);
@@ -203,6 +220,22 @@ export const audioEngine = {
         return {};
     },
 
+    // O Tone lança "Start time must be strictly greater than previous start time" se uma mesma fonte for
+    // reiniciada no mesmo instante (ou em instante já passado, que ele corrige para o relógio atual).
+    // Garante tempos estritamente crescentes por sintetizador, mesmo quando um disparo chega atrasado.
+    startTime(synth, time) {
+        this._lastStart = this._lastStart || new WeakMap();
+        // Folga de 15 ms sobre o relógio: o currentTime avança durante o próprio callback e o Tone
+        // "corrige" tempos já passados para o relógio atual, o que igualaria disparos seguidos.
+        let t = Math.max(time, Tone.context.currentTime + 0.015);
+        const last = this._lastStart.get(synth);
+        // O Tone compara com tolerância (~1e-6): diferenças de ponto flutuante (1.956 × 1.9560000000000002)
+        // contam como "mesmo instante" e lançam o erro, então o passo mínimo precisa ser folgado (2 ms)
+        if (last !== undefined && t < last + 0.002) t = last + 0.002;
+        this._lastStart.set(synth, t);
+        return t;
+    },
+
     triggerStroke(inst, stroke, time) {
         if (!stroke || inst.volume <= 0) return;
 
@@ -214,62 +247,62 @@ export const audioEngine = {
 
         if (baseType.startsWith("surdo")) {
             if (stroke === "pele-aberto") {
-                instSynths.main.triggerAttackRelease(instSynths.defaultPitch, "32n", execTime, 0.9);
+                instSynths.main.triggerAttackRelease(instSynths.defaultPitch, "32n", this.startTime(instSynths.main, execTime), 0.9);
             } else if (stroke === "abafado") {
-                instSynths.main.triggerAttackRelease("D1", "32n", execTime, 0.5);
+                instSynths.main.triggerAttackRelease("D1", "32n", this.startTime(instSynths.main, execTime), 0.5);
             }
         } else if (baseType === "caixa") {
             if (stroke === "pele-aberto") {
-                instSynths.pele.triggerAttackRelease("F2", "32n", execTime, 0.85);
-                instSynths.esteira.triggerAttackRelease("32n", execTime, 0.55);
+                instSynths.pele.triggerAttackRelease("F2", "32n", this.startTime(instSynths.pele, execTime), 0.85);
+                instSynths.esteira.triggerAttackRelease("32n", this.startTime(instSynths.esteira, execTime), 0.55);
             } else if (stroke === "fantasma") {
-                instSynths.pele.triggerAttackRelease("E2", "32n", execTime, 0.25);
-                instSynths.esteira.triggerAttackRelease("32n", execTime, 0.12);
+                instSynths.pele.triggerAttackRelease("E2", "32n", this.startTime(instSynths.pele, execTime), 0.25);
+                instSynths.esteira.triggerAttackRelease("32n", this.startTime(instSynths.esteira, execTime), 0.12);
             } else if (stroke === "aro") {
-                instSynths.aro.triggerAttackRelease("A4", "32n", execTime, 0.55);
+                instSynths.aro.triggerAttackRelease("A4", "32n", this.startTime(instSynths.aro, execTime), 0.55);
             } else if (stroke === "rimshot") {
-                instSynths.pele.triggerAttackRelease("A2", "32n", execTime, 0.95);
-                instSynths.rimshot.triggerAttackRelease("32n", execTime, 0.8);
+                instSynths.pele.triggerAttackRelease("A2", "32n", this.startTime(instSynths.pele, execTime), 0.95);
+                instSynths.rimshot.triggerAttackRelease(RIMSHOT_NOTE, "32n", this.startTime(instSynths.rimshot, execTime), 0.8);
             } else if (stroke === "rufo") {
                 for (let r = 0; r < 3; r++) {
                     const subTime = Tone.Time(execTime).toSeconds() + (r * 0.02);
-                    instSynths.esteira.triggerAttackRelease("32n", subTime, 0.35 - (r * 0.07));
+                    instSynths.esteira.triggerAttackRelease("32n", this.startTime(instSynths.esteira, subTime), 0.35 - (r * 0.07));
                 }
             }
         } else if (baseType === "repique") {
             if (stroke === "pele-aberto") {
-                instSynths.main.triggerAttackRelease("D3", "32n", execTime, 0.9);
+                instSynths.main.triggerAttackRelease("D3", "32n", this.startTime(instSynths.main, execTime), 0.9);
             } else if (stroke === "rimshot") {
-                instSynths.main.triggerAttackRelease("F3", "32n", execTime, 0.95);
-                instSynths.rimshot.triggerAttackRelease("32n", execTime, 0.65);
+                instSynths.main.triggerAttackRelease("F3", "32n", this.startTime(instSynths.main, execTime), 0.95);
+                instSynths.rimshot.triggerAttackRelease(RIMSHOT_NOTE, "32n", this.startTime(instSynths.rimshot, execTime), 0.65);
             } else if (stroke === "aro") {
-                instSynths.aro.triggerAttackRelease("B4", "32n", execTime, 0.6);
+                instSynths.aro.triggerAttackRelease("B4", "32n", this.startTime(instSynths.aro, execTime), 0.6);
             } else if (stroke === "slap") {
-                instSynths.main.triggerAttackRelease("G3", "32n", execTime, 0.95);
-                instSynths.aro.triggerAttackRelease("D5", "32n", execTime, 0.45);
+                instSynths.main.triggerAttackRelease("G3", "32n", this.startTime(instSynths.main, execTime), 0.95);
+                instSynths.aro.triggerAttackRelease("D5", "32n", this.startTime(instSynths.aro, execTime), 0.45);
             } else if (stroke === "rufo") {
                 for (let r = 0; r < 3; r++) {
                     const subTime = Tone.Time(execTime).toSeconds() + (r * 0.02);
-                    instSynths.main.triggerAttackRelease("D3", "32n", subTime, 0.45);
+                    instSynths.main.triggerAttackRelease("D3", "32n", this.startTime(instSynths.main, subTime), 0.45);
                 }
             }
         } else if (baseType === "chocalho") {
             if (stroke === "chocalho-frente") {
                 if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(4200, execTime);
-                instSynths.noise.triggerAttackRelease("32n", execTime, 0.8);
+                instSynths.noise.triggerAttackRelease("32n", this.startTime(instSynths.noise, execTime), 0.8);
             } else if (stroke === "chocalho-tras") {
                 if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(3200, execTime);
-                instSynths.noise.triggerAttackRelease("32n", execTime, 0.45);
+                instSynths.noise.triggerAttackRelease("32n", this.startTime(instSynths.noise, execTime), 0.45);
             }
         } else if (baseType === "tamborim") {
             if (stroke === "tamborim-chapado") {
-                instSynths.main.triggerAttackRelease("A3", "32n", execTime, 0.9);
+                instSynths.main.triggerAttackRelease("A3", "32n", this.startTime(instSynths.main, execTime), 0.9);
             } else if (stroke === "tamborim-ponta") {
-                instSynths.main.triggerAttackRelease("F#3", "32n", execTime, 0.7);
+                instSynths.main.triggerAttackRelease("F#3", "32n", this.startTime(instSynths.main, execTime), 0.7);
             } else if (stroke === "abafado") {
-                instSynths.main.triggerAttackRelease("A3", "32n", execTime, 0.35);
+                instSynths.main.triggerAttackRelease("A3", "32n", this.startTime(instSynths.main, execTime), 0.35);
             } else if (stroke === "aro") {
-                instSynths.main.triggerAttackRelease("E4", "32n", execTime, 0.55);
+                instSynths.main.triggerAttackRelease("E4", "32n", this.startTime(instSynths.main, execTime), 0.55);
             }
         }
     },
@@ -424,8 +457,23 @@ export const audioEngine = {
             if (!stroke) return;
             // Instrumentos criados/duplicados durante a reprodução ainda não têm canal de áudio
             if (!this.synths[inst.id]) this.initInstrumentChannel(inst);
-            this.triggerStroke(inst, stroke, time);
+
+            // Um erro em um instrumento não pode calar os outros nem interromper o relógio do Transport
+            try {
+                this.triggerStroke(inst, stroke, time);
+            } catch (err) {
+                this.reportStrokeError(inst, stroke, err);
+            }
         });
+    },
+
+    // Registra cada tipo de erro de síntese só uma vez, para não inundar o console
+    reportStrokeError(inst, stroke, err) {
+        this._reportedErrors = this._reportedErrors || new Set();
+        const key = `${inst.id.split("_")[0]}:${stroke}:${err?.message}`;
+        if (this._reportedErrors.has(key)) return;
+        this._reportedErrors.add(key);
+        console.warn(`[EasyGroove] Falha ao tocar "${stroke}" em ${inst.name || inst.id}:`, err);
     },
 
     schedulePlaybackSequence() {
@@ -589,6 +637,7 @@ export const audioEngine = {
         await Tone.start();
 
         this.updateTransportSettings();
+        this.updateMasterGain();
 
         if (!this.isPaused) {
             this.schedulePlaybackSequence();

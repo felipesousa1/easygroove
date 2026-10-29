@@ -239,7 +239,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.aro?.triggerAttackRelease("A4", "32n", execTime, 0.6);
         } else if (stroke === "rimshot") {
             instSynths.pele?.triggerAttackRelease("A2", "16n", execTime, 1.0);
-            instSynths.rimshot?.triggerAttackRelease("16n", execTime, 0.85);
+            instSynths.rimshot?.triggerAttackRelease(320, "16n", execTime, 0.85);
         } else if (stroke === "rufo") {
             for (let r = 0; r < 3; r++) {
                 const subTime = execTime + (r * 0.025);
@@ -251,7 +251,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.main?.triggerAttackRelease("D3", "16n", execTime, 0.95);
         } else if (stroke === "rimshot") {
             instSynths.main?.triggerAttackRelease("F3", "16n", execTime, 1.0);
-            instSynths.rimshot?.triggerAttackRelease("32n", execTime, 0.7);
+            instSynths.rimshot?.triggerAttackRelease(320, "32n", execTime, 0.7);
         } else if (stroke === "aro") {
             instSynths.aro?.triggerAttackRelease("B4", "32n", execTime, 0.65);
         } else if (stroke === "slap") {
