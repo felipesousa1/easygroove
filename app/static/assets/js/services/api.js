@@ -11,6 +11,14 @@ export function updateLogoLink(isLoggedIn) {
     logoLink.href = isLoggedIn ? "/biblioteca" : "/";
 }
 
+// Convidado (sem login) não vê "Salvar Arranjo" nem "Minha Biblioteca" no menu principal
+export function updateGuestMenu(isLoggedIn) {
+    ["menu-opt-save", "menu-opt-library"].forEach(id => {
+        const item = document.getElementById(id);
+        if (item) item.hidden = !isLoggedIn;
+    });
+}
+
 export function updateSaveButtonState(isLoggedIn) {
     const saveBtn = document.getElementById("btn-save-project");
     if (!saveBtn) return;
@@ -37,11 +45,13 @@ export async function checkAuthStatus() {
 
         updateLogoLink(isLoggedIn);
         updateSaveButtonState(isLoggedIn);
+        updateGuestMenu(isLoggedIn);
 
         return isLoggedIn;
     } catch {
         updateLogoLink(false);
         updateSaveButtonState(false);
+        updateGuestMenu(false);
         return false;
     }
 }
@@ -75,7 +85,11 @@ export async function saveCurrentArrangement() {
         });
 
         if (response.status === 401) {
+            // Sessão expirada: passa a se comportar como convidado
             updateSaveButtonState(false);
+            updateGuestMenu(false);
+            updateLogoLink(false);
+            showToast("Sua sessão expirou. Faça login para salvar o arranjo.", true);
             return;
         }
 
@@ -112,15 +126,6 @@ export function setupPersistenceEvents() {
         });
     }
 
-    const menuSaveBtn = document.getElementById("menu-opt-save");
-    if (menuSaveBtn) {
-        menuSaveBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            saveCurrentArrangement();
-        });
-    }
-
     checkAuthStatus();
 }
 export async function loadArrangementFromURL() {
@@ -135,9 +140,9 @@ export async function loadArrangementFromURL() {
         });
 
         if (response.status === 401) {
-            if (typeof updateLogoLink === "function") {
-                updateLogoLink(false);
-            }
+            updateLogoLink(false);
+            updateSaveButtonState(false);
+            updateGuestMenu(false);
             // Exibe o toast informativo mantendo o usuário no editor com as notas salvas na tela
             showToast("Você precisa estar logado para salvar o arranjo.");
             return;

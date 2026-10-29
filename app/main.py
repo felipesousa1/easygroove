@@ -64,9 +64,16 @@ async def get_index(
 
 
 @app.get("/app")
-async def get_editor(request: Request):
-    # Rota dedicada para o Editor de Arranjos
-    return templates.TemplateResponse(request=request, name="app.html")
+async def get_editor(
+    request: Request,
+    current_user: Optional[User] = Depends(get_user_from_cookie),
+):
+    # Rota dedicada para o Editor de Arranjos (acessível também como convidado, sem salvar/biblioteca)
+    return templates.TemplateResponse(
+        request=request,
+        name="app.html",
+        context={"is_guest": current_user is None},
+    )
 
 def format_relative_time(dt: datetime) -> str:
     """Formata data relativa baseada no horário UTC atual."""

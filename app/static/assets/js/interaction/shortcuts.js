@@ -2,6 +2,7 @@ import { scoreState, setSelectionClipboard } from '../core/state.js';
 import { resetLoop, cancelLoopPicking } from '../ui/loop.js';
 import { copySelectedMeasures, cutSelectedMeasures, pasteClipboardToTarget, clearSelectedMeasures } from './clipboard.js';
 import { addMeasureToEnd, renderScore } from '../ui/renderScore.js';
+import { showToast } from '../ui/toast.js';
 
 export function setupKeyboardShortcuts() {
     window.addEventListener("keydown", (e) => {
@@ -12,7 +13,9 @@ export function setupKeyboardShortcuts() {
 
             if (key === "s") {
                 e.preventDefault();
-                document.querySelector('button[title="Salvar Arranjo"]')?.click();
+                const saveBtn = document.getElementById("btn-save-project");
+                if (saveBtn?.disabled) showToast("Faça login para salvar o arranjo.", true);
+                else saveBtn?.click();
             } else if (key === "c") {
                 e.preventDefault();
                 copySelectedMeasures();
@@ -86,7 +89,10 @@ export function setupKeyboardShortcuts() {
                     break;
                 case "m":
                     e.preventDefault();
-                    document.getElementById("menu-opt-library")?.click();
+                    // Oculto para convidados: o atalho também não deve funcionar
+                    if (!document.getElementById("menu-opt-library")?.hidden) {
+                        document.getElementById("menu-opt-library")?.click();
+                    }
                     break;
                 case "w":
                     e.preventDefault();
@@ -114,7 +120,7 @@ export function setupKeyboardShortcuts() {
                     break;
                 case "e":
                     e.preventDefault();
-                    document.querySelector('button[title="Exportar Arranjo"]')?.click();
+                    document.getElementById("btn-export-popover")?.click();
                     break;
                 case "h":
                 case "?":

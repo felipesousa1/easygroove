@@ -25,7 +25,7 @@ const TOUR_SLIDES = [
                 tip: "Atalhos: P (play), S (stop), L (loop) e Shift + L (zerar loop)."
             },
             {
-                selector: "button[title='Salvar Arranjo'], button[title='Exportar Arranjo']",
+                selector: "#btn-save-project, #btn-export-popover",
                 title: "Salvar e Exportar",
                 text: "Salve o arranjo na sua conta ou exporte em áudio (.wav) ou arquivo (.json).",
                 tip: "Atalhos: Ctrl + S (salvar) e Shift + E (exportar)."
