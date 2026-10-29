@@ -1,13 +1,23 @@
 {% for col in collections %}
 <li data-collection-item-id="{{ col.id }}">
     <button type="button" class="lib-btn-collection" data-collection-id="{{ col.id }}"
-        hx-get="/biblioteca/search?collection_id={{ col.id }}" hx-target="#arrangements-grid"
-        hx-include="#lib-search-input, #lib-sort-select">
+        hx-get="/biblioteca/search" hx-vals='{"collection_id": "{{ col.id }}"}' hx-target="#arrangements-grid"
+        hx-include=".lib-query">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
         </svg>
         <span class="col-name-text">{{ col.name }}</span>
+        <span class="col-count" title="Arranjos nesta coleção">{{ collection_counts.get(col.id, 0) }}</span>
+
+        <!-- Botão Renomear Coleção (Lápis) -->
+        <div class="btn-rename-collection" data-col-id="{{ col.id }}" title="Renomear Coleção">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" style="width: 15px; height: 15px; pointer-events: none;">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+        </div>
 
         <!-- Botão Excluir Coleção (Lixeira) -->
         <div class="btn-delete-collection" data-col-id="{{ col.id }}" title="Excluir Coleção">

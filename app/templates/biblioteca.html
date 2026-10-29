@@ -41,15 +41,31 @@
     </header>
 
     <main class="lib-main">
-        <h1 class="lib-title">Biblioteca</h1>
+
+        <!-- Saudação (fundo padrão da página) -->
+        <section class="lib-greeting">
+            <h1 class="lib-title">Olá, @{{ user.username }}</h1>
+            <p class="lib-greeting-sub">
+                Seus arranjos de percussão, organizados em um só lugar ·
+                <span data-stat="arranjos"><strong>{{ stats.arranjos }}</strong> <span class="lib-stat-label">{{ 'arranjo' if stats.arranjos == 1 else 'arranjos' }}</span></span> ·
+                <span data-stat="colecoes"><strong>{{ stats.colecoes }}</strong> <span class="lib-stat-label">{{ 'coleção' if stats.colecoes == 1 else 'coleções' }}</span></span>
+            </p>
+        </section>
 
         <div class="lib-content">
 
             <!-- Barra Lateral (Coleções) -->
             <aside class="lib-sidebar">
+                {% if stats.ultimo %}
+                <a href="/app?id={{ stats.ultimo.id }}" class="lib-resume" title="Abrir o último arranjo editado">
+                    <span class="lib-resume-label">Continuar de onde parou</span>
+                    <span class="lib-resume-name">{{ stats.ultimo.name }}</span>
+                </a>
+                {% endif %}
+
                 <button type="button" class="lib-btn-primary active" id="btn-all-arrangements"
-                    hx-get="/biblioteca/search" hx-target="#arrangements-grid"
-                    hx-include="#lib-search-input, #lib-sort-select">
+                    hx-get="/biblioteca/search" hx-vals='{"collection_id": ""}' hx-target="#arrangements-grid"
+                    hx-include=".lib-query">
                     Todos os arranjos
                 </button>
 
@@ -66,6 +82,9 @@
             <!-- Área Principal (Grade de Arranjos) -->
             <section class="lib-workspace">
 
+                <!-- Coleção ativa (mantida ao buscar/filtrar) -->
+                <input type="hidden" name="collection_id" id="lib-collection-id" class="lib-query" value="">
+
                 <div class="lib-toolbar">
                     <div class="lib-search-bar">
                         <svg class="lib-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -73,24 +92,65 @@
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <input type="text" name="q" id="lib-search-input" placeholder="Buscar arranjo..."
-                            hx-get="/biblioteca/search" hx-trigger="keyup changed delay:300ms, search"
-                            hx-target="#arrangements-grid" hx-include="#lib-sort-select">
+                        <input type="text" name="q" id="lib-search-input" class="lib-query"
+                            placeholder="Buscar arranjo..." hx-get="/biblioteca/search"
+                            hx-trigger="keyup changed delay:300ms, search" hx-target="#arrangements-grid"
+                            hx-include=".lib-query">
                     </div>
 
-                    <div class="lib-filters">
-                        <span class="lib-filter-label">Ordenar por:</span>
-                        <select class="lib-sort-select" name="sort_by" id="lib-sort-select" hx-get="/biblioteca/search"
-                            hx-trigger="change" hx-target="#arrangements-grid" hx-include="#lib-search-input">
-                            <option value="az">A-Z (Ordem Alfabética)</option>
-                            <option value="recent">Mais recentes</option>
-                            <option value="old">Mais antigos</option>
-                        </select>
+                    <div class="lib-toolbar-actions">
+                        <label class="lib-sort">
+                            <span class="lib-sort-label">Ordenar por</span>
+                            <select class="lib-sort-select lib-query" name="sort_by" id="lib-sort-select"
+                                hx-get="/biblioteca/search" hx-trigger="change" hx-target="#arrangements-grid"
+                                hx-include=".lib-query">
+                                <option value="edited_desc">Edição mais recente</option>
+                                <option value="edited_asc">Edição mais antiga</option>
+                                <option value="created_desc">Criação mais recente</option>
+                                <option value="created_asc">Criação mais antiga</option>
+                                <option value="az">Nome (A-Z)</option>
+                                <option value="za">Nome (Z-A)</option>
+                            </select>
+                        </label>
+
+                        <div class="lib-view-toggle" role="group" aria-label="Modo de exibição">
+                            <button type="button" class="lib-view-btn active" data-view="grid" title="Grade">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </button>
+                            <button type="button" class="lib-view-btn" data-view="list" title="Lista">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="lib-grid" id="arrangements-grid">
                     {% include "partials/arrangements_grid.html" %}
+                </div>
+
+                <!-- Barra de ações do modo de seleção -->
+                <div class="lib-batch-bar" id="lib-batch-bar" hidden>
+                    <span class="lib-batch-count" id="lib-batch-count">0 selecionados</span>
+                    <select id="lib-batch-collection" class="lib-sort-select" aria-label="Coleção de destino">
+                        <option value="">Adicionar à coleção...</option>
+                    </select>
+                    <button type="button" class="lib-tool-btn" id="btn-batch-add" disabled>Adicionar</button>
+                    <button type="button" class="lib-tool-btn danger" id="btn-batch-delete" disabled>Excluir</button>
+                    <button type="button" class="lib-tool-btn" id="btn-batch-cancel" title="Cancelar seleção (Esc)">Cancelar</button>
                 </div>
 
                 <!-- Container flutuante que trava o botão no rodapé do box -->
@@ -108,6 +168,8 @@
         </div>
     </main>
 
+    <input type="file" id="lib-import-input" accept=".json,application/json" hidden>
+
     <!-- Modal Gerenciar Coleções -->
     <div class="lib-modal-overlay" id="manage-cols-modal">
         <div class="lib-modal-content">
@@ -123,12 +185,41 @@
         </div>
     </div>
 
-    <footer class="lib-footer">
-        &copy; 2026 - EasyGroove
-    </footer>
+    <!-- Modal Fale conosco -->
+    <div class="lib-modal-overlay" id="feedback-modal">
+        <div class="lib-modal-content">
+            <h3 class="lib-modal-title">Fale conosco</h3>
+            <p class="lib-modal-text">Dúvida, sugestão ou bug? Escreva abaixo e abriremos o seu aplicativo de e-mail
+                com a mensagem pronta para enviar.</p>
+            <form id="feedback-form" class="lib-feedback-form">
+                <select id="feedback-subject" class="lib-sort-select" aria-label="Assunto">
+                    <option value="Dúvida">Dúvida</option>
+                    <option value="Sugestão">Sugestão</option>
+                    <option value="Problema (bug)">Problema (bug)</option>
+                    <option value="Outro">Outro</option>
+                </select>
+                <textarea id="feedback-message" class="lib-textarea" rows="5" required
+                    placeholder="Escreva sua mensagem..."></textarea>
+                <div class="lib-modal-actions">
+                    <button type="button" class="lib-btn-add-dashed" id="btn-cancel-feedback"
+                        style="border: none;">Cancelar</button>
+                    <button type="submit" class="lib-btn-hero" style="align-items: center;">Enviar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% include "partials/site_footer.html" %}
+
+    <div class="lib-toast" id="lib-toast" role="status" aria-live="polite" hidden></div>
 
     <!-- Script modularizado da biblioteca -->
+    <script>window.SITE_EMAIL = {{ site.email | tojson }};</script>
+    <script src="assets/js/services/feedback.js"></script>
     <script src="assets/js/pages/biblioteca.js"></script>
+    <script src="assets/js/pages/biblioteca-actions.js"></script>
+    <script type="module" src="assets/js/pages/biblioteca-player.js"></script>
+
 </body>
 
 </html>

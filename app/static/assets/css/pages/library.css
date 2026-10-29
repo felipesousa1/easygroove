@@ -90,11 +90,10 @@
 }
 
 .lib-title {
-  font-size: 3rem;
+  font-size: 2.2rem;
   font-weight: 700;
   color: #360566;
-  text-align: center;
-  margin-bottom: 32px;
+  margin: 0 0 6px 0;
 }
 
 .lib-content {
@@ -197,7 +196,8 @@
   stroke: #ffffff;
 }
 
-.btn-delete-collection {
+.btn-delete-collection,
+.btn-rename-collection {
   display: none;
   position: absolute;
   right: 8px;
@@ -211,8 +211,54 @@
   border-radius: 4px;
 }
 
-.lib-btn-collection:hover .btn-delete-collection {
+.lib-btn-collection:hover .btn-delete-collection,
+.lib-btn-collection:hover .btn-rename-collection {
   display: block;
+}
+
+.btn-rename-collection {
+  right: 36px;
+  color: var(--color-text-muted);
+}
+
+.btn-rename-collection:hover {
+  background: var(--color-gray-hover);
+}
+
+.lib-btn-collection.active .btn-rename-collection {
+  color: #e9d5ff;
+}
+
+.lib-btn-collection.active .btn-rename-collection:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.col-name-text {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background-color: var(--color-gray-bg);
+  border-radius: 999px;
+  padding: 1px 8px;
+  flex-shrink: 0;
+}
+
+.lib-btn-collection:hover .col-count {
+  display: none;
+}
+
+.lib-btn-collection.active .col-count {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .btn-delete-collection:hover {
@@ -349,7 +395,7 @@
 
 .lib-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
   padding-bottom: 80px;
   overflow: visible;
@@ -362,8 +408,9 @@
 
 .lib-card {
   display: flex;
-  align-items: center;
-  padding: 12px;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
   background-color: #ffffff;
   border: 1.5px solid var(--color-gray-border);
   border-radius: 12px;
@@ -373,11 +420,7 @@
 }
 
 .lib-card[draggable="true"] {
-  cursor: grab;
-}
-
-.lib-card[draggable="true"]:active {
-  cursor: grabbing;
+  cursor: pointer;
 }
 
 .lib-card:hover {
@@ -386,16 +429,16 @@
 }
 
 .lib-card-img-placeholder {
-  width: 60px;
-  height: 60px;
+  width: 100%;
+  height: 112px;
   background-color: #f5f0ff;
-  border-radius: 10px;
+  border-radius: 11px 11px 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
   flex-shrink: 0;
   color: #8B00CE;
+  overflow: hidden;
 }
 
 .lib-card-img-placeholder svg {
@@ -407,13 +450,14 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 6px;
 }
 
 .lib-card-info {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
+  padding: 12px 14px 14px 14px;
 }
 
 .lib-card-title {
@@ -429,12 +473,15 @@
 }
 
 .lib-card-menu-wrapper {
-  position: relative;
+  position: absolute;
+  top: 8px;
+  right: 8px;
   display: inline-block;
+  z-index: 3;
 }
 
 .lib-card-menu {
-  background: none;
+  background: rgba(255, 255, 255, 0.85);
   border: none;
   color: var(--color-text-muted);
   cursor: pointer;
@@ -584,16 +631,778 @@
   height: 24px;
 }
 
-.lib-footer {
-  width: 100%;
-  height: 34px;
+/* ==========================================
+   BOAS-VINDAS
+   ========================================== */
+
+
+
+
+
+
+.lib-btn-hero,
+.lib-btn-hero-secondary {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lib-btn-hero {
   background-color: #360566;
+  color: #ffffff;
+  border: 1.5px solid #360566;
+}
+
+.lib-btn-hero:hover {
+  background-color: #4a0a8a;
+}
+
+.lib-btn-hero small {
+  font-weight: 500;
+  opacity: 0.8;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lib-btn-hero-secondary {
+  background-color: #ffffff;
+  color: #360566;
+  border: 1.5px solid #cbbbe6;
+}
+
+.lib-btn-hero-secondary:hover {
+  border-color: #360566;
+  background-color: #f5f0ff;
+}
+
+/* ==========================================
+   BARRA DE FERRAMENTAS, FILTROS E EXIBIÇÃO
+   ========================================== */
+.lib-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lib-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lib-tool-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.lib-tool-btn:hover:not(:disabled) {
+  border-color: #360566;
+  color: #360566;
+}
+
+.lib-tool-btn.active {
+  background-color: #360566;
+  border-color: #360566;
+  color: #ffffff;
+}
+
+.lib-tool-btn.danger {
+  color: #dc2626;
+}
+
+.lib-tool-btn.danger:hover:not(:disabled) {
+  border-color: #dc2626;
+  color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.lib-tool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lib-view-toggle {
+  display: inline-flex;
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-gray-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.lib-view-btn {
+  width: 40px;
+  height: 37px;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.lib-view-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.lib-view-btn.active {
+  background-color: #360566;
   color: #ffffff;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 1rem;
+}
+
+
+
+/* ==========================================
+   CARDS: METADADOS, INSTRUMENTOS, PRÉVIA
+   ========================================== */
+.lib-card-img-placeholder .lib-card-preview {
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  color: #8B00CE;
+}
+
+.lib-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #360566;
+}
+
+.lib-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.lib-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background-color: #f5f0ff;
+  color: #360566;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.lib-chip img {
+  width: 16px;
+  height: 16px;
+}
+
+
+
+.lib-card-check {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 4;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.lib-card-check {
+  cursor: pointer;
+}
+
+.lib-card-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #360566;
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.lib-card:hover .lib-card-check,
+.lib-grid.is-selecting .lib-card-check {
+  display: flex;
+}
+
+.lib-grid.is-selecting .lib-card {
+  cursor: pointer;
+}
+
+.lib-card.is-selected {
+  border-color: #360566;
+  box-shadow: 0 0 0 2px #360566;
+}
+
+/* Modo lista: uma linha compacta por arranjo */
+.lib-grid.is-list {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.lib-grid.is-list .lib-card {
+  flex-direction: row;
+  align-items: center;
+  padding: 10px 56px 10px 10px;
+}
+
+.lib-grid.is-list .lib-card-img-placeholder {
+  width: 120px;
+  height: 64px;
+  border-radius: 8px;
+  margin-right: 16px;
+}
+
+.lib-grid.is-list .lib-card-info {
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(160px, 2fr) minmax(0, 1.5fr) minmax(0, 2fr);
+  grid-template-areas: "title meta chips" "date meta chips";
+  column-gap: 20px;
+  align-items: center;
+}
+
+.lib-grid.is-list .lib-card-title-row { grid-area: title; margin-bottom: 0; }
+.lib-grid.is-list .lib-card-date { grid-area: date; }
+.lib-grid.is-list .lib-card-meta { grid-area: meta; margin-top: 0; }
+.lib-grid.is-list .lib-card-chips { grid-area: chips; margin-top: 0; flex-wrap: nowrap; overflow: hidden; }
+
+.lib-grid.is-list .lib-card-menu-wrapper {
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+}
+
+.lib-grid.is-list .lib-card-check {
+  top: 50%;
+  left: 18px;
+  transform: translateY(-50%);
+}
+
+.lib-grid.is-list .lib-card:hover .lib-card-img-placeholder,
+.lib-grid.is-list.is-selecting .lib-card-img-placeholder {
+  margin-left: 30px;
+}
+
+/* ==========================================
+   ESTADO VAZIO
+   ========================================== */
+.lib-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 36px 16px 20px 16px;
+  color: var(--color-text-muted);
+}
+
+.lib-empty-art {
+  width: 96px;
+  height: 96px;
+  color: #8B00CE;
+  opacity: 0.8;
+}
+
+.lib-empty-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #360566;
+  margin: 0;
+}
+
+.lib-empty-text {
+  max-width: 420px;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.lib-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.lib-empty-actions .lib-btn-hero,
+.lib-empty-actions .lib-btn-hero-secondary {
+  align-items: center;
+}
+
+/* ==========================================
+   SELEÇÃO EM LOTE E TOAST
+   ========================================== */
+.lib-batch-bar {
+  position: sticky;
+  bottom: 24px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-self: center;
+  margin-top: 8px;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  border: 1.5px solid #360566;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(54, 5, 102, 0.2);
+}
+
+.lib-batch-bar[hidden],
+.lib-toast[hidden] {
+  display: none;
+}
+
+.lib-batch-count {
+  font-weight: 700;
+  color: #360566;
+  margin-right: 6px;
+}
+
+.lib-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 14px 10px 18px;
+  background-color: #360566;
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 3000;
+}
+
+.lib-toast.is-error {
+  background-color: #dc2626;
+}
+
+.lib-toast button {
+  background: none;
+  border: none;
+  color: #e9d5ff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ==========================================
+   FALE CONOSCO (MODAL)
+   ========================================== */
+.lib-modal-text {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 14px 0;
+}
+
+.lib-feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lib-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 110px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--color-gray-border);
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: var(--color-text-main);
+  outline: none;
+}
+
+.lib-textarea:focus {
+  border-color: #360566;
+  box-shadow: 0 0 0 3px rgba(54, 5, 102, 0.1);
+}
+
+/* ==========================================
+   RODAPÉ
+   ========================================== */
+.lib-footer {
+  width: 100%;
+  background-color: #360566;
+  color: #ffffff;
   flex-shrink: 0;
   margin-top: auto;
+}
+
+.lib-footer-inner {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 40px 28px 40px;
+}
+
+.lib-footer-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.lib-footer-col h4 {
+  margin: 0 0 4px 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.lib-footer-col p {
+  margin: 0;
+  max-width: 340px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+
+.lib-footer-col a,
+.lib-footer-link {
+  color: #e9d5ff;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.lib-footer-col a:hover,
+.lib-footer-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.lib-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.lib-footer-logo {
+  height: 32px;
+  filter: brightness(0) invert(1);
+}
+
+.lib-footer-version {
+  font-size: 0.8rem;
+  opacity: 0.65;
+}
+
+.lib-footer-social {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.lib-footer-social a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.12);
+  transition: background-color 0.15s ease;
+}
+
+.lib-footer-social a:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.lib-footer-social svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lib-footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 14px 40px;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* ==========================================
+   RESPONSIVO
+   ========================================== */
+@media (max-width: 900px) {
+  .lib-header {
+    padding: 0 20px;
+  }
+
+  .lib-main {
+    padding: 20px 16px 32px 16px;
+  }
+
+  .lib-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .lib-sidebar {
+    width: 100%;
+  }
+
+  .lib-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .lib-search-bar {
+    max-width: none;
+    flex-basis: 100%;
+  }
+
+  .lib-footer-inner {
+    grid-template-columns: 1fr 1fr;
+    padding: 32px 20px 20px 20px;
+  }
+
+  .lib-footer-about {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .lib-username {
+    display: none;
+  }
+
+  .lib-workspace {
+    padding: 16px;
+  }
+
+  .lib-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .lib-grid.is-list {
+    grid-template-columns: 1fr;
+  }
+
+  .lib-grid.is-list .lib-card-info {
+    grid-template-columns: 1fr;
+    grid-template-areas: "title" "date" "meta";
+  }
+
+  .lib-grid.is-list .lib-card-chips,
+  .lib-grid.is-list .lib-card-img-placeholder {
+    display: none;
+  }
+
+  .lib-card-img-placeholder {
+    height: 84px;
+  }
+
+  .lib-card-chips {
+    display: none;
+  }
+
+  .lib-footer-inner {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .lib-fab {
+    padding: 10px 18px;
+  }
+}
+
+.lib-card-dropdown a {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-text-main);
+}
+
+.lib-card-dropdown a:hover {
+  background-color: var(--color-gray-hover);
+}
+
+/* ==========================================
+   SAUDAÇÃO, RETOMAR E ORDENAÇÃO
+   ========================================== */
+.lib-greeting {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 24px auto;
+}
+
+.lib-greeting-sub {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+}
+
+.lib-greeting-sub strong {
+  color: #360566;
+}
+
+.lib-resume {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 8px 12px 8px;
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--color-gray-border);
+  margin-bottom: 4px;
+}
+
+.lib-resume-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.lib-resume-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #360566;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lib-resume:hover .lib-resume-name {
+  text-decoration: underline;
+}
+
+.lib-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lib-sort-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.lib-toolbar-actions .lib-sort-select,
+.lib-toolbar-actions .lib-view-toggle {
+  height: 44px;
+}
+
+.lib-toolbar-actions .lib-view-btn {
+  height: 41px;
+}
+
+/* ==========================================
+   OUVIR ARRANJO (BOTÃO PLAY NO CARD)
+   ========================================== */
+.lib-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 4px;
+}
+
+.lib-card-title-row .lib-card-title {
+  margin-bottom: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lib-card-play {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background-color: #360566;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.lib-card-play:hover {
+  background-color: #4a0a8a;
+  transform: scale(1.08);
+}
+
+.lib-card-play svg {
+  width: 15px;
+  height: 15px;
+}
+
+.lib-card-play .icon-stop,
+.lib-card.is-playing .lib-card-play .icon-play {
+  display: none;
+}
+
+.lib-card.is-playing .lib-card-play .icon-stop {
+  display: block;
+}
+
+.lib-card.is-playing {
+  border-color: #360566;
+}
+
+.lib-card-play.is-loading {
+  opacity: 0.6;
+  cursor: progress;
 }

@@ -132,10 +132,48 @@ export function setupHelpEvents() {
 
     document.getElementById("contact-feedback-form")?.addEventListener("submit", (e) => {
         e.preventDefault();
-        if (typeof showToast === "function") showToast("Obrigado pelo feedback!");
-        document.getElementById("feedback-message-input").value = "";
+        const input = document.getElementById("feedback-message-input");
+        const message = input.value.trim();
+        if (!message) return;
+
+        // Abre o aplicativo de e-mail com a mensagem pronta (não há backend de feedback)
+        if (window.openFeedbackMail) {
+            window.openFeedbackMail("Feedback do editor", message);
+            showToast("Abrindo seu aplicativo de e-mail...");
+        } else {
+            showToast("Não foi possível abrir o e-mail de contato.", true);
+        }
+        input.value = "";
         helpModal.classList.remove("active");
     });
+}
+
+// Abre a ajuda em uma aba específica ("tour", "shortcuts"...)
+function openHelpTab(tab) {
+    const helpModal = document.getElementById("help-modal");
+    if (!helpModal) return;
+
+    helpModal.classList.add("active");
+    helpModal.querySelectorAll(".help-tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+    helpModal.querySelectorAll(".help-tab-panel").forEach(p => p.classList.toggle("active", p.id === `help-tab-${tab}`));
+}
+
+// Links externos (ex.: rodapé da biblioteca): /app?tour=1 inicia o tour; /app?help=shortcuts abre os atalhos
+export function handleHelpQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    const wantsTour = params.has("tour");
+    const helpTab = params.get("help");
+    if (!wantsTour && !helpTab) return;
+
+    if (wantsTour) {
+        // Espera o fade-in da página para medir corretamente os destaques
+        setTimeout(startTour, 700);
+    } else {
+        openHelpTab(helpTab);
+    }
+
+    // Limpa os parâmetros para o tour não reabrir ao recarregar
+    window.history.replaceState(null, "", window.location.pathname);
 }
 
 function startTour() {

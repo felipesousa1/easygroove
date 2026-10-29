@@ -140,25 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Exclusão de Arranjo corrigida (Sem res.json() em resposta 204)
-        const deleteBtn = e.target.closest(".btn-action-delete");
-        if (deleteBtn) {
-            e.stopPropagation();
-            if (confirm("Tem certeza que deseja excluir este arranjo?")) {
-                try {
-                    const res = await fetch(`/api/arrangements/${deleteBtn.dataset.id}`, { method: "DELETE" });
-                    if (res.ok) {
-                        htmx.trigger("#lib-search-input", "search");
-                    } else {
-                        const err = await res.json().catch(() => ({}));
-                        alert(err.detail || "Erro ao excluir o arranjo.");
-                    }
-                } catch (err) {
-                    alert("Falha de conexão ao excluir o arranjo.");
-                }
-            }
-            return;
-        }
+        // Exclusão de arranjo: tratada em biblioteca-actions.js (com opção de desfazer)
 
         const coverBtn = e.target.closest(".btn-action-change-cover");
         if (coverBtn) {
@@ -170,22 +152,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 3. Ações de Coleções
-        const deleteColBtn = e.target.closest(".btn-delete-collection");
-        if (deleteColBtn) {
-            e.stopPropagation();
-            const colId = deleteColBtn.dataset.colId;
-            if (confirm("Deseja excluir esta coleção? Os arranjos não serão apagados.")) {
-                const res = await fetch(`/api/collections/${colId}`, { method: "DELETE" });
-                if (res.ok) window.location.reload();
-            }
-            return;
-        }
+        // Exclusão de coleção: tratada em biblioteca-actions.js (com opção de desfazer)
 
         const removeColBtn = e.target.closest(".btn-action-remove-col");
         if (removeColBtn) {
             e.stopPropagation();
             const res = await fetch(`/api/arrangements/${removeColBtn.dataset.id}/collections/${removeColBtn.dataset.colId}`, { method: "DELETE" });
-            if (res.ok) htmx.trigger("#lib-search-input", "search");
+            if (res.ok) {
+                htmx.trigger("#lib-search-input", "search");
+                window.libActions?.refreshCollections();
+            }
             return;
         }
 
@@ -229,6 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (res.ok) {
                 modalCols.classList.remove("active");
                 htmx.trigger("#lib-search-input", "search");
+                window.libActions?.refreshCollections();
             } else {
                 alert("Erro ao salvar coleções.");
             }
@@ -285,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (arrId && colId) {
                 await fetch(`/api/arrangements/${arrId}/collections/${colId}`, { method: "POST" });
                 htmx.trigger("#lib-search-input", "search");
+                window.libActions?.refreshCollections();
             }
         }
     });
@@ -341,8 +319,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ name })
                     });
-                    if (res.ok) window.location.reload();
-                    else { li.remove(); alert("Erro ao criar coleção."); }
+                    if (res.ok) {
+                        li.remove();
+                        window.libActions?.adjustStat("colecoes", 1);
+                        await window.libActions?.refreshCollections();
+                    } else { li.remove(); alert("Erro ao criar coleção."); }
                 } catch (e) { li.remove(); }
             };
 
@@ -354,63 +335,71 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Renomear coleção: duplo clique no nome ou lápis ao lado dela
+    function startCollectionRename(btn) {
+        if (!btn || btn.querySelector("input")) return;
+
+        const colId = btn.dataset.collectionId;
+        const textSpan = btn.querySelector(".col-name-text");
+        if (!textSpan || !colId) return;
+
+        const currentName = textSpan.textContent.trim();
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = currentName;
+        input.style.cssText = "background: transparent; border: 1px solid var(--color-primary, #6366f1); border-radius: 4px; padding: 2px 6px; font-size: 0.9rem; color: inherit; width: 100%; outline: none;";
+
+        textSpan.style.display = "none";
+        btn.insertBefore(input, textSpan.nextSibling);
+        input.focus();
+        input.select();
+        let isSaving = false;
+
+        const finish = () => {
+            input.remove();
+            textSpan.style.display = "";
+        };
+
+        const saveEdit = async () => {
+            if (isSaving) return;
+            isSaving = true;
+            const newName = input.value.trim();
+
+            if (!newName || newName === currentName) return finish();
+
+            try {
+                const res = await fetch(`/api/collections/${colId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: newName })
+                });
+                if (res.ok) {
+                    textSpan.textContent = newName;
+                    window.libActions?.refreshCollections();
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    window.libActions?.showToast(err.detail || "Não foi possível renomear a coleção.", { isError: true });
+                }
+            } catch (e) { /* mantém o nome atual */ }
+            finish();
+        };
+
+        input.addEventListener("click", (evt) => evt.stopPropagation());
+        input.addEventListener("keydown", (evt) => {
+            if (evt.key === "Enter") { evt.preventDefault(); saveEdit(); }
+            else if (evt.key === "Escape") { isSaving = true; finish(); }
+        });
+        input.addEventListener("blur", saveEdit);
+    }
+
+    window.startCollectionRename = startCollectionRename;
+
     if (collectionListContainer) {
         collectionListContainer.addEventListener("dblclick", (e) => {
             const btn = e.target.closest(".lib-btn-collection");
-            if (!btn || btn.querySelector("input") || e.target.closest(".btn-delete-collection")) return;
-
-            const colId = btn.dataset.collectionId;
-            const textSpan = btn.querySelector(".col-name-text");
-            if (!textSpan || !colId) return;
-
-            const currentName = textSpan.textContent.trim();
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = currentName;
-            input.style.cssText = "background: transparent; border: 1px solid var(--color-primary, #6366f1); border-radius: 4px; padding: 2px 6px; font-size: 0.9rem; color: inherit; width: 100%; outline: none;";
-
-            textSpan.style.display = "none";
-            btn.appendChild(input);
-            input.focus();
-            input.select();
-            let isSaving = false;
-
-            const saveEdit = async () => {
-                if (isSaving) return;
-                isSaving = true;
-                const newName = input.value.trim();
-
-                if (!newName || newName === currentName) {
-                    input.remove();
-                    textSpan.style.display = "";
-                    return;
-                }
-
-                try {
-                    const res = await fetch(`/api/collections/${colId}`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: newName })
-                    });
-                    if (res.ok) {
-                        textSpan.textContent = newName;
-                        input.remove();
-                        textSpan.style.display = "";
-                    } else {
-                        input.remove();
-                        textSpan.style.display = "";
-                    }
-                } catch (e) {
-                    input.remove();
-                    textSpan.style.display = "";
-                }
-            };
-
-            input.addEventListener("keydown", (evt) => {
-                if (evt.key === "Enter") { evt.preventDefault(); saveEdit(); }
-                else if (evt.key === "Escape") { input.remove(); textSpan.style.display = ""; }
-            });
-            input.addEventListener("blur", saveEdit);
+            if (!btn || e.target.closest(".btn-delete-collection") || e.target.closest(".btn-rename-collection")) return;
+            startCollectionRename(btn);
         });
     }
+
 });

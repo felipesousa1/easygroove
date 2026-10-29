@@ -139,7 +139,9 @@ export function setupNewArrangementModal() {
     }
 
     // Se for uma página limpa (sem ID na URL), abre o modal no carregamento inicial
-    if (!hasArrangementId) {
+    // (exceto quando o link pede o tour ou a ajuda, ex.: rodapé da biblioteca)
+    const opensHelp = /[?&](tour|help)=/.test(window.location.search);
+    if (!hasArrangementId && !opensHelp) {
         openNewArrangementModal();
     }
 }

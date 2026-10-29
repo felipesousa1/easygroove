@@ -1,10 +1,17 @@
 {% for arr in arrangements %}
+{% set meta = arr.score_data | arr_meta %}
 <!-- draggable e data-collections adicionados -->
 <div class="lib-card" draggable="true" data-card-id="{{ arr.id }}"
     data-collections="{{ arr.collections | map(attribute='id') | list | tojson | forceescape }}">
+    <label class="lib-card-check" title="Selecionar">
+        <input type="checkbox" class="lib-card-checkbox" aria-label="Selecionar {{ arr.name }}">
+    </label>
+
     <div class="lib-card-img-placeholder">
         {% if arr.cover_url %}
         <img src="{{ arr.cover_url }}" alt="Capa" class="lib-card-cover-img">
+        {% elif meta.instrumentos %}
+        {{ arr.score_data | score_preview }}
         {% else %}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 18V5l12-2v13"></path>
@@ -14,8 +21,30 @@
         {% endif %}
     </div>
     <div class="lib-card-info">
-        <span class="lib-card-title" data-arrangement-id="{{ arr.id }}">{{ arr.name }}</span>
+        <div class="lib-card-title-row">
+            <button type="button" class="lib-card-play" data-id="{{ arr.id }}" title="Ouvir arranjo" aria-label="Ouvir {{ arr.name }}">
+                <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+                <svg class="icon-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1.5"></rect></svg>
+            </button>
+            <span class="lib-card-title" data-arrangement-id="{{ arr.id }}">{{ arr.name }}</span>
+        </div>
         <span class="lib-card-date">{{ arr.updated_at | relative_time }}</span>
+
+        <div class="lib-card-meta">
+            {% if meta.bpm %}<span>&#9833; {{ meta.bpm }} BPM</span>{% endif %}
+            <span>{{ meta.metrica }}</span>
+            <span>{{ meta.compassos }} {{ 'compasso' if meta.compassos == 1 else 'compassos' }}</span>
+        </div>
+
+        {% if meta.instrumentos %}
+        <div class="lib-card-chips">
+            {% for inst in meta.instrumentos %}
+            <span class="lib-chip" title="{{ inst.nome }}">
+                {% if inst.icone %}<img src="{{ inst.icone }}" alt="{{ inst.nome }}">{% else %}{{ inst.nome[:1] }}{% endif %}
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     <div class="lib-card-menu-wrapper">
@@ -29,8 +58,10 @@
         <div class="lib-card-dropdown">
             <a href="/app?id={{ arr.id }}" class="btn-action-edit" style="text-decoration: none; color: inherit; display: block;">Editar Arranjo</a>
             <button type="button" class="btn-action-rename-card" data-id="{{ arr.id }}">Renomear</button>
+            <button type="button" class="btn-action-duplicate" data-id="{{ arr.id }}">Duplicar</button>
             <button type="button" class="btn-action-change-cover" data-id="{{ arr.id }}">Alterar Capa</button>
             <button type="button" class="btn-action-manage-cols" data-id="{{ arr.id }}">Gerenciar Coleções</button>
+            <button type="button" class="btn-action-export" data-id="{{ arr.id }}">Exportar .json</button>
 
             {% if current_collection_id %}
             <!-- Exibe apenas se estiver dentro de uma coleção -->
@@ -44,7 +75,34 @@
     </div>
 </div>
 {% else %}
-<div style="grid-column: 1 / -1; text-align: center; color: var(--color-text-muted); padding: 40px 0;">
-    <p style="font-size: 1.1rem; font-weight: 600;">Nenhum arranjo encontrado.</p>
+<div class="lib-empty">
+    <svg class="lib-empty-art" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="3"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <ellipse cx="60" cy="42" rx="34" ry="12"></ellipse>
+        <path d="M26 42v34c0 7 15 12 34 12s34-5 34-12V42"></path>
+        <path d="M40 56l10 22M80 56L70 78M60 54v34" stroke-opacity=".45"></path>
+        <path d="M38 14l22 22M82 14L60 36" stroke-width="4"></path>
+    </svg>
+
+    {% if not has_any %}
+    <h3 class="lib-empty-title">Crie seu primeiro arranjo</h3>
+    <p class="lib-empty-text">Escreva uma batida de surdo, caixa, repique e companhia, ouça na hora e guarde tudo aqui.</p>
+    <div class="lib-empty-actions">
+        <a href="/app" class="lib-btn-hero">Criar arranjo</a>
+        <button type="button" class="lib-btn-hero-secondary btn-trigger-import">Importar .json</button>
+        <a href="/app?tour=1" class="lib-btn-hero-secondary">Ver tutorial</a>
+    </div>
+    {% elif q %}
+    <h3 class="lib-empty-title">Nada encontrado para “{{ q }}”</h3>
+    <p class="lib-empty-text">Tente buscar por outro nome.</p>
+    <div class="lib-empty-actions">
+        <button type="button" class="lib-btn-hero btn-clear-filters">Limpar busca</button>
+    </div>
+    {% elif current_collection_id %}
+    <h3 class="lib-empty-title">Esta coleção está vazia</h3>
+    <p class="lib-empty-text">Arraste um arranjo para ela ou use “Gerenciar Coleções” no menu do arranjo.</p>
+    {% else %}
+    <h3 class="lib-empty-title">Nenhum arranjo encontrado</h3>
+    {% endif %}
 </div>
 {% endfor %}

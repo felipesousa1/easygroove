@@ -1,3 +1,4 @@
+import copy
 import re
 from datetime import datetime, timezone
 from typing import List
@@ -71,6 +72,84 @@ def create_arrangement(
     session.commit()
     session.refresh(db_arrangement)
     return db_arrangement
+
+
+def unique_name(session: Session, user: User, base: str, suffix: str = "") -> str:
+    """Gera um nome livre para o usuário: "Base", "Base (2)"... ou, com suffix, "Base (Cópia)", "Base (Cópia 2)"."""
+    base = normalize_name(base) or "Novo arranjo"
+    taken = {
+        name.lower()
+        for name in session.exec(select(Arrangement.name).where(Arrangement.user_id == user.id)).all()
+    }
+
+    first = f"{base} ({suffix})" if suffix else base
+    if first.lower() not in taken:
+        return first
+
+    counter = 2
+    while True:
+        candidate = f"{base} ({suffix} {counter})" if suffix else f"{base} ({counter})"
+        if candidate.lower() not in taken:
+            return candidate
+        counter += 1
+
+
+@router.post(
+    "/import",
+    response_model=ArrangementRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def import_arrangement(
+    arrangement_in: ArrangementCreate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Cria um arranjo a partir de um JSON importado; nome repetido ganha um número em vez de erro."""
+    instruments = arrangement_in.score_data.get("instruments")
+    if not isinstance(instruments, list) or not instruments:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Estrutura do arquivo JSON inválida.",
+        )
+
+    name = unique_name(session, current_user, arrangement_in.name)
+    score_data = {**arrangement_in.score_data, "title": name}
+
+    db_arrangement = Arrangement(name=name, score_data=score_data, user_id=current_user.id)
+    session.add(db_arrangement)
+    session.commit()
+    session.refresh(db_arrangement)
+    return db_arrangement
+
+
+@router.post(
+    "/{arrangement_id}/duplicate",
+    response_model=ArrangementRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def duplicate_arrangement(
+    arrangement_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    original = session.get(Arrangement, arrangement_id)
+    if not original or original.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Arranjo não encontrado.",
+        )
+
+    name = unique_name(session, current_user, original.name, suffix="Cópia")
+    score_data = copy.deepcopy(original.score_data) if isinstance(original.score_data, dict) else {}
+    score_data["title"] = name
+
+    # A capa não é copiada: cada arranjo gerencia o próprio arquivo de imagem
+    duplicate = Arrangement(name=name, score_data=score_data, user_id=current_user.id)
+    duplicate.collections = list(original.collections)
+    session.add(duplicate)
+    session.commit()
+    session.refresh(duplicate)
+    return duplicate
 
 
 @router.get("/{arrangement_id}", response_model=ArrangementRead)

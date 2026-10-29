@@ -15,7 +15,7 @@ import { setupSubdivisionEvents } from './ui/beams.js';
 import { setupNewArrangementModal } from './ui/newArrangementModal.js';
 import { isDirty } from './core/state.js';
 import { setupExportEvents } from './services/export.js';
-import { setupHelpEvents } from './ui/help.js';
+import { setupHelpEvents, handleHelpQueryParams } from './ui/help.js';
 
 window.addEventListener("resize", renderRepeats);
 
@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         setupKeyboardShortcuts();
+        handleHelpQueryParams();
         if (!window.location.search.includes("id=")) pageReady.then(revealPage);
     } catch (err) {
         console.error("Erro na inicialização:", err);
