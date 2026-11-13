@@ -100,7 +100,7 @@ export function setupRepeatControlEvents() {
     // 2. Lógica de Drag and Drop para os handles do Ritornelo
     let activeDrag = null;
 
-    measuresTrack.addEventListener("mousedown", (e) => {
+    measuresTrack.addEventListener("pointerdown", (e) => {
         const handle = e.target.closest(".repeat-handle");
         if (!handle) return;
 
@@ -122,7 +122,7 @@ export function setupRepeatControlEvents() {
         document.body.style.cursor = "ew-resize";
     });
 
-    window.addEventListener("mousemove", (e) => {
+    window.addEventListener("pointermove", (e) => {
         if (!activeDrag) return;
 
         const measureHeaders = Array.from(measuresTrack.querySelectorAll(".measure-header"));
@@ -157,7 +157,7 @@ export function setupRepeatControlEvents() {
         }
     });
 
-    window.addEventListener("mouseup", () => {
+    window.addEventListener("pointerup", () => {
         if (activeDrag) {
             activeDrag = null;
             document.body.style.cursor = "";

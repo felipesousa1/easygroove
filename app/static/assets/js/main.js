@@ -19,6 +19,11 @@ import { setupHelpEvents, handleHelpQueryParams } from './ui/help.js';
 
 window.addEventListener("resize", renderRepeats);
 
+// Se o navegador cancelar um gesto de toque (pointercancel), encerra os arrastos como se o dedo tivesse soltado
+window.addEventListener("pointercancel", () => {
+    document.dispatchEvent(new Event("pointerup", { bubbles: true }));
+});
+
 // Resolve quando CSS, ícones e demais recursos terminaram de carregar
 const pageReady = new Promise(resolve => {
     if (document.readyState === "complete") resolve();
@@ -68,6 +73,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setupKeyboardShortcuts();
         handleHelpQueryParams();
+
+        // Dica "gire o celular" (celular em pé): dispensável durante a sessão
+        const rotateHint = document.getElementById("rotate-hint");
+        try {
+            if (sessionStorage.getItem("easygroove_rotate_hint") === "1") rotateHint?.classList.add("is-dismissed");
+        } catch (e) { /* storage indisponível */ }
+        document.getElementById("btn-dismiss-rotate-hint")?.addEventListener("click", () => {
+            rotateHint?.classList.add("is-dismissed");
+            try { sessionStorage.setItem("easygroove_rotate_hint", "1"); } catch (e) { /* storage indisponível */ }
+        });
         if (!window.location.search.includes("id=")) pageReady.then(revealPage);
     } catch (err) {
         console.error("Erro na inicialização:", err);

@@ -2,6 +2,7 @@ import { scoreState, getClipboard } from '../core/state.js';
 import { historyManager } from '../core/history.js';
 import { TIME_SIGNATURES } from '../core/constants.js';
 import { renderScore } from './renderScore.js';
+import { keepInViewport } from './placement.js';
 import { copyFullColumnMeasure, pasteFullColumnMeasure } from '../interaction/clipboard.js';
 
 export function createEmptyMeasureForSig(timeSigKey) {
@@ -65,6 +66,7 @@ export function setupMeasureMenuEvents() {
         }
 
         dropdown.classList.add("visible");
+        keepInViewport(dropdown);
     });
 
     if (measureTimeSigSelect) {

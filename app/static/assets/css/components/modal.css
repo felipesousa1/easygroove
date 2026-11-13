@@ -341,3 +341,18 @@
     cursor: pointer;
     text-decoration: underline;
 }
+/* Telas estreitas: o balão do tour nunca passa da largura da janela */
+.tour-tooltip-card {
+    max-width: calc(100vw - 32px);
+}
+
+@media (max-width: 1000px) {
+    .tour-navigation-bar {
+        gap: 12px;
+        padding: 8px 16px;
+        max-width: calc(100vw - 16px);
+        flex-wrap: wrap;
+        justify-content: center;
+        border-radius: 24px;
+    }
+}

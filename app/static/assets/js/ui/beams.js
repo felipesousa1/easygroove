@@ -1,3 +1,4 @@
+import { keepInViewport } from './placement.js';
 import { STROKE_DEFINITIONS } from '../core/constants.js';
 import { scoreState } from '../core/state.js';
 import { historyManager } from '../core/history.js';
@@ -87,6 +88,7 @@ export function setupSubdivisionEvents() {
         });
 
         document.body.appendChild(activePopover);
+        keepInViewport(activePopover);
     });
 
     document.addEventListener("click", (e) => {

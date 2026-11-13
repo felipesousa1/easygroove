@@ -407,6 +407,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!batchBar || !grid) return;
         const count = selectedCards().length;
         grid.classList.toggle("is-selecting", count > 0);
+        document.body.classList.toggle("has-selection", count > 0);
 
         batchBar.hidden = count === 0;
         batchCount.textContent = `${count} ${count === 1 ? "selecionado" : "selecionados"}`;

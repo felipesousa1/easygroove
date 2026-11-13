@@ -210,3 +210,50 @@
 .btn-login-submit:active {
   transform: translateY(0);
 }
+/* ==========================================
+   CELULAR: o painel roxo vira um cabeçalho e o formulário vem logo abaixo
+   ========================================== */
+@media (max-width: 700px) {
+  .login-body {
+    height: auto;
+    min-height: 100dvh;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .login-split-layout {
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+
+  .login-left {
+    flex: 0 0 auto;
+    padding: calc(28px + env(safe-area-inset-top)) 24px 28px 24px;
+    align-items: flex-start;
+  }
+
+  .login-heading {
+    font-size: 1.9rem;
+    margin-bottom: 10px;
+  }
+
+  .drum-emoji {
+    font-size: 1.8rem;
+  }
+
+  .login-subtitle {
+    font-size: 1rem;
+  }
+
+  /* o rodapé do painel deixa de ser "absolute" (ficaria em cima do texto) */
+  .login-footer {
+    display: none;
+  }
+
+  .login-right {
+    flex: 1;
+    align-items: flex-start;
+    padding: 28px 20px calc(28px + env(safe-area-inset-bottom)) 20px;
+  }
+}

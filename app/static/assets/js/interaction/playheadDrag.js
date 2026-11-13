@@ -38,7 +38,7 @@ export function setupPlayheadDragEvents() {
         else if (clientX < rect.left + 40) viewport.scrollLeft -= 16;
     }
 
-    measuresTrack.addEventListener("mousedown", (e) => {
+    measuresTrack.addEventListener("pointerdown", (e) => {
         if (e.button !== 0 || !window.audioEngine) return;
 
         const onGrip = e.target.closest(".playhead-grip");
@@ -60,7 +60,7 @@ export function setupPlayheadDragEvents() {
         audioEngine.seekToTicks(tick);
     });
 
-    document.addEventListener("mousemove", (e) => {
+    document.addEventListener("pointermove", (e) => {
         if (!dragging) return;
 
         const tick = getTargetTicks(e.clientX);
@@ -68,7 +68,7 @@ export function setupPlayheadDragEvents() {
         autoScrollNearEdges(e.clientX);
     });
 
-    document.addEventListener("mouseup", () => {
+    document.addEventListener("pointerup", () => {
         if (!dragging) return;
         dragging = false;
         document.body.classList.remove("playhead-dragging");

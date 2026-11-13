@@ -95,6 +95,13 @@ const TOUR_SAMPLE_STEP = 30; // passo da busca de posições para os balões
 
 let currentSlideIndex = 0;
 
+// Em telas pequenas não cabem vários balões ao mesmo tempo: cada destaque vira o seu próprio passo
+function getSlides() {
+    const compact = window.innerWidth < 700 || window.innerHeight < 500;
+    if (!compact) return TOUR_SLIDES;
+    return TOUR_SLIDES.flatMap(slide => slide.targets.map(target => ({ ...slide, targets: [target] })));
+}
+
 export function setupHelpEvents() {
     const helpModal = document.getElementById("help-modal");
     const btnHelpFloating = document.querySelector(".floating-help-btn");
@@ -186,7 +193,9 @@ function startTour() {
 }
 
 function renderSlide() {
-    const slide = TOUR_SLIDES[currentSlideIndex];
+    const slides = getSlides();
+    currentSlideIndex = Math.min(currentSlideIndex, slides.length - 1);
+    const slide = slides[currentSlideIndex];
     const maskHoles = document.getElementById("tour-mask-holes");
     const strokeBoxes = document.getElementById("tour-stroke-boxes");
     const tooltipsContainer = document.getElementById("tour-tooltips-container");
@@ -199,13 +208,13 @@ function renderSlide() {
     tooltipsContainer.innerHTML = "";
 
     document.getElementById("tour-slide-title").textContent = slide.title;
-    document.getElementById("tour-slide-badge").textContent = `${currentSlideIndex + 1} / ${TOUR_SLIDES.length}`;
+    document.getElementById("tour-slide-badge").textContent = `${currentSlideIndex + 1} / ${slides.length}`;
 
     const btnPrev = document.getElementById("btn-tour-prev");
     const btnNext = document.getElementById("btn-tour-next");
 
     btnPrev.style.display = currentSlideIndex === 0 ? "none" : "inline-block";
-    btnNext.textContent = currentSlideIndex === TOUR_SLIDES.length - 1 ? "Concluir" : "Próximo";
+    btnNext.textContent = currentSlideIndex === slides.length - 1 ? "Concluir" : "Próximo";
 
     if (navBar) {
         if (slide.navPosition === "top") {
@@ -325,9 +334,10 @@ function findCardPlacement(w, h, target, obstacles, placedCards, viewW, viewH) {
         candidates.push({ rect: makeRect(left, top, left + w, top + h), kind, gap });
     };
 
-    // Valores de 0 a max em passos fixos, mais o valor mais próximo do alvo ideal
-    const sample = (min, max, ideal) => {
-        if (min > max) return [];
+    // Valores de min a max em passos fixos, mais o valor mais próximo do alvo ideal.
+    // Se o alvo está colado na borda da tela e o intervalo ideal fica vazio, usa o ideal limitado à tela.
+    const sample = (min, max, ideal, lo = -Infinity, hi = Infinity) => {
+        if (min > max) return [clamp(ideal, lo, hi)];
         const values = [clamp(ideal, min, max)];
         for (let v = min; v <= max; v += TOUR_SAMPLE_STEP) values.push(v);
         return values;
@@ -337,12 +347,16 @@ function findCardPlacement(w, h, target, obstacles, placedCards, viewW, viewH) {
     const xs = sample(
         Math.max(bounds.left, target.left - w + minOverlap),
         Math.min(bounds.right - w, target.right - minOverlap),
-        centerX - w / 2
+        centerX - w / 2,
+        bounds.left,
+        bounds.right - w
     );
     const ys = sample(
         Math.max(bounds.top, target.top - h + minOverlap),
         Math.min(bounds.bottom - h, target.bottom - minOverlap),
-        centerY - h / 2
+        centerY - h / 2,
+        bounds.top,
+        bounds.bottom - h
     );
 
     for (let gap = TOUR_GAP; gap <= Math.max(viewW, viewH); gap += TOUR_SAMPLE_STEP) {
@@ -396,6 +410,13 @@ function findCardPlacement(w, h, target, obstacles, placedCards, viewW, viewH) {
         if (!best || c.score < best.score) best = c;
     });
 
+    // Última rede de segurança (telas muito pequenas): balão no centro, sem quebrar o tour
+    if (!best) {
+        const left = clamp(centerX - w / 2, bounds.left, bounds.right - w);
+        const top = clamp(centerY - h / 2, bounds.top, bounds.bottom - h);
+        best = { rect: makeRect(left, top, left + w, top + h), kind: "inside", gap: 0 };
+    }
+
     return best;
 }
 
@@ -445,7 +466,7 @@ function drawConnector(svgNS, container, card, target) {
 }
 
 function nextSlide() {
-    if (currentSlideIndex < TOUR_SLIDES.length - 1) {
+    if (currentSlideIndex < getSlides().length - 1) {
         currentSlideIndex++;
         renderSlide();
     } else {

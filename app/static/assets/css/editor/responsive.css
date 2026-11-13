@@ -1,0 +1,336 @@
+/* ==========================================
+   EDITOR RESPONSIVO (celular em paisagem como alvo principal; retrato para ouvir)
+   Carregado por último para sobrescrever os estilos de desktop.
+   ========================================== */
+
+/* No toque não existe hover: o que só aparecia ao passar o mouse precisa ficar visível */
+@media (hover: none) {
+  .btn-inst-menu {
+    opacity: 1;
+  }
+
+  .btn-inst-menu img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .btn-inst-menu {
+    padding: 4px;
+  }
+}
+
+/* ---------- Tablet pequeno / celular em paisagem ---------- */
+@media (max-width: 1000px) {
+  :root {
+    --sidebar-width: 76px;
+  }
+
+  .top-header {
+    height: 56px;
+    padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+    gap: 8px;
+  }
+
+  .header-left {
+    gap: 8px;
+    max-width: none;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  /* só o logo: o nome ocupa espaço que o player precisa */
+  .brand-logo span {
+    display: none;
+  }
+
+  .ui-icon-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  .arrangement-title-container {
+    max-width: 160px;
+    min-width: 0;
+  }
+
+  .arrangement-title {
+    font-size: 1rem;
+    max-width: 150px;
+  }
+
+  /* o player deixa de ser centralizado de forma absoluta (cobria o logo e o título) */
+  .header-center {
+    position: static;
+    transform: none;
+    gap: 4px;
+    padding: 4px 10px;
+    flex: 0 0 auto;
+  }
+
+  .player-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .bpm-input {
+    width: 48px;
+    padding: 4px;
+  }
+
+  .action-btn.icon-only {
+    width: 38px;
+    height: 38px;
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
+  .main-app-menu {
+    max-width: calc(100vw - 20px);
+  }
+
+  #main-app-menu {
+    width: min(286px, calc(100vw - 20px));
+  }
+
+  /* Área de edição */
+  .sticky-top-track {
+    padding: 8px 12px 14px 8px;
+  }
+
+  .workspace-body {
+    padding: 0 16px 90px 8px;
+  }
+
+  .corner-header-spacer,
+  .instruments-sidebar {
+    margin-right: 8px;
+  }
+
+  /* Cards de instrumento estreitos: ícone, nome curto, mudo e % (o slider sai; toque no % digita o valor) */
+  .instrument-card {
+    padding: 2px 3px 4px 3px;
+  }
+
+  .inst-icon-img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .inst-name {
+    font-size: 0.68rem;
+    max-width: 66px;
+  }
+
+  .inst-volume-row .vol-slider {
+    display: none;
+  }
+
+  .inst-volume-row {
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .vol-display-box {
+    width: auto;
+    min-width: 28px;
+  }
+
+  /* Barra flutuante: cabe na largura da tela e sobe do rodapé do aparelho */
+  .floating-editor-bar {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 16px);
+    padding: 4px 10px;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .floating-editor-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tool-palette {
+    padding: 4px 8px;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .floating-help-btn {
+    width: 36px;
+    height: 36px;
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(70px, calc(env(safe-area-inset-bottom) + 62px));
+  }
+
+  /* Popovers do metrônomo e do loop viram uma folha logo abaixo do cabeçalho */
+  .metronome-popover {
+    position: fixed;
+    top: 62px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-width: 360px;
+    margin: 0 auto;
+    transform: none;
+  }
+
+  .metronome-popover.loop-popover {
+    left: 8px;
+    transform: none;
+  }
+
+  .lib-modal-content,
+  .modal-content,
+  .help-modal-content {
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+}
+
+/* ---------- Retrato: ouvir e navegar; para editar, melhor deitar o celular ---------- */
+.rotate-hint {
+  display: none;
+}
+
+@media (max-width: 600px) and (orientation: portrait) {
+  .top-header {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 6px 10px;
+    row-gap: 6px;
+  }
+
+  .header-center {
+    order: 3;
+    flex: 1 1 100%;
+    justify-content: center;
+    padding: 2px 8px;
+  }
+
+  .metronome-popover {
+    top: 112px;
+  }
+
+  .rotate-hint {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    background-color: var(--color-purple-light);
+    color: var(--color-purple-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .rotate-hint.is-dismissed {
+    display: none;
+  }
+
+  .rotate-hint button {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+}
+
+/* ---------- Celular deitado (pouca altura): linhas mais baixas para caber 3 instrumentos ---------- */
+@media (max-height: 520px) {
+  .score-grid,
+  .sidebar-list {
+    gap: 8px;
+  }
+
+  .score-row {
+    height: 76px;
+  }
+
+  .measure-container {
+    padding: 6px 0;
+  }
+
+  .instrument-card {
+    height: 76px;
+    padding: 2px 3px 3px 3px;
+  }
+
+  /* o botão ⋮ do instrumento passa a flutuar no canto, sem ocupar uma linha própria */
+  .inst-header-row {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    width: auto;
+    height: auto;
+    padding: 0;
+  }
+
+  .inst-icon-img {
+    width: 28px;
+    height: 28px;
+    margin-top: 4px;
+  }
+
+  .sticky-top-track {
+    padding-top: 6px;
+    padding-bottom: 12px;
+  }
+
+  .workspace-body {
+    padding-bottom: 76px;
+  }
+}
+
+/* ---------- Arrastos por toque: o dedo não pode virar rolagem da página ---------- */
+.playhead-lane,
+.playhead-grip,
+.loop-handle,
+.loop-grab,
+.repeat-handle {
+  touch-action: none;
+}
+
+/* Dedo é impreciso: áreas de toque maiores nas alças e na régua do playhead */
+@media (pointer: coarse) {
+  .playhead-lane::before {
+    content: '';
+    position: absolute;
+    inset: -8px 0;
+  }
+
+  .playhead-grip {
+    width: 22px;
+    height: 22px;
+    left: -10px;
+  }
+
+  .loop-handle {
+    width: 22px;
+  }
+
+  .repeat-handle {
+    width: 20px;
+  }
+
+  .repeat-handle.left {
+    left: -10px;
+  }
+
+  .repeat-handle.right {
+    right: -10px;
+  }
+}
+
+/* Menu principal (10 opções) maior que a altura do celular deitado: rola dentro dele */
+@media (max-width: 1000px) {
+  #main-app-menu {
+    max-height: calc(100dvh - 72px);
+    overflow-y: auto;
+  }
+}

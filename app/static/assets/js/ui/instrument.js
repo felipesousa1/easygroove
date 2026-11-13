@@ -3,6 +3,7 @@ import { INSTRUMENT_PRESETS, getVolumeIcon } from '../core/constants.js';
 import { historyManager } from '../core/history.js';
 import { updateToolbarPalettes } from './toolbar.js';
 import { renderScore } from './renderScore.js';
+import { keepInViewport } from './placement.js';
 
 export function setupInstrumentControlEvents() {
     const sidebarList = document.getElementById("instruments-sidebar-list");
@@ -163,10 +164,17 @@ export function setupInstrumentControlEvents() {
                     }
                 }
 
+                // "Mover para cima/baixo" (alternativa ao arrastar, que não existe no toque) desligado nas pontas
+                const position = scoreState.instruments.findIndex(i => i.id === activeInstForMenu);
+                optionsDropdown.querySelector('[data-action="move-up-inst"]')?.classList.toggle("disabled", position <= 0);
+                optionsDropdown.querySelector('[data-action="move-down-inst"]')
+                    ?.classList.toggle("disabled", position === scoreState.instruments.length - 1);
+
                 const rect = menuBtn.getBoundingClientRect();
                 optionsDropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
                 optionsDropdown.style.left = `${rect.left + window.scrollX}px`;
                 optionsDropdown.classList.add("visible");
+                keepInViewport(optionsDropdown);
                 return;
             }
         });
@@ -239,6 +247,18 @@ export function setupInstrumentControlEvents() {
                     // Pequeno atraso para fechar o menu antes de dar o foco no input
                     setTimeout(() => startRenameInstrument(card, inst), 50);
                 }
+                return;
+            }
+
+            if (action === "move-up-inst" || action === "move-down-inst") {
+                const target = action === "move-up-inst" ? instIndex - 1 : instIndex + 1;
+                optionsDropdown.classList.remove("visible");
+                if (target < 0 || target >= scoreState.instruments.length) return;
+
+                historyManager.pushState();
+                const [moved] = scoreState.instruments.splice(instIndex, 1);
+                scoreState.instruments.splice(target, 0, moved);
+                renderScore();
                 return;
             }
 

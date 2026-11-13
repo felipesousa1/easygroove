@@ -262,7 +262,7 @@ export function setupLoopEvents() {
         applyLoopToAudio();
     });
 
-    document.addEventListener("mousedown", (e) => {
+    document.addEventListener("pointerdown", (e) => {
         const loopBar = document.getElementById("loop-bar");
         if (!loopBar || !scoreState.loopState.active || scoreState.loopState.empty) return;
 
@@ -281,7 +281,7 @@ export function setupLoopEvents() {
         }
     });
 
-    document.addEventListener("mousemove", (e) => {
+    document.addEventListener("pointermove", (e) => {
         if (!draggingMode || !measuresTrack) return;
 
         const loop = scoreState.loopState;
@@ -325,7 +325,7 @@ export function setupLoopEvents() {
         updateLoopBarVisuals();
     });
 
-    document.addEventListener("mouseup", () => {
+    document.addEventListener("pointerup", () => {
         if (draggingMode) {
             const loopBar = document.getElementById("loop-bar");
             if (loopBar) loopBar.classList.remove("dragging-body");

@@ -3,6 +3,7 @@ import { historyManager } from '../core/history.js';
 import { exportScoreToAudio, exportScoreToJSON } from '../services/export.js'; import { openNewArrangementModal } from './newArrangementModal.js';
 import { saveCurrentArrangement } from '../services/api.js';
 import { setColumnTimeSignature } from './menu.js';
+import { keepInViewport } from './placement.js';
 import { selectActiveInstrument } from './toolbar.js';
 import { getStrokeVisual } from './beams.js';
 import { TIME_SIGNATURES } from '../core/constants.js';
@@ -191,6 +192,7 @@ export function setupHeaderEvents() {
         const rect = badgeBtn.getBoundingClientRect();
         popover.style.top = `${rect.bottom + window.scrollY + 6}px`;
         popover.style.left = `${rect.left + window.scrollX}px`;
+        keepInViewport(popover);
 
         const closeHandler = (evt) => {
             if (!popover.contains(evt.target) && !badgeBtn.contains(evt.target)) {

@@ -22,3 +22,24 @@ body {
 .is-loading body {
   opacity: 0;
 }
+
+/* ==========================================
+   TOQUE / CELULAR
+   ========================================== */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Sem atraso/zoom por toque duplo e sem "flash" cinza ao tocar */
+button,
+a,
+select,
+label,
+.note-slot,
+.measure-container,
+.measure-header,
+.dropdown-item {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
