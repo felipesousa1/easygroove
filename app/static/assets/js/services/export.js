@@ -222,7 +222,9 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
 
     const baseType = instId.split("_")[0];
 
-    if (baseType.startsWith("surdo")) {
+    if (instSynths.params) {
+        window.audioEngine.triggerSurdoStroke(instSynths, stroke, execTime);
+    } else if (baseType.startsWith("surdo")) {
         if (stroke === "pele-aberto") {
             instSynths.main?.triggerAttackRelease(instSynths.defaultPitch || "C1", "4n", execTime, 1.0);
         } else if (stroke === "abafado") {

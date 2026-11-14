@@ -7,6 +7,37 @@ import { TIME_SIGNATURES } from '../core/constants.js';
 // "velocidade" eram lidos como duração/tempo e os disparos lançavam "Start time must be strictly greater..."
 const RIMSHOT_NOTE = 320;
 
+// Surdos de marcação (1ª e 2ª): fundamental e parciais em Hz fixos (sem queda de pitch), nível em dB em relação à
+// fundamental. Cada toque tem queda em dB/s e dura `length` s, terminando num fade de `fade` s; os parciais agudos
+// decaem `partialExtraDbPerSec` mais rápido que a fundamental. thump = ruído curto passa-baixa no ataque;
+// punch = soco de sub-grave (seno com queda rápida de pitch) no instante da batida.
+const SURDO_MARCACAO = {
+    surdo1: {
+        f0: 50.5,
+        partials: [{ freq: 82, db: -6 }, { freq: 102, db: -12 }, { freq: 122, db: -15 }, { freq: 154, db: -15 }],
+        aberto: { dbPerSec: 25, length: 0.9, fade: 0.06, velocity: 1 },
+        fechado: { dbPerSec: 60, length: 0.4, fade: 0.06, velocity: 0.65 },
+        partialExtraDbPerSec: 12,
+        thump: { cutoff: 1500, decay: 0.015, level: 0.1 },
+        punch: { freq: 58, glide: 2.2, pitchDecay: 0.04, decay: 0.16, level: 0.5 },
+        trimDb: 3
+    },
+    // Mesmo timbre do 1ª, ~2 semitons mais agudo (frequências × 1,12) e com menos reverberação
+    surdo2: {
+        f0: 56.5,
+        partials: [{ freq: 92, db: -6 }, { freq: 114, db: -12 }, { freq: 137, db: -15 }, { freq: 172, db: -15 }],
+        aberto: { dbPerSec: 34, length: 0.7, fade: 0.06, velocity: 1 },
+        fechado: { dbPerSec: 60, length: 0.35, fade: 0.06, velocity: 0.65 },
+        partialExtraDbPerSec: 12,
+        thump: { cutoff: 1500, decay: 0.015, level: 0.1 },
+        punch: { freq: 64, glide: 2.2, pitchDecay: 0.04, decay: 0.14, level: 0.5 },
+        trimDb: 3
+    }
+};
+
+// Teto do ganho do canal (dB): acima disso o controle de volume só empurrava o sinal para dentro do limiter
+const VOLUME_CEILING_DB = { surdo1: 6, surdo2: 6 };
+
 export const audioEngine = {
     isPlaying: false,
     isPaused: false,
@@ -109,16 +140,18 @@ export const audioEngine = {
         this.metronomeSynth.triggerAttackRelease(pitch, "32n", time, velocity);
     },
 
-    calculateDb(volume) {
+    calculateDb(volume, instId = "") {
         if (volume <= 0) return -Infinity;
-        return ((volume - 50) / 50) * 24 - 4.5;
+        const db = ((volume - 50) / 50) * 24 - 4.5;
+        const ceiling = VOLUME_CEILING_DB[instId.split("_")[0]];
+        return ceiling === undefined ? db : Math.min(db, ceiling);
     },
 
     initInstrumentChannel(inst) {
         const destination = this.masterBus || this.masterLimiter || Tone.getDestination();
 
         if (!this.channels[inst.id]) {
-            this.channels[inst.id] = new Tone.Volume(this.calculateDb(inst.volume)).connect(destination);
+            this.channels[inst.id] = new Tone.Volume(this.calculateDb(inst.volume, inst.id)).connect(destination);
         } else {
             this.setInstrumentVolume(inst.id, inst.volume);
         }
@@ -136,7 +169,7 @@ export const audioEngine = {
 
     setInstrumentVolume(instId, volume) {
         if (this.channels[instId]) {
-            const db = this.calculateDb(volume);
+            const db = this.calculateDb(volume, instId);
             this.channels[instId].volume.rampTo(db, 0.03);
         }
     },
@@ -146,6 +179,52 @@ export const audioEngine = {
         const destination = this.masterLimiter || Tone.getDestination();
         const channel = isOffline ? Tone.getDestination() : (this.channels[instId] || onlineDestination);
         
+        const marcacao = SURDO_MARCACAO[baseType];
+        if (marcacao) {
+            // Cadeia: sintetizadores -> saturação suave -> trim -> canal. O trim sobe o nível sem depender do
+            // volume do canal; a saturação (tanh) arredonda o ataque sem deixar o pico passar de 1.
+            const trim = new Tone.Volume(marcacao.trimDb).connect(channel);
+            const shaper = new Tone.WaveShaper((x) => Math.tanh(2.5 * x) / Math.tanh(2.5), 2048).connect(trim);
+            const preGain = new Tone.Gain(0.5).connect(shaper);
+            const group = { trim, shaper, preGain, marcacao, params: marcacao };
+
+            // Um Synth senoidal por parcial (índice 0 = fundamental) e por toque: a = aberto, f = fechado.
+            // O envelope cai em dB/s (decay exponencial até o nível final) e a nota é solta num fade de `fade` s.
+            const voiceCount = marcacao.partials.length + 1;
+            [["a", marcacao.aberto], ["f", marcacao.fechado]].forEach(([prefix, style]) => {
+                const body = style.length - style.fade;
+                for (let i = 0; i < voiceCount; i++) {
+                    const extra = i === 0 ? 0 : marcacao.partialExtraDbPerSec;
+                    const dropDb = (style.dbPerSec + extra) * body;
+                    group[`${prefix}${i}`] = new Tone.Synth({
+                        oscillator: { type: "sine" },
+                        envelope: {
+                            attack: 0.001, decay: body, decayCurve: "exponential",
+                            sustain: Math.pow(10, -dropDb / 20), release: style.fade, releaseCurve: "linear"
+                        }
+                    }).connect(preGain);
+                }
+            });
+
+            // Ruído curto passa-baixa no ataque (escuro, bem baixo)
+            group.thumpFilter = new Tone.Filter(marcacao.thump.cutoff, "lowpass").connect(preGain);
+            group.thump = new Tone.NoiseSynth({
+                noise: { type: "pink" },
+                envelope: { attack: 0.001, decay: marcacao.thump.decay, sustain: 0 }
+            }).connect(group.thumpFilter);
+
+            // Punch de sub-grave: seno curto com queda rápida de pitch (como um bumbo) no instante da batida,
+            // o golpe que faz a membrana/caixa de som vibrar
+            group.punch = new Tone.MembraneSynth({
+                pitchDecay: marcacao.punch.pitchDecay,
+                octaves: marcacao.punch.glide,
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.001, decay: marcacao.punch.decay, sustain: 0, release: 0.05 }
+            }).connect(preGain);
+
+            return group;
+        }
+
         if (baseType.startsWith("surdo")) {
             const pitch = baseType === "surdo1" ? "C1" : baseType === "surdo2" ? "G1" : "C2";
             // MembraneSynth monofônico dedicado evita acúmulo de vozes sobrepostas
@@ -309,6 +388,40 @@ export const audioEngine = {
         return t;
     },
 
+    // Surdos 1ª/2ª: fundamental + parciais fixos, queda em dB/s; o abafado tem o mesmo timbre com queda rápida.
+    // `timeFor` garante tempos crescentes por sintetizador (online); na exportação offline o tempo vale como está.
+    triggerSurdoStroke(synths, stroke, time, timeFor = (synth, t) => t) {
+        const cfg = synths.marcacao;
+        const prefix = stroke === "pele-aberto" ? "a" : stroke === "abafado" ? "f" : null;
+        if (!prefix) return;
+
+        const style = prefix === "a" ? cfg.aberto : cfg.fechado;
+        const voices = [{ freq: cfg.f0, db: 0 }, ...cfg.partials];
+
+        if (prefix === "f") {
+            // A mão encosta na pele: corta o aberto ainda ressoando em 30 ms. O release é lido no momento do
+            // triggerRelease, então dá para trocá-lo e restaurá-lo em seguida.
+            voices.forEach((_, i) => {
+                const synth = synths[`a${i}`];
+                const release = synth.envelope.release;
+                synth.envelope.release = 0.03;
+                try { synth.triggerRelease(time); } catch (e) { }
+                synth.envelope.release = release;
+            });
+        }
+
+        voices.forEach((voice, i) => {
+            const synth = synths[`${prefix}${i}`];
+            synth.triggerAttackRelease(voice.freq, style.length - style.fade, timeFor(synth, time), style.velocity * Math.pow(10, voice.db / 20));
+        });
+
+        synths.thump.triggerAttackRelease(cfg.thump.decay, timeFor(synths.thump, time), cfg.thump.level);
+
+        // O abafado também leva o punch, um pouco mais fraco
+        const punchLevel = cfg.punch.level * (prefix === "a" ? 1 : 0.6);
+        synths.punch.triggerAttackRelease(cfg.punch.freq, cfg.punch.decay, timeFor(synths.punch, time), punchLevel);
+    },
+
     triggerStroke(inst, stroke, time) {
         if (!stroke || inst.volume <= 0) return;
 
@@ -318,7 +431,9 @@ export const audioEngine = {
 
         const baseType = inst.id.split("_")[0];
 
-        if (baseType.startsWith("surdo")) {
+        if (instSynths.params) {
+            this.triggerSurdoStroke(instSynths, stroke, execTime, (synth, t) => this.startTime(synth, t));
+        } else if (baseType.startsWith("surdo")) {
             if (stroke === "pele-aberto") {
                 instSynths.main.triggerAttackRelease(instSynths.defaultPitch, "32n", this.startTime(instSynths.main, execTime), 0.9);
             } else if (stroke === "abafado") {
