@@ -9,6 +9,11 @@ export function updateToolbarPalettes() {
     // Higieniza as chaves do instrumento caso venham de um JSON antigo
     currentInst.availableStrokes = sanitizeStrokes(currentInst.availableStrokes);
 
+    // Arranjos salvos guardam a lista de toques da época em que o instrumento foi criado:
+    // o preset é a fonte da verdade, então toques novos aparecem também nos arranjos antigos
+    const preset = INSTRUMENT_PRESETS[currentInst.id.split("_")[0]];
+    if (preset) currentInst.availableStrokes = [...preset.availableStrokes];
+
     // Se a ferramenta ativa for uma chave antiga, higieniza também
     scoreState.activeTool.strokeType = sanitizeStrokes([scoreState.activeTool.strokeType])[0];
 

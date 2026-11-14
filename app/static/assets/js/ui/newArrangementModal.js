@@ -5,6 +5,9 @@ import { showToast } from './toast.js';
 
 let isEventsInitialized = false;
 
+// Instrumentos marcados por padrão em um arranjo novo (os demais aparecem desmarcados)
+const DEFAULT_INSTRUMENTS = ["surdo1", "surdo2", "surdo3", "caixa", "repique", "chocalho", "tamborim"];
+
 // Preenche a lista de instrumentos e abre o modal
 export function openNewArrangementModal() {
     const modalOverlay = document.getElementById("new-arrangement-modal");
@@ -18,7 +21,7 @@ export function openNewArrangementModal() {
     // Preenche os checkboxes dos instrumentos
     instrumentsListContainer.innerHTML = Object.entries(INSTRUMENT_PRESETS).map(([id, preset]) => `
         <label class="modal-checkbox-item">
-            <input type="checkbox" value="${id}" checked>
+            <input type="checkbox" value="${id}" ${DEFAULT_INSTRUMENTS.includes(id) ? "checked" : ""}>
             <span>${preset.name}</span>
         </label>
     `).join("");

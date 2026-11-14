@@ -227,6 +227,13 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.main?.triggerAttackRelease(instSynths.defaultPitch || "C1", "4n", execTime, 1.0);
         } else if (stroke === "abafado") {
             instSynths.main?.triggerAttackRelease("D1", "16n", execTime, 0.5);
+        } else if (stroke === "mao") {
+            instSynths.main?.triggerAttackRelease("G1", "32n", execTime, 0.6);
+        } else if (stroke === "aro") {
+            instSynths.aro?.triggerAttackRelease("A4", "32n", execTime, 0.55);
+        } else if (stroke === "corpo") {
+            instSynths.corpo?.triggerAttackRelease("32n", execTime, 0.45);
+            instSynths.main?.triggerAttackRelease("C2", "32n", execTime, 0.25);
         }
     } else if (baseType === "caixa") {
         if (stroke === "pele-aberto") {
@@ -237,9 +244,12 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.esteira?.triggerAttackRelease("32n", execTime, 0.15);
         } else if (stroke === "aro") {
             instSynths.aro?.triggerAttackRelease("A4", "32n", execTime, 0.6);
-        } else if (stroke === "rimshot") {
+        } else if (stroke === "rimshot" || stroke === "rimshot-forte") {
             instSynths.pele?.triggerAttackRelease("A2", "16n", execTime, 1.0);
             instSynths.rimshot?.triggerAttackRelease(320, "16n", execTime, 0.85);
+        } else if (stroke === "rimshot-fraco") {
+            instSynths.pele?.triggerAttackRelease("A2", "16n", execTime, 0.65);
+            instSynths.rimshot?.triggerAttackRelease(320, "16n", execTime, 0.5);
         } else if (stroke === "rufo") {
             for (let r = 0; r < 3; r++) {
                 const subTime = execTime + (r * 0.025);
@@ -257,6 +267,11 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
         } else if (stroke === "slap") {
             instSynths.main?.triggerAttackRelease("G3", "32n", execTime, 1.0);
             instSynths.aro?.triggerAttackRelease("D5", "32n", execTime, 0.5);
+        } else if (stroke === "borda") {
+            instSynths.main?.triggerAttackRelease("E3", "32n", execTime, 0.65);
+            instSynths.aro?.triggerAttackRelease("G4", "32n", execTime, 0.3);
+        } else if (stroke === "corpo") {
+            instSynths.main?.triggerAttackRelease("A2", "32n", execTime, 0.4);
         } else if (stroke === "rufo") {
             for (let r = 0; r < 3; r++) {
                 const subTime = execTime + (r * 0.022);
@@ -280,6 +295,38 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.main?.triggerAttackRelease("A3", "32n", execTime, 0.4);
         } else if (stroke === "aro") {
             instSynths.main?.triggerAttackRelease("E4", "32n", execTime, 0.6);
+        } else if (stroke === "volta") {
+            instSynths.main?.triggerAttackRelease("G#3", "32n", execTime, 0.7);
+        }
+    } else if (baseType === "agogo") {
+        const agogoNotes = { "agogo-1": "D5", "agogo-2": "G5", "agogo-3": "A5", "agogo-4": "D6" };
+        if (agogoNotes[stroke]) instSynths.main?.triggerAttackRelease(agogoNotes[stroke], "32n", execTime, 0.75);
+    } else if (baseType === "xequere") {
+        if (stroke === "xequere-baixo") {
+            if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(1500, execTime);
+            instSynths.baixo?.triggerAttackRelease("16n", execTime, 0.75);
+        } else if (stroke === "xequere-cima") {
+            if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(3500, execTime);
+            instSynths.cima?.triggerAttackRelease("32n", execTime, 0.6);
+        }
+    } else if (baseType === "triangulo") {
+        if (stroke === "triangulo-fechado") {
+            instSynths.fechado?.triggerAttackRelease("E7", "32n", execTime, 0.55);
+        } else if (stroke === "triangulo-aberto-curto") {
+            instSynths.curto?.triggerAttackRelease("E7", "16n", execTime, 0.6);
+        } else if (stroke === "triangulo-aberto-longo") {
+            instSynths.longo?.triggerAttackRelease("E7", "8n", execTime, 0.6);
+        }
+    } else if (baseType === "timbal") {
+        if (stroke === "timbal-open") {
+            instSynths.main?.triggerAttackRelease("A3", "32n", execTime, 0.9);
+        } else if (stroke === "timbal-bass") {
+            instSynths.main?.triggerAttackRelease("D2", "32n", execTime, 0.95);
+        } else if (stroke === "timbal-fantasma") {
+            instSynths.main?.triggerAttackRelease("A3", "32n", execTime, 0.25);
+        } else if (stroke === "timbal-slap") {
+            instSynths.slap?.triggerAttackRelease("E4", "32n", execTime, 0.75);
+            instSynths.main?.triggerAttackRelease("A3", "32n", execTime, 0.45);
         }
     }
 }
