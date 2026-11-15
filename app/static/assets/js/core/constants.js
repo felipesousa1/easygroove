@@ -144,15 +144,15 @@ iconHTML: `<span style="font-size: 1.1rem; line-height: 1; font-weight: bold; co
     },
     "xequere-baixo": {
         label: "Xequerê (Baixo)",
-        iconHTML: `▼`,
-        className: "arrow-down",
-        renderHTML: `▼`
+        iconHTML: `<span style="display:inline-block; transform: rotate(90deg);">&gt;</span>`,
+        className: "chevron-accent",
+        renderHTML: `<span style="display:inline-block; transform: rotate(90deg);">&gt;</span>`
     },
     "xequere-cima": {
         label: "Xequerê (Cima)",
-        iconHTML: `▲`,
-        className: "arrow-up",
-        renderHTML: `▲`
+        iconHTML: `<span style="display:inline-block; transform: rotate(-90deg);">&gt;</span>`,
+        className: "chevron-accent",
+        renderHTML: `<span style="display:inline-block; transform: rotate(-90deg);">&gt;</span>`
     },
     "triangulo-fechado": {
         label: "Triângulo Fechado",

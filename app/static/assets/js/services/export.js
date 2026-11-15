@@ -292,6 +292,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
         const agogoNotes = { "agogo-1": "D5", "agogo-2": "G5", "agogo-3": "A5", "agogo-4": "D6" };
         if (agogoNotes[stroke]) instSynths.main?.triggerAttackRelease(agogoNotes[stroke], "32n", execTime, 0.75);
     } else if (baseType === "xequere") {
+        if (window.audioEngine.playInstrumentSample("xequere", stroke, Tone.getDestination(), execTime)) return;
         if (stroke === "xequere-baixo") {
             if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(1500, execTime);
             instSynths.baixo?.triggerAttackRelease("16n", execTime, 0.75);
@@ -300,6 +301,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.cima?.triggerAttackRelease("32n", execTime, 0.6);
         }
     } else if (baseType === "triangulo") {
+        if (window.audioEngine.playInstrumentSample("triangulo", stroke, Tone.getDestination(), execTime)) return;
         if (stroke === "triangulo-fechado") {
             instSynths.fechado?.triggerAttackRelease("E7", "32n", execTime, 0.55);
         } else if (stroke === "triangulo-aberto-curto") {

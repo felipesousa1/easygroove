@@ -62,6 +62,8 @@ const USE_REPIQUE_AMOSTRAS = true;
 const USE_TAMBORIM_AMOSTRAS = true;
 const USE_CHOCALHO_AMOSTRAS = true;
 const USE_AGOGO_AMOSTRAS = true;
+const USE_XEQUERE_AMOSTRAS = true;
+const USE_TRIANGULO_AMOSTRAS = true;
 const INSTRUMENT_SAMPLES = {
     caixa: {
         enabled: USE_CAIXA_AMOSTRAS,
@@ -104,6 +106,21 @@ const INSTRUMENT_SAMPLES = {
             "agogo-2": { file: "agogo-2.wav", gain: 0.85 },
             "agogo-3": { file: "agogo-3.wav", gain: 0.8 },
             "agogo-4": { file: "agogo-4.wav", gain: 0.75 }
+        }
+    },
+    xequere: {
+        enabled: USE_XEQUERE_AMOSTRAS,
+        strokes: {
+            "xequere-baixo": { file: "xequere-baixo2.wav", gain: 0.8 },
+            "xequere-cima": { file: "xequere-cima2.wav", gain: 0.8 }
+        }
+    },
+    triangulo: {
+        enabled: USE_TRIANGULO_AMOSTRAS,
+        strokes: {
+            "triangulo-fechado": { file: "triangulo-fechado.wav", gain: 0.6 },
+            "triangulo-aberto-curto": { file: "triangulo-aberto-curto.wav", gain: 0.6 },
+            "triangulo-aberto-longo": { file: "triangulo-aberto-longo.wav", gain: 0.6 }
         }
     },
     tamborim: {
@@ -539,6 +556,7 @@ export const audioEngine = {
         }
 
         if (baseType === "xequere") {
+            loadInstrumentSamples("xequere");
             const xequereFilter = new Tone.Filter(2000, "highpass").connect(channel);
             return {
                 filter: xequereFilter,
@@ -554,6 +572,7 @@ export const audioEngine = {
         }
 
         if (baseType === "triangulo") {
+            loadInstrumentSamples("triangulo");
             // FMSynth leve e inarmônico: o MetalSynth (6 osciladores + filtros, ×3) derrubava o áudio do Chrome
             const trianguloSynth = (decay, release) => new Tone.FMSynth({
                 harmonicity: 3.7, modulationIndex: 8,
@@ -744,6 +763,7 @@ export const audioEngine = {
                 instSynths.main.triggerAttackRelease(agogoNotes[stroke], "32n", this.startTime(instSynths.main, execTime), 0.7);
             }
         } else if (baseType === "xequere") {
+            if (this.playInstrumentSample("xequere", stroke, this.channels[inst.id], execTime)) return;
             if (stroke === "xequere-baixo") {
                 if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(1500, execTime);
                 instSynths.baixo.triggerAttackRelease("16n", this.startTime(instSynths.baixo, execTime), 0.7);
@@ -752,6 +772,7 @@ export const audioEngine = {
                 instSynths.cima.triggerAttackRelease("32n", this.startTime(instSynths.cima, execTime), 0.55);
             }
         } else if (baseType === "triangulo") {
+            if (this.playInstrumentSample("triangulo", stroke, this.channels[inst.id], execTime)) return;
             if (stroke === "triangulo-fechado") {
                 instSynths.fechado.triggerAttackRelease("E7", "32n", this.startTime(instSynths.fechado, execTime), 0.5);
             } else if (stroke === "triangulo-aberto-curto") {
