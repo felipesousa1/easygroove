@@ -88,10 +88,10 @@ const INSTRUMENT_SAMPLES = {
     tamborim: {
         enabled: USE_TAMBORIM_AMOSTRAS,
         strokes: {
-            "tamborim-chapado": { file: "tamborim-chapado.wav", gain: 0.85 },
-            "tamborim-ponta": { file: "tamborim-ponta.wav", gain: 1.2 },
-            volta: { file: "tamborim-volta.wav", gain: 1 },
-            abafado: { file: "tamborim-abafado.wav", gain: 0.9 }
+            "tamborim-chapado": { file: "tamborim-chapado2.wav", gain: 0.85 },
+            "tamborim-ponta": { file: "tamborim-ponta2.wav", gain: 0.85 },
+            volta: { file: "tamborim-volta2.wav", gain: 0.7 },
+            abafado: { file: "tamborim-abafado2.wav", gain: 0.65 }
         }
     }
 };

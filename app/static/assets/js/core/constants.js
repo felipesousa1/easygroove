@@ -77,10 +77,10 @@ iconHTML: `<span style="font-size: 1.1rem; line-height: 1; font-weight: bold; co
         renderHTML: `<img src="assets/icons/stroke-corpo.svg" alt="Corpo">`
     },
     "volta": {
-        label: "Volta",
-        iconHTML: `<img src="assets/icons/stroke-volta.svg" alt="Volta" class="ui-icon-stroke">`,
+        label: "Vira / Volta",
+        iconHTML: `<img src="assets/icons/stroke-borda.svg" alt="Vira / Volta" class="ui-icon-stroke">`,
         className: "custom-svg",
-        renderHTML: `<img src="assets/icons/stroke-volta.svg" alt="Volta">`
+        renderHTML: `<img src="assets/icons/stroke-borda.svg" alt="Vira / Volta">`
     },
     "chocalho-frente": {
         label: "Chocalho (Frente)",
@@ -96,15 +96,15 @@ iconHTML: `<span style="font-size: 1.1rem; line-height: 1; font-weight: bold; co
     },
     "tamborim-chapado": {
         label: "Chapado",
-        iconHTML: `▲`,
-        className: "arrow-up",
-        renderHTML: `▲`
+        iconHTML: `<span class="stroke-dot" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#111827;"></span>`,
+        className: "filled",
+        renderHTML: ""
     },
     "tamborim-ponta": {
         label: "Ponta de baqueta",
-        iconHTML: `▼`,
-        className: "arrow-down",
-        renderHTML: `▼`
+        iconHTML: `<span class="stroke-ring" style="display:inline-block; width:12px; height:12px; border:2px solid #111827; border-radius:50%; box-sizing:border-box;"></span>`,
+        className: "ring-empty",
+        renderHTML: ""
     },
     "agogo-1": {
         label: "Agogô 1",
