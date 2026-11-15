@@ -3,15 +3,12 @@ import { INSTRUMENT_PRESETS, getVolumeIcon } from '../core/constants.js';
 import { historyManager } from '../core/history.js';
 import { updateToolbarPalettes } from './toolbar.js';
 import { renderScore } from './renderScore.js';
-import { keepInViewport } from './placement.js';
 
 export function setupInstrumentControlEvents() {
     const sidebarList = document.getElementById("instruments-sidebar-list");
     const addInstBtn = document.getElementById("btn-open-add-instrument");
     const addInstDropdown = document.getElementById("add-instrument-dropdown");
-    const optionsDropdown = document.getElementById("instrument-options-dropdown");
 
-    let activeInstForMenu = null;
     let draggedInstId = null;
 
     if (addInstBtn && addInstDropdown) {
@@ -42,7 +39,7 @@ export function setupInstrumentControlEvents() {
                 e.target.closest(".vol-slider") ||
                 e.target.closest("input") ||
                 e.target.closest(".vol-display-box") ||
-                e.target.closest(".btn-inst-menu")
+                e.target.closest(".btn-inst-act")
             ) {
                 e.preventDefault();
                 return;
@@ -143,38 +140,10 @@ export function setupInstrumentControlEvents() {
                 return;
             }
 
-            const menuBtn = e.target.closest(".btn-inst-menu");
-            if (menuBtn) {
+            const actBtn = e.target.closest(".btn-inst-act");
+            if (actBtn) {
                 e.stopPropagation();
-                activeInstForMenu = menuBtn.dataset.instId;
-
-                const targetInst = scoreState.instruments.find(i => i.id === activeInstForMenu);
-                const hideBtn = optionsDropdown.querySelector('[data-action="toggle-hide-inst"]');
-                if (hideBtn && targetInst) {
-                    if (targetInst.hidden) {
-                        hideBtn.innerHTML = `
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                Exibir Instrumento
-            `;
-                    } else {
-                        hideBtn.innerHTML = `
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                Ocultar Instrumento
-            `;
-                    }
-                }
-
-                // "Mover para cima/baixo" (alternativa ao arrastar, que não existe no toque) desligado nas pontas
-                const position = scoreState.instruments.findIndex(i => i.id === activeInstForMenu);
-                optionsDropdown.querySelector('[data-action="move-up-inst"]')?.classList.toggle("disabled", position <= 0);
-                optionsDropdown.querySelector('[data-action="move-down-inst"]')
-                    ?.classList.toggle("disabled", position === scoreState.instruments.length - 1);
-
-                const rect = menuBtn.getBoundingClientRect();
-                optionsDropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
-                optionsDropdown.style.left = `${rect.left + window.scrollX}px`;
-                optionsDropdown.classList.add("visible");
-                keepInViewport(optionsDropdown);
+                runInstrumentAction(actBtn.dataset.action, actBtn.dataset.instId);
                 return;
             }
         });
@@ -230,73 +199,51 @@ export function setupInstrumentControlEvents() {
         });
     }
 
-    if (optionsDropdown) {
-        optionsDropdown.addEventListener("click", (e) => {
-            const item = e.target.closest(".dropdown-item");
-            if (!item || !activeInstForMenu) return;
-
-            const action = item.dataset.action;
-            const instIndex = scoreState.instruments.findIndex(i => i.id === activeInstForMenu);
-            if (instIndex === -1) return;
-
-            if (action === "rename-inst") {
-                optionsDropdown.classList.remove("visible");
-                const card = document.querySelector(`.instrument-card[data-instrument-id="${activeInstForMenu}"]`);
-                const inst = scoreState.instruments[instIndex];
-                if (card && inst) {
-                    // Pequeno atraso para fechar o menu antes de dar o foco no input
-                    setTimeout(() => startRenameInstrument(card, inst), 50);
-                }
-                return;
-            }
-
-            if (action === "move-up-inst" || action === "move-down-inst") {
-                const target = action === "move-up-inst" ? instIndex - 1 : instIndex + 1;
-                optionsDropdown.classList.remove("visible");
-                if (target < 0 || target >= scoreState.instruments.length) return;
-
-                historyManager.pushState();
-                const [moved] = scoreState.instruments.splice(instIndex, 1);
-                scoreState.instruments.splice(target, 0, moved);
-                renderScore();
-                return;
-            }
-
-            historyManager.pushState();
-
-            if (action === "toggle-hide-inst") {
-                scoreState.instruments[instIndex].hidden = !scoreState.instruments[instIndex].hidden;
-            } else if (action === "delete-inst") {
-                if (scoreState.instruments.length <= 1) {
-                    alert("O arranjo precisa ter no mínimo 1 instrumento.");
-                    return;
-                }
-                scoreState.instruments.splice(instIndex, 1);
-                if (scoreState.activeTool.instrumentId === activeInstForMenu) {
-                    scoreState.activeTool.instrumentId = scoreState.instruments[0].id;
-                }
-            } else if (action === "duplicate-inst") {
-                const original = scoreState.instruments[instIndex];
-                const cloned = {
-                    ...JSON.parse(JSON.stringify(original)),
-                    id: `${original.id.split('_')[0]}_${Date.now()}`,
-                    name: `${original.name} (Cópia)`
-                };
-                scoreState.instruments.splice(instIndex + 1, 0, cloned);
-            } else if (action === "clear-inst") {
-                scoreState.instruments[instIndex].pattern = scoreState.instruments[instIndex].pattern.map(() => createEmptyMeasure());
-            }
-
-            optionsDropdown.classList.remove("visible");
-            renderScore();
-        });
-    }
-
     document.addEventListener("click", () => {
         if (addInstDropdown) addInstDropdown.classList.remove("visible");
-        if (optionsDropdown) optionsDropdown.classList.remove("visible");
         document.querySelectorAll(".volume-popover").forEach(p => p.classList.remove("visible"));
     });
+}
+
+// Ações dos botões do card (ocultar, solo, duplicar, limpar, excluir; todas entram no desfazer). Renomear (duplo clique) e mover (arrastar) ficam
+// nos próprios eventos do card.
+function runInstrumentAction(action, instId) {
+    const instIndex = scoreState.instruments.findIndex(i => i.id === instId);
+    if (instIndex === -1) return;
+    const inst = scoreState.instruments[instIndex];
+
+    if (action === "delete-inst" && scoreState.instruments.length <= 1) {
+        alert("O arranjo precisa ter no mínimo 1 instrumento.");
+        return;
+    }
+
+    historyManager.pushState();
+
+    if (action === "toggle-hide-inst") {
+        inst.hidden = !inst.hidden;
+    } else if (action === "toggle-solo-inst") {
+        if (inst.solo) delete inst.solo; else inst.solo = true;
+    } else if (action === "delete-inst") {
+        scoreState.instruments.splice(instIndex, 1);
+        if (scoreState.activeTool.instrumentId === instId) {
+            scoreState.activeTool.instrumentId = scoreState.instruments[0].id;
+        }
+    } else if (action === "duplicate-inst") {
+        const cloned = {
+            ...JSON.parse(JSON.stringify(inst)),
+            id: `${inst.id.split('_')[0]}_${Date.now()}`,
+            name: `${inst.name} (Cópia)`
+        };
+        delete cloned.solo; // a cópia não herda o solo
+        scoreState.instruments.splice(instIndex + 1, 0, cloned);
+    } else if (action === "clear-inst") {
+        inst.pattern = inst.pattern.map(() => createEmptyMeasure());
+    } else {
+        return;
+    }
+
+    window.audioEngine?.updateMasterGain?.();
+    renderScore();
 }
 
 // Função isolada e robusta para ativar a edição do nome

@@ -5,17 +5,13 @@
 
 /* No toque não existe hover: o que só aparecia ao passar o mouse precisa ficar visível */
 @media (hover: none) {
-  .btn-inst-menu {
+  /* sem hover os botões do card ficam sempre visíveis e sem o nome (só o ícone) */
+  .btn-inst-act {
     opacity: 1;
   }
 
-  .btn-inst-menu img {
-    width: 18px;
-    height: 18px;
-  }
-
-  .btn-inst-menu {
-    padding: 4px;
+  .btn-inst-act::after {
+    display: none;
   }
 }
 
@@ -261,14 +257,33 @@
     padding: 2px 3px 3px 3px;
   }
 
-  /* o botão ⋮ do instrumento passa a flutuar no canto, sem ocupar uma linha própria */
+  /* o card estreito não tem a linha reservada do topo; os botões ficam menores, ao lado do ícone do instrumento */
   .inst-header-row {
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    width: auto;
-    height: auto;
-    padding: 0;
+    display: none;
+  }
+
+  .inst-side {
+    top: 3px;
+    gap: 1px;
+  }
+
+  .inst-side-left {
+    left: 4px;
+  }
+
+  .inst-side-right {
+    right: 4px;
+  }
+
+  .btn-inst-act {
+    width: 15px;
+    height: 15px;
+    font-size: 9px;
+  }
+
+  .btn-inst-act svg {
+    width: 10px;
+    height: 10px;
   }
 
   .inst-icon-img {

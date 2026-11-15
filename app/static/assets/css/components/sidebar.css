@@ -37,40 +37,111 @@
   border-color: #94a3b8;
 }
 
+/* Linha reservada no topo do card (espaçamento original entre ícone, nome e volume) */
 .inst-header-row {
   width: 100%;
   height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 2px;
 }
 
-.btn-inst-menu {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 3px;
+/* Botões do card: ocultar/solo à esquerda e duplicar/limpar/excluir à direita, só o ícone; o nome aparece no hover */
+.inst-side {
+  position: absolute;
+  top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 2;
+}
+
+.inst-side-left {
+  left: 14px;
+}
+
+.inst-side-right {
+  right: 14px;
+}
+
+.btn-inst-act {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: 800 11px/1 inherit;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0; /* escondidos: aparecem no hover do card ou quando ligados (oculto/solo) */
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
 }
 
-.instrument-card:hover .btn-inst-menu {
+.instrument-card:hover .btn-inst-act,
+.btn-inst-act.active,
+.btn-inst-act:focus-visible {
   opacity: 1;
 }
 
-.btn-inst-menu:hover {
-  background-color: var(--color-gray-hover);
+.btn-inst-act svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+  pointer-events: none;
 }
 
-.btn-inst-menu img {
-  width: 14px;
-  height: 14px;
-  display: block;
+.btn-inst-act:hover,
+.btn-inst-act:focus-visible {
+  background-color: var(--color-gray-hover);
+  color: var(--color-text-main);
+}
+
+.btn-inst-act.btn-danger:hover {
+  color: #dc2626;
+}
+
+/* Ligado: ocultar (instrumento oculto) e solo */
+.btn-inst-act.active {
+  background-color: var(--color-purple-primary);
+  color: #ffffff;
+}
+
+.btn-inst-act.active:hover {
+  background-color: var(--color-purple-primary);
+  color: #ffffff;
+}
+
+/* Nome do botão no hover (a esquerda abre para a direita e a direita, para a esquerda) */
+.btn-inst-act::after {
+  content: attr(data-label);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--color-black);
+  color: #ffffff;
+  font: 600 0.68rem/1.2 inherit;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease 0.25s;
+  z-index: 60;
+}
+
+.inst-side-left .btn-inst-act::after {
+  left: calc(100% + 6px);
+}
+
+.inst-side-right .btn-inst-act::after {
+  right: calc(100% + 6px);
+}
+
+.btn-inst-act:hover::after,
+.btn-inst-act:focus-visible::after {
+  opacity: 1;
 }
 
 .inst-icon-img {

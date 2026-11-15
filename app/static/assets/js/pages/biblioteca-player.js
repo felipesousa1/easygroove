@@ -1,7 +1,7 @@
 // Ouvir um arranjo direto da biblioteca (botão play no card).
 // Reaproveita o motor de áudio do editor. Tone.js e o motor são pré-carregados quando a página fica
 // ociosa (ou ao passar o mouse no play), e o JSON do arranjo é pré-buscado, para o clique ser imediato.
-import { scoreState } from '../core/state.js';
+import { scoreState, isInstrumentHidden } from '../core/state.js';
 import { TIME_SIGNATURES, clampBpm } from '../core/constants.js';
 
 const TONE_URL = "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js";
@@ -131,7 +131,7 @@ function applyArrangement(data) {
 // Há alguma nota em instrumento audível (não oculto e com volume)? Evita "tocar" em silêncio sem explicar
 function hasAudibleNotes() {
     return scoreState.instruments.some(inst => {
-        if (inst.hidden || inst.volume <= 0) return false;
+        if (isInstrumentHidden(inst) || inst.volume <= 0) return false;
         return (inst.pattern || []).some(measure =>
             Array.isArray(measure) && measure.some(beat =>
                 (beat?.notes || []).some(stroke => stroke && stroke !== "empty")
@@ -159,7 +159,7 @@ function firstNoteSeconds(audio) {
         const beats = (TIME_SIGNATURES[sig] || TIME_SIGNATURES["4/4"]).beats;
         for (let b = 0; b < beats; b++) {
             for (const inst of scoreState.instruments) {
-                if (inst.hidden || inst.volume <= 0) continue;
+                if (isInstrumentHidden(inst) || inst.volume <= 0) continue;
                 const beat = inst.pattern?.[mIdx]?.[b];
                 const slot = (beat?.notes || []).findIndex(n => n && n !== "empty");
                 if (slot >= 0) return ((ticks + b * ppq + (slot / beat.subdivisions) * ppq) / ppq) * (60 / scoreState.bpm);

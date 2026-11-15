@@ -1,4 +1,4 @@
-import { scoreState, createEmptyMeasure, createEmptyMeasureForSig, getClipboard } from '../core/state.js';
+import { scoreState, createEmptyMeasure, createEmptyMeasureForSig, getClipboard, isInstrumentHidden } from '../core/state.js';
 import { TIME_SIGNATURES, getVolumeIcon, supportsSticking } from '../core/constants.js';
 import { createBeamsSVG, getStrokeVisual } from './beams.js';
 import { updateToolbarPalettes } from './toolbar.js';
@@ -102,6 +102,13 @@ function renderMeasuresTrack(trackContainer) {
     if (window.updatePlayheadPosition) window.updatePlayheadPosition();
 }
 
+const svgIcon = (inner) => `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+const ICON_EYE = svgIcon('<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>');
+const ICON_EYE_OFF = svgIcon('<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>');
+const ICON_DUPLICATE = svgIcon('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>');
+const ICON_ERASER = svgIcon('<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>');
+const ICON_TRASH = svgIcon('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>');
+
 function renderSidebar(sidebarList) {
     sidebarList.querySelectorAll(".instrument-card").forEach(el => el.remove());
     const addInstWrapper = sidebarList.querySelector("div");
@@ -112,17 +119,24 @@ function renderSidebar(sidebarList) {
         }
 
         const card = document.createElement("div");
-        card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
+        card.className = `instrument-card ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${isInstrumentHidden(inst) ? 'hidden-track' : ''}`;
         card.dataset.instrumentId = inst.id;
         card.dataset.instIndex = index;
         card.draggable = true;
 
+        const isSolo = Boolean(inst.solo);
         card.innerHTML = `
-        <div class="inst-header-row">
-            <span></span>
-            <button type="button" class="btn-inst-menu" data-inst-id="${inst.id}" title="Opções do Instrumento">
-            <img src="assets/icons/more-vertical.svg" alt="Opções">
+        <div class="inst-header-row"></div>
+        <div class="inst-side inst-side-left">
+            <button type="button" class="btn-inst-act btn-hide${inst.hidden ? ' active' : ''}" data-action="toggle-hide-inst" data-inst-id="${inst.id}" data-label="${inst.hidden ? 'Exibir instrumento' : 'Ocultar instrumento'}" aria-label="${inst.hidden ? 'Exibir instrumento' : 'Ocultar instrumento'}">
+                ${inst.hidden ? ICON_EYE_OFF : ICON_EYE}
             </button>
+            <button type="button" class="btn-inst-act btn-solo${isSolo ? ' active' : ''}" data-action="toggle-solo-inst" data-inst-id="${inst.id}" data-label="${isSolo ? 'Desativar solo' : 'Solo'}" aria-label="Solo" aria-pressed="${isSolo}">S</button>
+        </div>
+        <div class="inst-side inst-side-right">
+            <button type="button" class="btn-inst-act" data-action="duplicate-inst" data-inst-id="${inst.id}" data-label="Duplicar linha" aria-label="Duplicar linha">${ICON_DUPLICATE}</button>
+            <button type="button" class="btn-inst-act" data-action="clear-inst" data-inst-id="${inst.id}" data-label="Limpar notas" aria-label="Limpar notas">${ICON_ERASER}</button>
+            <button type="button" class="btn-inst-act btn-danger" data-action="delete-inst" data-inst-id="${inst.id}" data-label="Excluir instrumento" aria-label="Excluir instrumento">${ICON_TRASH}</button>
         </div>
 
         <img src="${inst.iconSvg}" class="inst-icon-img" alt="${inst.name}">
@@ -165,7 +179,7 @@ function renderGrid(scoreGrid) {
 
     scoreState.instruments.forEach((inst, instIndex) => {
         const row = document.createElement("div");
-        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
+        row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${isInstrumentHidden(inst) ? 'hidden-track' : ''}`;
         row.dataset.instrumentId = inst.id;
         const hasSticking = supportsSticking(inst.id);
 

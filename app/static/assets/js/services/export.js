@@ -1,4 +1,4 @@
-import { scoreState } from '../core/state.js';
+import { scoreState, isInstrumentHidden } from '../core/state.js';
 import { TIME_SIGNATURES } from '../core/constants.js';
 import { showToast } from '../ui/toast.js';
 
@@ -154,7 +154,7 @@ export async function exportScoreToAudio() {
 
             // Instancia os sintetizadores conectados ao novo OfflineAudioContext
             scoreState.instruments.forEach(inst => {
-                if (!inst.hidden && inst.volume > 0 && window.audioEngine) {
+                if (!isInstrumentHidden(inst) && inst.volume > 0 && window.audioEngine) {
                     offlineSynths[inst.id] = window.audioEngine.createSynthsForInstrument(inst.id, true);
                 }
             });
@@ -170,7 +170,7 @@ export async function exportScoreToAudio() {
                     const beatTime = currentTime + (b * secondsPerBeat);
 
                     scoreState.instruments.forEach(inst => {
-                        if (inst.hidden || inst.volume === 0) return;
+                        if (isInstrumentHidden(inst) || inst.volume === 0) return;
 
                         const beatData = inst.pattern?.[mIdx]?.[b];
                         if (!beatData || !beatData.notes) return;

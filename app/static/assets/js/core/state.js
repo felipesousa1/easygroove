@@ -26,6 +26,15 @@ export function setIsDirty(value) {
     isDirty = value;
 }
 
+// Solo (inst.solo) e ocultar (inst.hidden) fazem parte da partitura: são salvos com o arranjo e entram no desfazer.
+// Com algum solo ativo só os instrumentos em solo ficam visíveis e tocam (mesmo que um deles estivesse oculto);
+// sem solo vale o "ocultar" de cada instrumento.
+export function isInstrumentHidden(inst) {
+    if (!inst) return false;
+    const soloActive = scoreState.instruments.some(i => i.solo);
+    return soloActive ? !inst.solo : Boolean(inst.hidden);
+}
+
 const savedAutoScroll = localStorage.getItem("easygroove_autoscroll");
 const savedToolbar = localStorage.getItem("easygroove_toolbar");
 

@@ -1,6 +1,6 @@
 // assets/js/audio.js - MOTOR DE ÁUDIO (TONE.JS)
 
-import { scoreState } from '../core/state.js';
+import { scoreState, isInstrumentHidden } from '../core/state.js';
 import { TIME_SIGNATURES } from '../core/constants.js';
 
 // MetalSynth (rimshot) usa a assinatura (nota, duração, tempo, velocidade); sem a nota, "tempo" e
@@ -465,7 +465,7 @@ export const audioEngine = {
     // Compensa a soma dos instrumentos audíveis (≈ -5 dB por década de instrumentos: 7 => -4 dB; 1 => 0 dB)
     updateMasterGain() {
         if (!this.masterBus) return;
-        const audible = scoreState.instruments.filter(i => !i.hidden && i.volume > 0).length;
+        const audible = scoreState.instruments.filter(i => !isInstrumentHidden(i) && i.volume > 0).length;
         this.masterBus.volume.rampTo(-5 * Math.log10(Math.max(1, audible)), 0.05);
     },
 
@@ -1061,7 +1061,7 @@ export const audioEngine = {
     // (nada é agendado para o futuro no áudio), então pausar/parar corta o som imediatamente.
     playSlot(mIdx, b, subdivisions, s, time) {
         scoreState.instruments.forEach(inst => {
-            if (inst.hidden) return;
+            if (isInstrumentHidden(inst)) return;
             const beatObj = inst.pattern?.[mIdx]?.[b];
             if (!beatObj || beatObj.subdivisions !== subdivisions) return;
 
