@@ -185,7 +185,7 @@ function playSurdoSample(file, destination, time, gain) {
 
 // Afinação geral dos surdos: multiplica a fundamental, os parciais e o punch das tabelas acima (1,1 ≈ 1,6 semitom
 // mais agudo). Um único número para deixar todos mais ou menos graves.
-const SURDO_PITCH_SCALE = 1.15;
+const SURDO_PITCH_SCALE = 1.2;
 
 // Curva de volume dos surdos (ganho do canal, em dB): 50% = padrão e 100% = máximo sem distorção. Abaixo de 50% segue a
 // mesma inclinação dos outros instrumentos (0,48 dB por ponto); acima de 50% sobe devagar até o teto de 100%.
