@@ -831,8 +831,8 @@
 
 .lib-card-chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-wrap: nowrap; /* sempre uma linha: os ícones encolhem se for preciso */
+  gap: 3px;
   margin-top: 10px;
 }
 
@@ -840,8 +840,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  flex: 0 1 26px;
+  min-width: 0;
+  aspect-ratio: 1;
   background-color: #f5f0ff;
   color: #360566;
   border-radius: 50%;
@@ -850,8 +851,8 @@
 }
 
 .lib-chip img {
-  width: 16px;
-  height: 16px;
+  width: 62%;
+  height: 62%;
 }
 
 
@@ -1459,9 +1460,14 @@
 }
 
 .lib-chip-more {
+  flex: 0 0 auto;
+  aspect-ratio: auto;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 13px;
   background-color: #360566;
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   font-weight: 800;
   line-height: 1;
 }

@@ -36,13 +36,13 @@
 
         {% if meta.instrumentos %}
         <div class="lib-card-chips">
-            {% for inst in meta.instrumentos[:8] %}
+            {% for inst in meta.instrumentos[:10] %}
             <span class="lib-chip" title="{{ inst.nome }}">
                 {% if inst.icone %}<img src="{{ inst.icone }}" alt="{{ inst.nome }}">{% else %}{{ inst.nome[:1] }}{% endif %}
             </span>
             {% endfor %}
-            {% if meta.instrumentos | length > 8 %}
-            <span class="lib-chip lib-chip-more" title="Mais {{ meta.instrumentos | length - 8 }}: {{ meta.instrumentos[8:] | map(attribute='nome') | join(', ') }}">+</span>
+            {% if meta.instrumentos | length > 10 %}
+            <span class="lib-chip lib-chip-more" title="Mais {{ meta.instrumentos | length - 10 }}: {{ meta.instrumentos[10:] | map(attribute='nome') | join(', ') }}">+{{ meta.instrumentos | length - 10 }}</span>
             {% endif %}
         </div>
         {% endif %}
