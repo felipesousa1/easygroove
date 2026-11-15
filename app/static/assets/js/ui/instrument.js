@@ -1,4 +1,4 @@
-import { scoreState, createEmptyMeasure } from '../core/state.js';
+import { scoreState, createEmptyMeasure, openVolumePanels } from '../core/state.js';
 import { INSTRUMENT_PRESETS, getVolumeIcon } from '../core/constants.js';
 import { historyManager } from '../core/history.js';
 import { updateToolbarPalettes } from './toolbar.js';
@@ -39,6 +39,7 @@ export function setupInstrumentControlEvents() {
                 e.target.closest(".vol-slider") ||
                 e.target.closest("input") ||
                 e.target.closest(".vol-display-box") ||
+                e.target.closest(".inst-vol-panel") ||
                 e.target.closest(".btn-inst-act")
             ) {
                 e.preventDefault();
@@ -85,23 +86,6 @@ export function setupInstrumentControlEvents() {
         });
 
         sidebarList.addEventListener("click", (e) => {
-            const muteBtn = e.target.closest(".btn-mute");
-            if (muteBtn) {
-                e.stopPropagation();
-                const instId = muteBtn.dataset.instId;
-                const inst = scoreState.instruments.find(i => i.id === instId);
-                if (!inst) return;
-
-                historyManager.pushState();
-                if (inst.volume > 0) {
-                    inst.previousVolume = inst.volume;
-                    updateInstrumentVolume(instId, 0);
-                } else {
-                    updateInstrumentVolume(instId, inst.previousVolume || 50);
-                }
-                return;
-            }
-
             const volBox = e.target.closest(".vol-display-box");
             if (volBox) {
                 e.stopPropagation();
@@ -143,6 +127,10 @@ export function setupInstrumentControlEvents() {
             const actBtn = e.target.closest(".btn-inst-act");
             if (actBtn) {
                 e.stopPropagation();
+                if (actBtn.dataset.action === "toggle-volume") {
+                    toggleVolumePanel(actBtn.dataset.instId);
+                    return;
+                }
                 runInstrumentAction(actBtn.dataset.action, actBtn.dataset.instId);
                 return;
             }
@@ -204,6 +192,25 @@ export function setupInstrumentControlEvents() {
         document.querySelectorAll(".volume-popover").forEach(p => p.classList.remove("visible"));
     });
 }
+
+// Abre/fecha a barra de volume do card (não mexe no arranjo, então não entra no desfazer nem re-renderiza)
+function setVolumePanel(card, open) {
+    const instId = card.dataset.instrumentId;
+    if (open) openVolumePanels.add(instId); else openVolumePanels.delete(instId);
+    card.classList.toggle("vol-open", open);
+}
+
+function toggleVolumePanel(instId) {
+    const card = document.querySelector(`.instrument-card[data-instrument-id="${instId}"]`);
+    if (card) setVolumePanel(card, !card.classList.contains("vol-open"));
+}
+
+// Clique fora do card fecha as barras de volume abertas
+document.addEventListener("click", (e) => {
+    document.querySelectorAll(".instrument-card.vol-open").forEach(card => {
+        if (!card.contains(e.target)) setVolumePanel(card, false);
+    });
+});
 
 // Ações dos botões do card (ocultar, solo, duplicar, limpar, excluir; todas entram no desfazer). Renomear (duplo clique) e mover (arrastar) ficam
 // nos próprios eventos do card.
@@ -303,7 +310,7 @@ export function updateInstrumentVolume(instId, volume) {
     const card = document.querySelector(`.instrument-card[data-instrument-id="${instId}"]`);
     if (card) {
         const slider = card.querySelector(".vol-slider");
-        const muteImg = card.querySelector(".btn-mute img");
+        const muteImg = card.querySelector(".btn-vol img");
         const volText = card.querySelector(".vol-text");
         const numInput = card.querySelector(".volume-number-input");
 

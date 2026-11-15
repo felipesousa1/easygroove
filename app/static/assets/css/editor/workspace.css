@@ -21,7 +21,7 @@
   top: 0;
   z-index: 100;
   background-color: var(--color-gray-bg);
-  padding: 16px 40px 16px 24px;
+  padding: 16px 40px 16px 10px;
   width: max-content;
 }
 
@@ -41,7 +41,7 @@
 
 .workspace-body {
   display: flex;
-  padding: 0 40px 140px 24px;
+  padding: 0 40px 140px 10px;
   width: max-content;
 }
 

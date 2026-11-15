@@ -19,13 +19,14 @@
   background-color: #ffffff;
   border: 1.5px solid var(--color-gray-border);
   border-radius: 12px;
-  padding: 4px 6px 6px 6px;
+  padding: 0;
   height: 96px;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
@@ -35,12 +36,6 @@
 
 .instrument-card:hover {
   border-color: #94a3b8;
-}
-
-/* Linha reservada no topo do card (espaçamento original entre ícone, nome e volume) */
-.inst-header-row {
-  width: 100%;
-  height: 14px;
 }
 
 /* Botões do card: ocultar/solo à esquerda e duplicar/limpar/excluir à direita, só o ícone; o nome aparece no hover */
@@ -54,11 +49,11 @@
 }
 
 .inst-side-left {
-  left: 14px;
+  left: 7px;
 }
 
 .inst-side-right {
-  right: 14px;
+  right: 7px;
 }
 
 .btn-inst-act {
@@ -85,7 +80,7 @@
   opacity: 1;
 }
 
-.btn-inst-act svg {
+.btn-inst-act .icon {
   width: 13px;
   height: 13px;
   display: block;
@@ -145,11 +140,12 @@
 }
 
 .inst-icon-img {
-  width: 34px;
-  height: 34px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
   margin: 0;
   pointer-events: none;
+  transition: transform 0.15s ease;
 }
 
 /* Card de Instrumento Ocultado */
@@ -161,7 +157,7 @@
 }
 
 .instrument-card.hidden-track .inst-icon-img,
-.instrument-card.hidden-track .btn-mute img {
+.instrument-card.hidden-track .btn-vol img {
   filter: grayscale(1) opacity(0.5) !important;
 }
 
@@ -191,14 +187,14 @@
 }
 
 .inst-name {
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--color-text-main);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 130px;
+  max-width: 90px;
   line-height: 1.1;
   cursor: pointer;
   pointer-events: none !important;
@@ -206,6 +202,7 @@
 
 .inst-name-input {
   width: 90%;
+  box-sizing: border-box;
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--color-text-main);
@@ -217,51 +214,54 @@
   background-color: #ffffff;
 }
 
-.inst-volume-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2px;
-  padding: 0 4px;
-  box-sizing: border-box;
-}
-
-.btn-mute {
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-  flex-shrink: 0;
-}
-
-.btn-mute:hover {
-  background-color: var(--color-gray-hover);
-}
-
-.btn-mute img {
-  width: 16px;
-  height: 16px;
-  pointer-events: none;
+/* Ícone de volume (dinâmico) no card, abaixo do solo */
+.btn-inst-act img {
+  width: 13px;
+  height: 13px;
   display: block;
+  pointer-events: none;
+}
+
+/* Volume: pequeno retângulo ao lado do ícone, só depois do clique; some ao clicar fora */
+.inst-vol-panel {
+  position: absolute;
+  left: 30px;
+  width: 132px;
+  top: 40px;
+  height: 26px;
+  display: none;
+  align-items: center;
+  gap: 3px;
+  padding: 0 7px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid var(--color-gray-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+  z-index: 5;
+}
+
+.instrument-card.vol-open .inst-vol-panel {
+  display: flex;
+}
+
+/* Com o retângulo aberto o ícone de volume continua visível */
+.instrument-card.vol-open .btn-vol {
+  opacity: 1;
 }
 
 .vol-slider {
   flex: 1;
   min-width: 0;
   height: 4px;
-  margin: 0 4px;
+  margin: 0;
   accent-color: var(--color-purple-primary);
   cursor: pointer;
   display: block;
 }
 
 .vol-display-box {
-  width: 34px;
+  width: 28px;
   display: flex;
   align-items: center;
   justify-content: flex-end;

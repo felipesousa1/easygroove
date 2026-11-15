@@ -1,4 +1,5 @@
-import { scoreState, createEmptyMeasure, createEmptyMeasureForSig, getClipboard, isInstrumentHidden } from '../core/state.js';
+import { icon } from './icon.js';
+import { scoreState, createEmptyMeasure, createEmptyMeasureForSig, getClipboard, isInstrumentHidden, openVolumePanels } from '../core/state.js';
 import { TIME_SIGNATURES, getVolumeIcon, supportsSticking } from '../core/constants.js';
 import { createBeamsSVG, getStrokeVisual } from './beams.js';
 import { updateToolbarPalettes } from './toolbar.js';
@@ -53,10 +54,7 @@ function renderMeasuresTrack(trackContainer) {
           <div style="display: flex; align-items: center; gap: 4px;">
             ${!isInsideRepeat ? `
             <button type="button" class="measure-loop-btn ${isRepeatEnd ? 'active' : ''}" data-measure-index="${m}" title="Ativar/Desativar Ritornelo">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
-                    <path d="M21 3v5h-5"></path>
-                </svg>
+                ${icon("repeat")}
             </button>
             ` : ''}
             <button type="button" class="measure-menu-btn" data-measure-index="${m}" title="Opções do Compasso">
@@ -102,12 +100,6 @@ function renderMeasuresTrack(trackContainer) {
     if (window.updatePlayheadPosition) window.updatePlayheadPosition();
 }
 
-const svgIcon = (inner) => `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
-const ICON_EYE = svgIcon('<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>');
-const ICON_EYE_OFF = svgIcon('<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>');
-const ICON_DUPLICATE = svgIcon('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>');
-const ICON_ERASER = svgIcon('<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>');
-const ICON_TRASH = svgIcon('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>');
 
 function renderSidebar(sidebarList) {
     sidebarList.querySelectorAll(".instrument-card").forEach(el => el.remove());
@@ -125,34 +117,32 @@ function renderSidebar(sidebarList) {
         card.draggable = true;
 
         const isSolo = Boolean(inst.solo);
+        const volOpen = openVolumePanels.has(inst.id);
+        card.classList.toggle('vol-open', volOpen);
         card.innerHTML = `
-        <div class="inst-header-row"></div>
         <div class="inst-side inst-side-left">
             <button type="button" class="btn-inst-act btn-hide${inst.hidden ? ' active' : ''}" data-action="toggle-hide-inst" data-inst-id="${inst.id}" data-label="${inst.hidden ? 'Exibir instrumento' : 'Ocultar instrumento'}" aria-label="${inst.hidden ? 'Exibir instrumento' : 'Ocultar instrumento'}">
-                ${inst.hidden ? ICON_EYE_OFF : ICON_EYE}
+                ${inst.hidden ? icon("eye-off") : icon("eye")}
             </button>
             <button type="button" class="btn-inst-act btn-solo${isSolo ? ' active' : ''}" data-action="toggle-solo-inst" data-inst-id="${inst.id}" data-label="${isSolo ? 'Desativar solo' : 'Solo'}" aria-label="Solo" aria-pressed="${isSolo}">S</button>
+            <button type="button" class="btn-inst-act btn-vol" data-action="toggle-volume" data-inst-id="${inst.id}" data-label="Volume" aria-label="Volume"><img src="${getVolumeIcon(inst.volume)}" alt=""></button>
         </div>
         <div class="inst-side inst-side-right">
-            <button type="button" class="btn-inst-act" data-action="duplicate-inst" data-inst-id="${inst.id}" data-label="Duplicar linha" aria-label="Duplicar linha">${ICON_DUPLICATE}</button>
-            <button type="button" class="btn-inst-act" data-action="clear-inst" data-inst-id="${inst.id}" data-label="Limpar notas" aria-label="Limpar notas">${ICON_ERASER}</button>
-            <button type="button" class="btn-inst-act btn-danger" data-action="delete-inst" data-inst-id="${inst.id}" data-label="Excluir instrumento" aria-label="Excluir instrumento">${ICON_TRASH}</button>
+            <button type="button" class="btn-inst-act" data-action="duplicate-inst" data-inst-id="${inst.id}" data-label="Duplicar linha" aria-label="Duplicar linha">${icon("duplicate")}</button>
+            <button type="button" class="btn-inst-act" data-action="clear-inst" data-inst-id="${inst.id}" data-label="Limpar notas" aria-label="Limpar notas">${icon("eraser")}</button>
+            <button type="button" class="btn-inst-act btn-danger" data-action="delete-inst" data-inst-id="${inst.id}" data-label="Excluir instrumento" aria-label="Excluir instrumento">${icon("trash")}</button>
         </div>
 
         <img src="${inst.iconSvg}" class="inst-icon-img" alt="${inst.name}">
         <span class="inst-name" title="Duplo clique para renomear">${inst.name}</span>
         <input type="text" class="inst-name-input" value="${inst.name}" style="display:none;" maxlength="20">
 
-        <div class="inst-volume-row">
-            <button type="button" class="btn-mute" data-inst-id="${inst.id}" title="Mute / Desmutar">
-            <img src="${getVolumeIcon(inst.volume)}" alt="Volume">
-            </button>
+        <div class="inst-vol-panel">
             <input type="range" class="vol-slider" min="0" max="100" value="${inst.volume}" data-inst-id="${inst.id}">
-            
             <div class="vol-display-box" data-inst-id="${inst.id}" title="Clique para editar valor">
-            <span class="vol-text">${inst.volume}%</span>
-            <input type="number" class="vol-direct-input" min="0" max="100" value="${inst.volume}" style="display: none;">
-            <span class="vol-percent" style="display: none;">%</span>
+                <span class="vol-text">${inst.volume}%</span>
+                <input type="number" class="vol-direct-input" min="0" max="100" value="${inst.volume}" style="display: none;">
+                <span class="vol-percent" style="display: none;">%</span>
             </div>
         </div>
         `;
@@ -327,21 +317,21 @@ export function renderSelectionToolbar() {
 
     toolbar.innerHTML = `
         <button type="button" class="quick-action-btn" id="quick-btn-copy" title="Copiar (Ctrl+C)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            ${icon("copy")}
             Copiar
         </button>
         <button type="button" class="quick-action-btn" id="quick-btn-cut" title="Recortar (Ctrl+X)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+            ${icon("cut")}
             Recortar
         </button>
         ${hasClipboardData ? `
         <button type="button" class="quick-action-btn \({!pasteStatus.compatible ? 'disabled' : ''}" id="quick-btn-paste" title="\){pasteStatus.compatible ? 'Colar (Ctrl+V)' : pasteStatus.reason}" ${!pasteStatus.compatible ? 'disabled' : ''}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            ${icon("paste")}
             Colar
         </button>
         ` : ''}
         <button type="button" class="quick-action-btn danger" id="quick-btn-clear" title="Limpar (Del)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            ${icon("clear")}
             Limpar
         </button>
     `;

@@ -623,3 +623,7 @@
     transform: translateY(0);
   }
 }
+.measure-loop-btn .icon {
+  width: 14px;
+  height: 14px;
+}

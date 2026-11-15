@@ -196,6 +196,16 @@
   stroke: #ffffff;
 }
 
+.lib-btn-collection .icon {
+  width: 18px;
+  height: 18px;
+  color: #8B00CE;
+}
+
+.lib-btn-collection.active .icon {
+  color: #ffffff;
+}
+
 .btn-delete-collection,
 .btn-rename-collection {
   display: none;

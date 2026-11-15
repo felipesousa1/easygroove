@@ -119,15 +119,6 @@
     max-width: 66px;
   }
 
-  .inst-volume-row .vol-slider {
-    display: none;
-  }
-
-  .inst-volume-row {
-    justify-content: center;
-    gap: 6px;
-  }
-
   .vol-display-box {
     width: auto;
     min-width: 28px;
@@ -257,11 +248,7 @@
     padding: 2px 3px 3px 3px;
   }
 
-  /* o card estreito não tem a linha reservada do topo; os botões ficam menores, ao lado do ícone do instrumento */
-  .inst-header-row {
-    display: none;
-  }
-
+  /* os botões ficam menores, ao lado do ícone do instrumento */
   .inst-side {
     top: 3px;
     gap: 1px;
@@ -281,9 +268,16 @@
     font-size: 9px;
   }
 
-  .btn-inst-act svg {
+  .btn-inst-act .icon,
+  .btn-inst-act img {
     width: 10px;
     height: 10px;
+  }
+
+  .inst-vol-panel {
+    left: 22px;
+    width: 120px;
+    top: 34px;
   }
 
   .inst-icon-img {

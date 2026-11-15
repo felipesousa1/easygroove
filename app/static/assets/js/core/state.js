@@ -29,6 +29,9 @@ export function setIsDirty(value) {
 // Solo (inst.solo) e ocultar (inst.hidden) fazem parte da partitura: são salvos com o arranjo e entram no desfazer.
 // Com algum solo ativo só os instrumentos em solo ficam visíveis e tocam (mesmo que um deles estivesse oculto);
 // sem solo vale o "ocultar" de cada instrumento.
+// Cards com a barra de volume aberta (sobrevive aos re-renders)
+export const openVolumePanels = new Set();
+
 export function isInstrumentHidden(inst) {
     if (!inst) return false;
     const soloActive = scoreState.instruments.some(i => i.solo);

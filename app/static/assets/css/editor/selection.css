@@ -98,3 +98,7 @@
     background: transparent;
     color: #ffffff;
 }
+.quick-action-btn .icon {
+  width: 13px;
+  height: 13px;
+}

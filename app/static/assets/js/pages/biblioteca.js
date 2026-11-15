@@ -1,3 +1,5 @@
+import { icon } from '../ui/icon.js';
+
 document.addEventListener("DOMContentLoaded", () => {
     // Logout
     const btnLogout = document.getElementById("btn-logout");
@@ -310,9 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const li = document.createElement("li");
             li.innerHTML = `
                 <div class="lib-btn-collection active" style="cursor: default;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    </svg>
+                    ${icon("folder")}
                     <input type="text" id="new-collection-input" value="Nova Coleção" style="background: transparent; border: 1px solid var(--color-primary, #6366f1); border-radius: 4px; padding: 2px 6px; font-size: 0.9rem; color: inherit; width: 100%; outline: none;">
                 </div>
             `;
