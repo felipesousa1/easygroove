@@ -1,5 +1,6 @@
 import { scoreState, currentArrangementId, setCurrentArrangementId, setIsDirty } from '../core/state.js';
 import { historyManager } from '../core/history.js';
+import { clampBpm } from '../core/constants.js';
 import { showToast } from '../ui/toast.js';
 import { renderScore } from '../ui/renderScore.js';
 import { updateLoopBarVisuals } from '../ui/loop.js';
@@ -158,6 +159,7 @@ export async function loadArrangementFromURL() {
             setCurrentArrangementId(arrangement.id);
 
             Object.assign(scoreState, arrangement.score_data);
+            scoreState.bpm = clampBpm(scoreState.bpm);
             scoreState.loopState = {
                 active: false,
                 mode: scoreState.loopState?.mode || "measures",

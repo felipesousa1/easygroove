@@ -6,7 +6,7 @@ import { setColumnTimeSignature } from './menu.js';
 import { keepInViewport } from './placement.js';
 import { selectActiveInstrument } from './toolbar.js';
 import { getStrokeVisual } from './beams.js';
-import { TIME_SIGNATURES } from '../core/constants.js';
+import { TIME_SIGNATURES, BPM_MIN, BPM_MAX } from '../core/constants.js';
 
 export function setupGridEvents() {
     const scoreGrid = document.getElementById("score-grid");
@@ -92,7 +92,7 @@ export function setupHeaderEvents() {
     if (bpmInput) {
         bpmInput.addEventListener("change", (e) => {
             const val = parseInt(e.target.value, 10);
-            if (!isNaN(val) && val >= 40 && val <= 260) {
+            if (!isNaN(val) && val >= BPM_MIN && val <= BPM_MAX) {
                 scoreState.bpm = val;
                 if (popoverBpmDisplay) popoverBpmDisplay.textContent = val;
             } else {
@@ -265,7 +265,7 @@ export function setupTransportEvents() {
         btn.addEventListener("click", () => {
             const step = parseInt(btn.dataset.step, 10);
             let currentBpm = scoreState.bpm || 120;
-            let newBpm = Math.min(Math.max(currentBpm + step, 40), 260);
+            let newBpm = Math.min(Math.max(currentBpm + step, BPM_MIN), BPM_MAX);
 
             scoreState.bpm = newBpm;
             if (bpmInput) bpmInput.value = newBpm;
@@ -278,7 +278,7 @@ export function setupTransportEvents() {
     if (bpmInput) {
         bpmInput.addEventListener("input", (e) => {
             const val = parseInt(e.target.value, 10);
-            if (!isNaN(val) && val >= 40 && val <= 260) {
+            if (!isNaN(val) && val >= BPM_MIN && val <= BPM_MAX) {
                 scoreState.bpm = val;
                 if (popoverBpmDisplay) popoverBpmDisplay.textContent = val;
                 if (Tone.Transport) {

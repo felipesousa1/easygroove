@@ -2,7 +2,7 @@
 // Reaproveita o motor de áudio do editor. Tone.js e o motor são pré-carregados quando a página fica
 // ociosa (ou ao passar o mouse no play), e o JSON do arranjo é pré-buscado, para o clique ser imediato.
 import { scoreState } from '../core/state.js';
-import { TIME_SIGNATURES } from '../core/constants.js';
+import { TIME_SIGNATURES, clampBpm } from '../core/constants.js';
 
 const TONE_URL = "https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js";
 const LOAD_TIMEOUT_MS = 10000;
@@ -120,6 +120,7 @@ function applyArrangement(data) {
         measuresConfig: [],
         repeats: [],
     }, data);
+    scoreState.bpm = clampBpm(scoreState.bpm, 90);
 
     scoreState.loopState = {
         active: false, mode: "measures", empty: false,

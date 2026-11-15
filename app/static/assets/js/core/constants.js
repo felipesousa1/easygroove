@@ -219,6 +219,17 @@ export function getVolumeIcon(vol) {
     return "assets/icons/vol-alto.svg";
 }
 
+// Andamento permitido (BPM). Acima do máximo a reprodução com muitos instrumentos não acompanha o áudio.
+export const BPM_MIN = 40;
+export const BPM_MAX = 200;
+
+// Mantém o BPM dentro dos limites (arranjos salvos com valores antigos, mais altos, são limitados ao carregar)
+export function clampBpm(value, fallback = 120) {
+    const bpm = Number(value);
+    if (!Number.isFinite(bpm)) return fallback;
+    return Math.min(Math.max(Math.round(bpm), BPM_MIN), BPM_MAX);
+}
+
 export const TIME_SIGNATURES = {
     "4/4": { beats: 4, subdivisions: 4, beamType: "double" },
     "2/4": { beats: 2, subdivisions: 4, beamType: "double" },

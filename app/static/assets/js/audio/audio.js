@@ -160,6 +160,11 @@ function loadSurdoSamples(amostras) {
 }
 
 // Devolve false se a amostra não existe ou ainda não carregou (o chamador usa o sintetizador de reserva)
+// Batidas de amostra soando ao mesmo tempo por instrumento (canal). Com andamento alto, caudas longas (triângulo,
+// agogô, timbal) se acumulam; acima do limite a mais antiga recebe um fade curto e é parada, como a mão na pele.
+const SAMPLE_MAX_VOICES = 6;
+const sampleVoices = new WeakMap(); // destino (canal) -> batidas ativas, da mais antiga para a mais nova
+
 function playSample(file, destination, time, gain) {
     if (!sampleBuffers || !sampleBuffers.has(file)) return false;
     const buffer = sampleBuffers.get(file);
@@ -173,9 +178,28 @@ function playSample(file, destination, time, gain) {
     gainNode.gain.value = gain;
     source.connect(gainNode);
     Tone.connect(gainNode, destination);
-    source.onended = () => { source.disconnect(); gainNode.disconnect(); };
+
+    let voices = sampleVoices.get(destination);
+    if (!voices) { voices = []; sampleVoices.set(destination, voices); }
+    const voice = { source, gainNode };
+    voices.push(voice);
+    source.onended = () => {
+        source.disconnect(); gainNode.disconnect();
+        const i = voices.indexOf(voice);
+        if (i >= 0) voices.splice(i, 1);
+    };
+
     // Só protege contra horário já passado: Tone.now() inclui o lookAhead e atrasaria batidas do Transport
-    source.start(Math.max(time, ctx.currentTime + 0.005));
+    const start = Math.max(time, ctx.currentTime + 0.005);
+    source.start(start);
+
+    while (voices.length > SAMPLE_MAX_VOICES) {
+        const old = voices.shift();
+        try { old.gainNode.gain.setTargetAtTime(0, start, 0.008); } catch (e) { }
+        // Para a fonte depois do fade (pelo relógio da página, como nos surdos: agendar stop() no áudio pesou)
+        const delay = Math.max(0, (start + 0.07 - ctx.currentTime) * 1000);
+        setTimeout(() => { try { old.source.stop(); } catch (e) { } }, delay);
+    }
     return true;
 }
 
@@ -196,6 +220,8 @@ const SURDO_VOLUME_DB = { at50: -9.3, at100: -1 };
 // Sintetizadores do Tone.js ficam sempre ativos (osciladores, sinais), mesmo parados: 10 por surdo custavam ~10% de
 // um núcleo cada e, com batidas abertas sobrepostas, o áudio do navegador não acompanhava (o contexto morria).
 // Aqui só existem nós enquanto a batida soa. Cada batida tem um "bus" de ganho para poder ser cortada inteira.
+// Máximo de batidas de um surdo soando ao mesmo tempo (as mais antigas são cortadas)
+const SURDO_MAX_HITS = 4;
 const surdoNoiseBuffers = new WeakMap(); // contexto -> buffer de ruído branco (reaproveitado)
 
 function surdoNoiseBuffer(ctx) {
@@ -210,18 +236,29 @@ function surdoNoiseBuffer(ctx) {
     return buffer;
 }
 
-function startSurdoHit(group, time) {
+function startSurdoHit(group, time, destination = group.preGain) {
     const ctx = Tone.getContext();
     const bus = ctx.createGain();
-    Tone.connect(bus, group.preGain);
+    Tone.connect(bus, destination);
     const start = Math.max(time, ctx.currentTime);
-    const hit = { bus, start, end: start, last: null };
+    const hit = { bus, start, end: start, last: null, sources: [] };
     group.hits.add(hit);
+
+    // Limite de segurança: batidas demais vivas ao mesmo tempo (andamento alto + toques abertos) pesam no áudio;
+    // as mais antigas já estão quase mudas e são cortadas
+    if (group.hits.size > SURDO_MAX_HITS) {
+        let extra = group.hits.size - SURDO_MAX_HITS;
+        for (const old of group.hits) {
+            if (extra-- <= 0) break;
+            if (old !== hit) cutSurdoHit(old, start, 0.008);
+        }
+    }
     return { ctx, hit, start };
 }
 
 // Registra o fim da voz: quando a mais longa da batida termina, o bus é desconectado e a batida sai do conjunto
 function endSurdoVoice(group, hit, source, nodes, stopAt) {
+    hit.sources.push(source);
     if (stopAt >= hit.end) { hit.end = stopAt; hit.last = source; }
     source.onended = () => {
         nodes.forEach(node => { try { node.disconnect(); } catch (e) { } });
@@ -298,11 +335,76 @@ function addSurdoNoise(group, { ctx, hit, start }, { cutoff, decay, level }) {
 
 // Corta (fade curto) as batidas que já começaram antes de `time`: a mão encostando na pele
 // (`all` inclui as batidas agendadas para depois, usado no pause/stop)
+// Fundamental, parciais, ruído de ataque e punch de uma batida aberta/abafada. Serve à síntese ao vivo e à
+// pré-renderização (`hit` vem de startSurdoHit, ou monta-se um igual num OfflineAudioContext).
+function buildSurdoVoices(group, hit, cfg, open) {
+    const style = open ? cfg.aberto : cfg.fechado;
+    const voices = [{ freq: cfg.f0, db: 0 }, ...cfg.partials].map(v => ({ ...v, freq: v.freq * SURDO_PITCH_SCALE }));
+
+    // O envelope cai em dB/s (os parciais agudos caem mais rápido) e termina num fade
+    const body = style.length - style.fade;
+    voices.forEach((voice, i) => {
+        const dropDb = (style.dbPerSec + (i === 0 ? 0 : cfg.partialExtraDbPerSec)) * body;
+        addSurdoSine(group, hit, {
+            freq: voice.freq, level: style.velocity * Math.pow(10, voice.db / 20),
+            body, sustain: Math.pow(10, -dropDb / 20), fade: style.fade
+        });
+    });
+
+    addSurdoNoise(group, hit, { cutoff: cfg.thump.cutoff, decay: cfg.thump.decay, level: cfg.thump.level });
+
+    // Punch de sub-grave (seno com queda rápida de pitch, como um bumbo); o abafado leva 60% dele
+    addSurdoPunch(group, hit, { ...cfg.punch, freq: cfg.punch.freq * SURDO_PITCH_SCALE, level: cfg.punch.level * (open ? 1 : 0.6) });
+}
+
+// Renderiza uma vez cada batida (aberto e abafado) com a mesma cadeia do surdo ao vivo (pré-ganho -> tanh -> trim) e
+// depois toca como amostra. Cada batida ao vivo criava ~15 nós de áudio; com 8+ instrumentos e andamento alto, criar e
+// remover nós sem parar travava o áudio do navegador. Como amostra são 2 nós por batida.
+const USE_SURDO_PRERENDER = true;
+
+async function bakeSurdoStrokes(group) {
+    const cfg = group.marcacao;
+    const rate = Tone.getContext().sampleRate;
+    const curve = new Float32Array(2048);
+    for (let i = 0; i < curve.length; i++) {
+        const x = (i / (curve.length - 1)) * 2 - 1;
+        curve[i] = Math.tanh(2.5 * x) / Math.tanh(2.5);
+    }
+
+    for (const [stroke, open] of [["pele-aberto", true], ["abafado", false]]) {
+        const style = open ? cfg.aberto : cfg.fechado;
+        const off = new OfflineAudioContext(1, Math.ceil(rate * (style.length + 0.1)), rate);
+        const trim = off.createGain();
+        trim.gain.value = Math.pow(10, cfg.trimDb / 20);
+        trim.connect(off.destination);
+        const shaper = off.createWaveShaper();
+        shaper.curve = curve;
+        shaper.connect(trim);
+        const pre = off.createGain();
+        pre.gain.value = 0.5;
+        pre.connect(shaper);
+        const bus = off.createGain();
+        bus.connect(pre);
+
+        const hit = { ctx: off, hit: { bus, start: 0, end: 0, last: null, sources: [] }, start: 0 };
+        buildSurdoVoices({ hits: new Set() }, hit, cfg, open);
+        const buffer = await off.startRendering();
+        group.baked[stroke] = buffer;
+    }
+}
+
+function cutSurdoHit(hit, time, tau) {
+    try { hit.bus.gain.setTargetAtTime(0, time, tau); } catch (e) { }
+    // Depois do fade a batida está muda: para as fontes para não ficarem tocando silêncio até o fim natural
+    // (com andamento alto isso somava centenas de nós vivos e o áudio do navegador não acompanhava)
+    const ctx = Tone.getContext();
+    const delayMs = Math.max(0, (time + tau * 8 - ctx.currentTime) * 1000);
+    setTimeout(() => hit.sources.forEach(source => { try { source.stop(); } catch (e) { } }), delayMs);
+}
+
 function cutSurdoHits(group, time, tau = 0.01, all = false) {
     group.hits.forEach(hit => {
-        if (all || hit.start < time) {
-            try { hit.bus.gain.setTargetAtTime(0, time, tau); } catch (e) { }
-        }
+        if (all || hit.start < time) cutSurdoHit(hit, time, tau);
     });
 }
 
@@ -473,13 +575,18 @@ export const audioEngine = {
             const trim = new Tone.Volume(marcacao.trimDb).connect(channel);
             const shaper = new Tone.WaveShaper((x) => Math.tanh(2.5 * x) / Math.tanh(2.5), 2048).connect(trim);
             const preGain = new Tone.Gain(0.5).connect(shaper);
-            const group = { trim, shaper, preGain, marcacao, params: marcacao, hits: new Set() };
+            const group = { trim, shaper, preGain, marcacao, params: marcacao, hits: new Set(), baked: {} };
 
             // Aro e corpo (Surdo 3): amostras .wav carregadas uma vez
             if (marcacao.amostras) loadSurdoSamples(marcacao.amostras);
 
             // Pause/stop: silencia as batidas que ainda soam
             group.stopHits = () => cutSurdoHits(group, Tone.getContext().currentTime, 0.01, true);
+
+            // Pré-renderiza aberto e abafado em segundo plano; até ficarem prontos (alguns ms) o surdo sintetiza ao vivo
+            if (USE_SURDO_PRERENDER && !isOffline && typeof OfflineAudioContext !== "undefined") {
+                bakeSurdoStrokes(group).catch(err => console.warn("[EasyGroove] Pré-render do surdo falhou:", err));
+            }
 
             return group;
         }
@@ -633,9 +740,25 @@ export const audioEngine = {
 
     // Surdos 1ª/2ª/3ª: fundamental + parciais fixos, queda em dB/s; o abafado tem o mesmo timbre com queda rápida.
     // Cada batida cria seus próprios nós (ver startSurdoHit), então não há sintetizador para reiniciar.
+    // Toca a batida pré-renderizada (aberto/abafado) com o mesmo choke da síntese ao vivo; false se ainda não está pronta
+    playBakedSurdo(synths, stroke, time) {
+        const buffer = synths.baked?.[stroke];
+        if (!buffer) return false;
+
+        // A saturação já está embutida na amostra: a batida entra direto no trim
+        const hit = startSurdoHit(synths, time, synths.trim);
+        cutSurdoHits(synths, hit.start, 0.012);
+
+        const source = hit.ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(hit.hit.bus);
+        source.start(hit.start);
+        endSurdoVoice(synths, hit.hit, source, [source], hit.start + buffer.duration);
+        return true;
+    },
+
     triggerSurdoStroke(synths, stroke, time) {
         const cfg = synths.marcacao;
-        const voices = [{ freq: cfg.f0, db: 0 }, ...cfg.partials].map(v => ({ ...v, freq: v.freq * SURDO_PITCH_SCALE }));
 
         // A mão na pele: interrompe a reverberação do aberto e faz uma nota baixa e curta
         if (stroke === "mao" && cfg.mao) {
@@ -663,27 +786,15 @@ export const audioEngine = {
         const open = stroke === "pele-aberto";
         if (!open && stroke !== "abafado") return;
 
-        const style = open ? cfg.aberto : cfg.fechado;
+        // Batida pré-renderizada (2 nós em vez de ~15 por batida); sem ela ainda, sintetiza ao vivo
+        if (this.playBakedSurdo(synths, stroke, time)) return;
+
         const hit = startSurdoHit(synths, time);
 
         // Cada surdo é uma pele só: uma nova batida corta o que ainda ressoa da anterior (aberto ou abafado). Sem isso
         // as batidas se somam (toques repetidos estouram) e o áudio pesa.
         cutSurdoHits(synths, hit.start, 0.012);
-
-        // Fundamental e parciais: o envelope cai em dB/s (os parciais agudos caem mais rápido) e termina num fade
-        const body = style.length - style.fade;
-        voices.forEach((voice, i) => {
-            const dropDb = (style.dbPerSec + (i === 0 ? 0 : cfg.partialExtraDbPerSec)) * body;
-            addSurdoSine(synths, hit, {
-                freq: voice.freq, level: style.velocity * Math.pow(10, voice.db / 20),
-                body, sustain: Math.pow(10, -dropDb / 20), fade: style.fade
-            });
-        });
-
-        addSurdoNoise(synths, hit, { cutoff: cfg.thump.cutoff, decay: cfg.thump.decay, level: cfg.thump.level });
-
-        // Punch de sub-grave (seno com queda rápida de pitch, como um bumbo); o abafado leva 60% dele
-        addSurdoPunch(synths, hit, { ...cfg.punch, freq: cfg.punch.freq * SURDO_PITCH_SCALE, level: cfg.punch.level * (open ? 1 : 0.6) });
+        buildSurdoVoices(synths, hit, cfg, open);
     },
 
     // Toca o .wav do toque; false se desligado, sem amostra para o toque ou ainda não carregada (usa o sintetizado)
