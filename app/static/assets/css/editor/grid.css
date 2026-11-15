@@ -139,6 +139,73 @@
   pointer-events: auto;
 }
 
+/* Manulação (D/E) logo abaixo dos toques, no espaço vazio do compasso (não altera a altura nem a posição da grade).
+   Vazio fica invisível e só aparece no hover, como um círculo cinza; só aceita clique onde há toque preenchido. */
+.beat-group {
+  position: relative;
+}
+
+.sticking-bar {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  height: 14px;
+  display: flex;
+  pointer-events: auto;
+}
+
+.sticking-cell {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-black);
+  font: 700 10px/14px inherit;
+  text-align: center;
+  cursor: pointer;
+  z-index: 0; /* cria o contexto de empilhamento do círculo (::before com z-index -1) */
+}
+
+.sticking-cell::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background-color: var(--color-gray-border);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+  z-index: -1;
+}
+
+.sticking-cell:hover::before,
+.sticking-cell:focus-visible::before {
+  opacity: 1;
+}
+
+.sticking-cell.no-note {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Telas de toque não têm hover: o círculo fica com um tom leve para dar para encontrá-lo */
+@media (hover: none) {
+  .sticking-cell:not(.no-note)::before {
+    opacity: 0.45;
+  }
+}
+
+.score-row.hidden-track .sticking-cell {
+  color: #94a3b8;
+}
+
 .note-slot {
   flex: 1;
   height: 28px;

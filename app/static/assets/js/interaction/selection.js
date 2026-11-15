@@ -120,6 +120,7 @@ export function setupSelectionEvents() {
         if (
             e.target.closest("#selection-quick-toolbar") ||
             e.target.closest(".note-slot") ||
+            e.target.closest(".sticking-cell") ||
             e.target.closest(".beat-beams") ||
             e.target.closest("button") ||
             e.target.closest("input") ||

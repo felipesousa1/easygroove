@@ -123,6 +123,7 @@ function applySubdivision(instId, measureIndex, beatIndex, newSubdivision) {
     // Atualiza subdivisão e apaga o conteúdo do tempo preenchendo com nulos
     currentBeat.subdivisions = newSubdivision;
     currentBeat.notes = new Array(newSubdivision).fill(null);
+    delete currentBeat.hands;
 
     // Chamada direta da renderização
     renderScore();

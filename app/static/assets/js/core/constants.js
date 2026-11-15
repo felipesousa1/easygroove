@@ -230,6 +230,15 @@ export function clampBpm(value, fallback = 120) {
     return Math.min(Math.max(Math.round(bpm), BPM_MIN), BPM_MAX);
 }
 
+// Manulação (mão que toca cada nota): D = direita, E = esquerda. Guardada em beat.hands (mesmo tamanho de beat.notes;
+// ausente = sem manulação, então arranjos antigos continuam válidos). Só alguns instrumentos têm essa linha na partitura.
+export const STICKING_INSTRUMENTS = ["surdo", "caixa", "agogo", "timbal"];
+export const STICKING_CYCLE = [null, "D", "E"];
+
+export function supportsSticking(instId) {
+    return STICKING_INSTRUMENTS.includes(String(instId || "").replace(/[0-9]+$/, "").split("_")[0]);
+}
+
 export const TIME_SIGNATURES = {
     "4/4": { beats: 4, subdivisions: 4, beamType: "double" },
     "2/4": { beats: 2, subdivisions: 4, beamType: "double" },

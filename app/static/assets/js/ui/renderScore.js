@@ -1,5 +1,5 @@
 import { scoreState, createEmptyMeasure, createEmptyMeasureForSig, getClipboard } from '../core/state.js';
-import { TIME_SIGNATURES, getVolumeIcon } from '../core/constants.js';
+import { TIME_SIGNATURES, getVolumeIcon, supportsSticking } from '../core/constants.js';
 import { createBeamsSVG, getStrokeVisual } from './beams.js';
 import { updateToolbarPalettes } from './toolbar.js';
 import { renderRepeats } from './repeat.js';
@@ -167,6 +167,7 @@ function renderGrid(scoreGrid) {
         const row = document.createElement("div");
         row.className = `score-row ${inst.id === scoreState.activeTool.instrumentId ? 'active' : ''} ${inst.hidden ? 'hidden-track' : ''}`;
         row.dataset.instrumentId = inst.id;
+        const hasSticking = supportsSticking(inst.id);
 
         for (let m = 0; m < scoreState.measuresCount; m++) {
             const measureContainer = document.createElement("div");
@@ -227,6 +228,28 @@ function renderGrid(scoreGrid) {
                 }
 
                 beatGroup.appendChild(slotsBar);
+
+                // Linha de manulação (D/E) logo abaixo dos toques; o botão só aparece no hover quando está vazio
+                if (hasSticking) {
+                    const stickingBar = document.createElement("div");
+                    stickingBar.className = "sticking-bar";
+                    for (let s = 0; s < beatSubdivs; s++) {
+                        const hasNote = Boolean(beatData.notes[s]);
+                        const hand = hasNote ? (beatData.hands?.[s] || null) : null;
+                        const cell = document.createElement("button");
+                        cell.type = "button";
+                        cell.className = `sticking-cell${hasNote ? "" : " no-note"}`;
+                        cell.textContent = hand || "";
+                        cell.title = "Manulação: clique para alternar D / E / vazio";
+                        cell.tabIndex = hasNote ? 0 : -1;
+                        cell.dataset.instIndex = instIndex;
+                        cell.dataset.measure = m;
+                        cell.dataset.beat = b;
+                        cell.dataset.step = s;
+                        stickingBar.appendChild(cell);
+                    }
+                    beatGroup.appendChild(stickingBar);
+                }
                 measureContainer.appendChild(beatGroup);
             }
 

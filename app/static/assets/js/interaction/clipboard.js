@@ -17,7 +17,7 @@ function isPatternEmpty(patterns) {
         if (!measure) return true;
         return measure.every(beat => {
             if (!beat || !beat.notes) return true;
-            return beat.notes.every(note => note === null || note === "empty");
+            return beat.notes.every(note => note === null || note === "empty") && !(beat.hands || []).some(Boolean);
         });
     });
 }
@@ -83,6 +83,7 @@ export function clearSelectedMeasures(showNotification = true) {
             measurePattern.forEach(beatObj => {
                 if (beatObj && beatObj.notes) {
                     beatObj.notes = new Array(beatObj.subdivisions).fill(null);
+                    delete beatObj.hands;
                 }
             });
         }

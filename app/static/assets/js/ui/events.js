@@ -6,7 +6,7 @@ import { setColumnTimeSignature } from './menu.js';
 import { keepInViewport } from './placement.js';
 import { selectActiveInstrument } from './toolbar.js';
 import { getStrokeVisual } from './beams.js';
-import { TIME_SIGNATURES, BPM_MIN, BPM_MAX } from '../core/constants.js';
+import { TIME_SIGNATURES, BPM_MIN, BPM_MAX, STICKING_CYCLE } from '../core/constants.js';
 
 export function setupGridEvents() {
     const scoreGrid = document.getElementById("score-grid");
@@ -47,11 +47,49 @@ export function setupGridEvents() {
             slot.className = `note-slot ${visual.className}`;
             slot.innerHTML = visual.content;
 
+            // Manulação acompanha o toque: sem toque o botão some e a mão é apagada
+            const beatObj = instrument.pattern[measure][beat];
+            if (!targetStroke && beatObj.hands) {
+                beatObj.hands[step] = null;
+                if (beatObj.hands.every(h => !h)) delete beatObj.hands;
+            }
+            const stickingCell = scoreGrid.querySelector(
+                `.sticking-cell[data-inst-index="${instIndex}"][data-measure="${measure}"][data-beat="${beat}"][data-step="${step}"]`
+            );
+            if (stickingCell) {
+                stickingCell.classList.toggle("no-note", !targetStroke);
+                stickingCell.tabIndex = targetStroke ? 0 : -1;
+                if (!targetStroke) stickingCell.textContent = "";
+            }
+
             if (targetStroke && window.audioEngine) {
                 audioEngine.previewStroke(instrument.id, targetStroke);
             }
         }
     }
+
+    // Manulação: cada clique no botão abaixo do toque alterna vazio -> D -> E -> vazio
+    scoreGrid.addEventListener("click", (e) => {
+        const cell = e.target.closest(".sticking-cell");
+        if (!cell) return;
+
+        const instrument = scoreState.instruments[parseInt(cell.dataset.instIndex, 10)];
+        const beatObj = instrument?.pattern[parseInt(cell.dataset.measure, 10)]?.[parseInt(cell.dataset.beat, 10)];
+        const step = parseInt(cell.dataset.step, 10);
+        if (!beatObj || !beatObj.notes[step]) return; // só há manulação onde o toque está preenchido
+
+        historyManager.pushState();
+        if (!Array.isArray(beatObj.hands)) beatObj.hands = [];
+        beatObj.hands.length = beatObj.subdivisions;
+        for (let i = 0; i < beatObj.subdivisions; i++) if (beatObj.hands[i] === undefined) beatObj.hands[i] = null;
+
+        const current = beatObj.hands[step] || null;
+        const next = STICKING_CYCLE[(STICKING_CYCLE.indexOf(current) + 1) % STICKING_CYCLE.length];
+        beatObj.hands[step] = next;
+        if (beatObj.hands.every(h => h === null)) delete beatObj.hands;
+
+        cell.textContent = next || "";
+    });
 
     scoreGrid.addEventListener("mousedown", (e) => {
         const slot = e.target.closest(".note-slot");
