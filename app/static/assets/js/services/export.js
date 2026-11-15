@@ -126,6 +126,21 @@ function writeString(view, offset, string) {
     }
 }
 
+// Ajusta o ganho do arquivo inteiro para que o pico fique em `target` (0-1); mantém o equilíbrio entre os instrumentos
+function normalizePeak(buffer, target) {
+    let peak = 0;
+    for (let c = 0; c < buffer.numberOfChannels; c++) {
+        const data = buffer.getChannelData(c);
+        for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i]));
+    }
+    if (peak < 1e-4) return;
+    const gain = target / peak;
+    for (let c = 0; c < buffer.numberOfChannels; c++) {
+        const data = buffer.getChannelData(c);
+        for (let i = 0; i < data.length; i++) data[i] *= gain;
+    }
+}
+
 export async function exportScoreToAudio() {
     try {
         if (typeof showToast === "function") {
@@ -148,13 +163,22 @@ export async function exportScoreToAudio() {
 
         const durationInSeconds = (totalBeats * secondsPerBeat) + 1.5; // Margem extra para cauda do som
 
+        // Instrumentos que entram no áudio (não ocultos, com volume)
+        const audibleInstruments = scoreState.instruments.filter(inst => !isInstrumentHidden(inst) && inst.volume > 0);
+
+        // As amostras (.wav) precisam estar carregadas antes de renderizar, senão cai nos sons sintetizados de reserva
+        if (window.audioEngine) await window.audioEngine.ensureSamplesLoaded(audibleInstruments);
+
         // 3. Renderiza o áudio via Tone.Offline
         const renderedBuffer = await Tone.Offline(async () => {
             const offlineSynths = {};
 
+            // Mesma mixagem do app (volumes, bus mestre e limitadores) dentro do OfflineAudioContext
+            if (window.audioEngine) window.audioEngine.prepareOfflineMix(audibleInstruments);
+
             // Instancia os sintetizadores conectados ao novo OfflineAudioContext
-            scoreState.instruments.forEach(inst => {
-                if (!isInstrumentHidden(inst) && inst.volume > 0 && window.audioEngine) {
+            audibleInstruments.forEach(inst => {
+                if (window.audioEngine) {
                     offlineSynths[inst.id] = window.audioEngine.createSynthsForInstrument(inst.id, true);
                 }
             });
@@ -191,6 +215,7 @@ export async function exportScoreToAudio() {
             });
         }, durationInSeconds);
 
+        normalizePeak(renderedBuffer, 0.89); // ≈ -1 dBFS, sem distorção: o mix foi renderizado com folga
         const wavBlob = bufferToWav(renderedBuffer);
         const url = URL.createObjectURL(wavBlob);
 
@@ -221,11 +246,13 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
     if (!instSynths || !stroke) return;
 
     const baseType = instId.split("_")[0];
+    // Canal do instrumento na mixagem offline (as amostras entram por ele, com o volume do instrumento)
+    const channel = window.audioEngine.offlineChannels[instId] || Tone.getDestination();
 
     if (instSynths.params) {
         window.audioEngine.triggerSurdoStroke(instSynths, stroke, execTime);
     } else if (baseType === "caixa") {
-        if (window.audioEngine.playInstrumentSample("caixa", stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("caixa", stroke, channel, execTime)) return;
         if (stroke === "pele-aberto") {
             instSynths.pele?.triggerAttackRelease("F2", "16n", execTime, 0.9);
             instSynths.esteira?.triggerAttackRelease("16n", execTime, 0.6);
@@ -247,7 +274,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             }
         }
     } else if (baseType === "repique") {
-        if (window.audioEngine.playInstrumentSample("repique", stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("repique", stroke, channel, execTime)) return;
         if (stroke === "pele-aberto") {
             instSynths.main?.triggerAttackRelease("D3", "16n", execTime, 0.95);
         } else if (stroke === "rimshot") {
@@ -270,12 +297,12 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             }
         }
     } else if (baseType === "chocalho") {
-        if (window.audioEngine.playInstrumentSample("chocalho", stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("chocalho", stroke, channel, execTime)) return;
         const acentuado = stroke.endsWith("-acentuado");
         if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(acentuado ? 4200 : 3200, execTime);
         instSynths.noise?.triggerAttackRelease(acentuado ? "16n" : "32n", execTime, acentuado ? 0.85 : 0.5);
     } else if (baseType === "tamborim") {
-        if (window.audioEngine.playInstrumentSample("tamborim", stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("tamborim", stroke, channel, execTime)) return;
         if (stroke === "tamborim-chapado") {
             instSynths.main?.triggerAttackRelease("A3", "16n", execTime, 1.0);
         } else if (stroke === "tamborim-ponta") {
@@ -288,11 +315,11 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.main?.triggerAttackRelease("G#3", "32n", execTime, 0.7);
         }
     } else if (baseType === "agogo") {
-        if (window.audioEngine.playInstrumentSample("agogo", stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("agogo", stroke, channel, execTime)) return;
         const agogoNotes = { "agogo-1": "D5", "agogo-2": "G5", "agogo-3": "A5", "agogo-4": "D6" };
         if (agogoNotes[stroke]) instSynths.main?.triggerAttackRelease(agogoNotes[stroke], "32n", execTime, 0.75);
     } else if (baseType === "xequere") {
-        if (window.audioEngine.playInstrumentSample("xequere", stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("xequere", stroke, channel, execTime)) return;
         if (stroke === "xequere-baixo") {
             if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(1500, execTime);
             instSynths.baixo?.triggerAttackRelease("16n", execTime, 0.75);
@@ -301,7 +328,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.cima?.triggerAttackRelease("32n", execTime, 0.6);
         }
     } else if (baseType === "triangulo") {
-        if (window.audioEngine.playInstrumentSample("triangulo", stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("triangulo", stroke, channel, execTime)) return;
         if (stroke === "triangulo-fechado") {
             instSynths.fechado?.triggerAttackRelease("E7", "32n", execTime, 0.55);
         } else if (stroke === "triangulo-aberto-curto") {
@@ -310,7 +337,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.longo?.triggerAttackRelease("E7", "8n", execTime, 0.6);
         }
     } else if (baseType === "timbal") {
-        if (window.audioEngine.playInstrumentSample("timbal", stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("timbal", stroke, channel, execTime)) return;
         if (stroke === "timbal-open") {
             instSynths.main?.triggerAttackRelease("A3", "32n", execTime, 0.9);
         } else if (stroke === "timbal-bass") {

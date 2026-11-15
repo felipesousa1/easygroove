@@ -163,6 +163,10 @@ function loadSurdoSamples(amostras) {
 // Batidas de amostra soando ao mesmo tempo por instrumento (canal). Com andamento alto, caudas longas (triângulo,
 // agogô, timbal) se acumulam; acima do limite a mais antiga recebe um fade curto e é parada, como a mão na pele.
 const SAMPLE_MAX_VOICES = 6;
+
+// Renderização offline (exportação): o JS agenda tudo de uma vez e o áudio roda depois, então nada de limitar vozes nem
+// parar fontes pelo relógio da página; o tempo vale só no relógio do próprio contexto.
+const isOfflineContext = (rawCtx) => typeof OfflineAudioContext !== "undefined" && rawCtx instanceof OfflineAudioContext;
 const sampleVoices = new WeakMap(); // destino (canal) -> batidas ativas, da mais antiga para a mais nova
 
 function playSample(file, destination, time, gain) {
@@ -193,7 +197,7 @@ function playSample(file, destination, time, gain) {
     const start = Math.max(time, ctx.currentTime + 0.005);
     source.start(start);
 
-    while (voices.length > SAMPLE_MAX_VOICES) {
+    while (voices.length > SAMPLE_MAX_VOICES && !isOfflineContext(ctx)) {
         const old = voices.shift();
         try { old.gainNode.gain.setTargetAtTime(0, start, 0.008); } catch (e) { }
         // Para a fonte depois do fade (pelo relógio da página, como nos surdos: agendar stop() no áudio pesou)
@@ -398,6 +402,11 @@ function cutSurdoHit(hit, time, tau) {
     // Depois do fade a batida está muda: para as fontes para não ficarem tocando silêncio até o fim natural
     // (com andamento alto isso somava centenas de nós vivos e o áudio do navegador não acompanhava)
     const ctx = Tone.getContext();
+    if (isOfflineContext(ctx.rawContext)) {
+        // Exportação: o stop é agendado no relógio do áudio (um setTimeout mataria batidas que ainda vão tocar)
+        hit.sources.forEach(source => { try { source.stop(time + tau * 8); } catch (e) { } });
+        return;
+    }
     const delayMs = Math.max(0, (time + tau * 8 - ctx.currentTime) * 1000);
     setTimeout(() => hit.sources.forEach(source => { try { source.stop(); } catch (e) { } }), delayMs);
 }
@@ -407,6 +416,28 @@ function cutSurdoHits(group, time, tau = 0.01, all = false) {
         if (all || hit.start < time) cutSurdoHit(hit, time, tau);
     });
 }
+
+// Cadeia master: bus (compensação da soma) -> Limiter -> ganho 0,5x -> limitador suave -> saída. O Limiter do Tone deixa
+// passar picos acima de 0 dBFS (clipping no destino); o limitador suave arredonda o sinal a partir de 0,85 e nunca passa
+// de 1, mesmo com vários instrumentos juntos (abaixo de 0,85 é transparente; entrada 0,5x -> curva -> o mapa dobra de volta).
+// Serve ao áudio ao vivo e à exportação (que roda num contexto offline), para os dois soarem iguais.
+function buildMasterChain() {
+    const softClip = new Tone.WaveShaper((u) => {
+        const x = Math.abs(u * 2);
+        const y = x <= 0.85 ? x : 0.85 + 0.15 * Math.tanh((x - 0.85) / 0.15);
+        return Math.sign(u) * y;
+    }, 4096);
+    softClip.oversample = "2x";
+    softClip.toDestination();
+    const softClipGain = new Tone.Gain(0.5).connect(softClip);
+    const limiter = new Tone.Limiter(-3).connect(softClipGain);
+    // Bus mestre antes do limitador: a soma de vários instrumentos tocando juntos passava de 0 dB
+    const bus = new Tone.Volume(0).connect(limiter);
+    return { softClip, softClipGain, limiter, bus };
+}
+
+// Folga (dB) antes dos limitadores na exportação offline
+const OFFLINE_HEADROOM_DB = 12;
 
 export const audioEngine = {
     isPlaying: false,
@@ -433,17 +464,11 @@ export const audioEngine = {
         // Último estágio: limitador suave. O Limiter do Tone deixa passar picos acima de 0 dBFS (clipping no
         // destino); aqui o sinal é arredondado suavemente a partir de 0,85 e nunca passa de 1, mesmo com vários
         // instrumentos juntos. Abaixo de 0,85 é transparente. (entrada 0,5× -> curva -> o mapa dobra o valor de volta)
-        this.masterSoftClip = new Tone.WaveShaper((u) => {
-            const x = Math.abs(u * 2);
-            const y = x <= 0.85 ? x : 0.85 + 0.15 * Math.tanh((x - 0.85) / 0.15);
-            return Math.sign(u) * y;
-        }, 4096);
-        this.masterSoftClip.oversample = "2x";
-        this.masterSoftClip.toDestination();
-        this.masterSoftClipGain = new Tone.Gain(0.5).connect(this.masterSoftClip);
-        this.masterLimiter = new Tone.Limiter(-3).connect(this.masterSoftClipGain);
-        // Bus mestre antes do limitador: a soma de vários instrumentos tocando juntos passava de 0 dB
-        this.masterBus = new Tone.Volume(0).connect(this.masterLimiter);
+        const chain = buildMasterChain();
+        this.masterSoftClip = chain.softClip;
+        this.masterSoftClipGain = chain.softClipGain;
+        this.masterLimiter = chain.limiter;
+        this.masterBus = chain.bus;
 
         scoreState.instruments.forEach(inst => {
             this.initInstrumentChannel(inst);
@@ -460,6 +485,36 @@ export const audioEngine = {
         Tone.Transport.bpm.value = scoreState.bpm;
         this.updateMasterGain();
         this.isInitialized = true;
+    },
+
+    // ---- Exportação (renderização offline) ----
+    offlineChannels: {},
+
+    // Carrega (e espera) os .wav de todos os instrumentos do arranjo. Sem isso, exportar sem ter tocado antes (ou logo
+    // depois de abrir) usava os sintetizadores de reserva, porque as amostras ainda não tinham chegado.
+    async ensureSamplesLoaded(instruments) {
+        instruments.forEach(inst => {
+            const baseType = inst.id.split("_")[0];
+            loadInstrumentSamples(baseType);
+            const marcacao = SURDO_MARCACAO[baseType];
+            if (marcacao?.amostras) loadSurdoSamples(marcacao.amostras);
+        });
+        await Tone.loaded();
+    },
+
+    // Monta, dentro do Tone.Offline, a mesma mixagem do app ao vivo: um canal por instrumento (volume do instrumento) ->
+    // bus mestre (compensação pela quantidade de instrumentos) -> limitador -> limitador suave
+    prepareOfflineMix(instruments) {
+        const chain = buildMasterChain();
+        const audible = instruments.length;
+        // Folga de 12 dB: na exportação os limitadores não devem saturar (soaria "estourado" com muitos instrumentos juntos);
+        // o export.js normaliza o pico do arquivo depois de renderizado
+        chain.bus.volume.value = -OFFLINE_HEADROOM_DB - 5 * Math.log10(Math.max(1, audible));
+        this.offlineChannels = {};
+        instruments.forEach(inst => {
+            this.offlineChannels[inst.id] = new Tone.Volume(this.calculateDb(inst.volume, inst.id)).connect(chain.bus);
+        });
+        return chain;
     },
 
     // Compensa a soma dos instrumentos audíveis (≈ -5 dB por década de instrumentos: 7 => -4 dB; 1 => 0 dB)
@@ -566,7 +621,7 @@ export const audioEngine = {
     createSynthsForInstrument(instId, isOffline = false) {
         const baseType = instId.split("_")[0];
         const destination = this.masterLimiter || Tone.getDestination();
-        const channel = isOffline ? Tone.getDestination() : (this.channels[instId] || onlineDestination);
+        const channel = isOffline ? (this.offlineChannels[instId] || Tone.getDestination()) : (this.channels[instId] || onlineDestination);
         
         const marcacao = SURDO_MARCACAO[baseType];
         if (marcacao) {
