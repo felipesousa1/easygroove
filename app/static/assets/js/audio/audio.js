@@ -60,6 +60,8 @@ let sampleBuffers = null;
 const USE_CAIXA_AMOSTRAS = true;
 const USE_REPIQUE_AMOSTRAS = true;
 const USE_TAMBORIM_AMOSTRAS = true;
+const USE_CHOCALHO_AMOSTRAS = true;
+const USE_AGOGO_AMOSTRAS = true;
 const INSTRUMENT_SAMPLES = {
     caixa: {
         enabled: USE_CAIXA_AMOSTRAS,
@@ -83,6 +85,25 @@ const INSTRUMENT_SAMPLES = {
             rufo: { file: "repique-rufo2.wav", gain: 2 },
             aro: { file: "repique-aro2.wav", gain: 1.2 },
             corpo: { file: "repique-corpo2.wav", gain: 0.8 }
+        }
+    },
+    chocalho: {
+        enabled: USE_CHOCALHO_AMOSTRAS,
+        strokes: {
+            // Frente e trás soam igual (o som do trás original); os acentuados usam o som do frente original, mais forte
+            "chocalho-frente": { file: "chocalho-tras2.wav", gain: 1 },
+            "chocalho-tras": { file: "chocalho-tras2.wav", gain: 1 },
+            "chocalho-frente-acentuado": { file: "chocalho-frente2.wav", gain: 1.5 },
+            "chocalho-tras-acentuado": { file: "chocalho-frente2.wav", gain: 1.5 }
+        }
+    },
+    agogo: {
+        enabled: USE_AGOGO_AMOSTRAS,
+        strokes: {
+            "agogo-1": { file: "agogo-1.wav", gain: 0.8 },
+            "agogo-2": { file: "agogo-2.wav", gain: 0.85 },
+            "agogo-3": { file: "agogo-3.wav", gain: 0.8 },
+            "agogo-4": { file: "agogo-4.wav", gain: 0.75 }
         }
     },
     tamborim: {
@@ -483,6 +504,7 @@ export const audioEngine = {
         }
 
         if (baseType === "chocalho") {
+            loadInstrumentSamples("chocalho");
             const chocalhoFilter = new Tone.Filter(3500, "highpass").connect(channel);
             return {
                 filter: chocalhoFilter,
@@ -504,6 +526,7 @@ export const audioEngine = {
         }
 
         if (baseType === "agogo") {
+            loadInstrumentSamples("agogo");
             return {
                 main: new Tone.FMSynth({
                     harmonicity: 5.07, modulationIndex: 6,
@@ -697,13 +720,10 @@ export const audioEngine = {
                 }
             }
         } else if (baseType === "chocalho") {
-            if (stroke === "chocalho-frente") {
-                if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(4200, execTime);
-                instSynths.noise.triggerAttackRelease("32n", this.startTime(instSynths.noise, execTime), 0.8);
-            } else if (stroke === "chocalho-tras") {
-                if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(3200, execTime);
-                instSynths.noise.triggerAttackRelease("32n", this.startTime(instSynths.noise, execTime), 0.45);
-            }
+            if (this.playInstrumentSample("chocalho", stroke, this.channels[inst.id], execTime)) return;
+            const acentuado = stroke.endsWith("-acentuado");
+            if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(acentuado ? 4200 : 3200, execTime);
+            instSynths.noise.triggerAttackRelease("32n", this.startTime(instSynths.noise, execTime), acentuado ? 0.8 : 0.45);
         } else if (baseType === "tamborim") {
             if (this.playInstrumentSample("tamborim", stroke, this.channels[inst.id], execTime)) return;
             if (stroke === "tamborim-chapado") {
@@ -718,6 +738,7 @@ export const audioEngine = {
                 instSynths.main.triggerAttackRelease("G#3", "32n", this.startTime(instSynths.main, execTime), 0.65);
             }
         } else if (baseType === "agogo") {
+            if (this.playInstrumentSample("agogo", stroke, this.channels[inst.id], execTime)) return;
             const agogoNotes = { "agogo-1": "D5", "agogo-2": "G5", "agogo-3": "A5", "agogo-4": "D6" };
             if (agogoNotes[stroke]) {
                 instSynths.main.triggerAttackRelease(agogoNotes[stroke], "32n", this.startTime(instSynths.main, execTime), 0.7);

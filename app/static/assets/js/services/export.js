@@ -270,13 +270,10 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             }
         }
     } else if (baseType === "chocalho") {
-        if (stroke === "chocalho-frente") {
-            if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(4200, execTime);
-            instSynths.noise?.triggerAttackRelease("16n", execTime, 0.85);
-        } else if (stroke === "chocalho-tras") {
-            if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(3200, execTime);
-            instSynths.noise?.triggerAttackRelease("32n", execTime, 0.5);
-        }
+        if (window.audioEngine.playInstrumentSample("chocalho", stroke, Tone.getDestination(), execTime)) return;
+        const acentuado = stroke.endsWith("-acentuado");
+        if (instSynths.filter) instSynths.filter.frequency.setValueAtTime(acentuado ? 4200 : 3200, execTime);
+        instSynths.noise?.triggerAttackRelease(acentuado ? "16n" : "32n", execTime, acentuado ? 0.85 : 0.5);
     } else if (baseType === "tamborim") {
         if (window.audioEngine.playInstrumentSample("tamborim", stroke, Tone.getDestination(), execTime)) return;
         if (stroke === "tamborim-chapado") {
@@ -291,6 +288,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.main?.triggerAttackRelease("G#3", "32n", execTime, 0.7);
         }
     } else if (baseType === "agogo") {
+        if (window.audioEngine.playInstrumentSample("agogo", stroke, Tone.getDestination(), execTime)) return;
         const agogoNotes = { "agogo-1": "D5", "agogo-2": "G5", "agogo-3": "A5", "agogo-4": "D6" };
         if (agogoNotes[stroke]) instSynths.main?.triggerAttackRelease(agogoNotes[stroke], "32n", execTime, 0.75);
     } else if (baseType === "xequere") {

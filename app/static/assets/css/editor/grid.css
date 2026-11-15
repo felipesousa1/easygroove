@@ -387,6 +387,11 @@
   justify-content: center;
 }
 
+/* Chocalho acentuado: mesmo símbolo, mais grosso */
+.note-slot.chevron-bold {
+  -webkit-text-stroke: 1.6px currentColor;
+}
+
 .note-slot img,
 .note-slot svg {
   width: 16px;

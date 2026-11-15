@@ -94,6 +94,18 @@ iconHTML: `<span style="font-size: 1.1rem; line-height: 1; font-weight: bold; co
         className: "chevron-back",
         renderHTML: `&lt;`
     },
+    "chocalho-frente-acentuado": {
+        label: "Chocalho (Frente acentuado)",
+        iconHTML: `<span style="-webkit-text-stroke: 1.6px currentColor;">&gt;</span>`,
+        className: "chevron-accent chevron-bold",
+        renderHTML: `&gt;`
+    },
+    "chocalho-tras-acentuado": {
+        label: "Chocalho (Trás acentuado)",
+        iconHTML: `<span style="-webkit-text-stroke: 1.6px currentColor;">&lt;</span>`,
+        className: "chevron-back chevron-bold",
+        renderHTML: `&lt;`
+    },
     "tamborim-chapado": {
         label: "Chapado",
         iconHTML: `<span class="stroke-dot" style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#111827;"></span>`,
@@ -192,7 +204,7 @@ export const INSTRUMENT_PRESETS = {
     surdo3: { name: "Surdo 3ª", iconSvg: "assets/icons/inst-surdo3.svg", availableStrokes: ["pele-aberto", "abafado", "mao", "aro", "corpo"] },
     caixa: { name: "Caixa", iconSvg: "assets/icons/inst-caixa.svg", availableStrokes: ["pele-aberto", "fantasma", "rimshot-fraco", "rimshot-forte", "rufo", "aro"] },
     repique: { name: "Repique", iconSvg: "assets/icons/inst-repique.svg", availableStrokes: ["pele-aberto", "borda", "rimshot", "slap", "rufo", "aro", "corpo"] },
-    chocalho: { name: "Chocalho", iconSvg: "assets/icons/inst-chocalho.svg", availableStrokes: ["chocalho-frente", "chocalho-tras"] },
+    chocalho: { name: "Chocalho", iconSvg: "assets/icons/inst-chocalho.svg", availableStrokes: ["chocalho-frente", "chocalho-tras", "chocalho-frente-acentuado", "chocalho-tras-acentuado"] },
     tamborim: { name: "Tamborim", iconSvg: "assets/icons/inst-tamborim.svg", availableStrokes: ["tamborim-chapado", "tamborim-ponta", "volta", "abafado"] },
     agogo: { name: "Agogô", iconSvg: "assets/icons/inst-agogo.svg", availableStrokes: ["agogo-1", "agogo-2", "agogo-3", "agogo-4"] },
     xequere: { name: "Xequerê", iconSvg: "assets/icons/inst-xequere.svg", availableStrokes: ["xequere-baixo", "xequere-cima"] },
