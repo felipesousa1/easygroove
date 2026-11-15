@@ -310,6 +310,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.longo?.triggerAttackRelease("E7", "8n", execTime, 0.6);
         }
     } else if (baseType === "timbal") {
+        if (window.audioEngine.playInstrumentSample("timbal", stroke, Tone.getDestination(), execTime)) return;
         if (stroke === "timbal-open") {
             instSynths.main?.triggerAttackRelease("A3", "32n", execTime, 0.9);
         } else if (stroke === "timbal-bass") {

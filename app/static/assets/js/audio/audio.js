@@ -64,6 +64,7 @@ const USE_CHOCALHO_AMOSTRAS = true;
 const USE_AGOGO_AMOSTRAS = true;
 const USE_XEQUERE_AMOSTRAS = true;
 const USE_TRIANGULO_AMOSTRAS = true;
+const USE_TIMBAL_AMOSTRAS = true;
 const INSTRUMENT_SAMPLES = {
     caixa: {
         enabled: USE_CAIXA_AMOSTRAS,
@@ -121,6 +122,15 @@ const INSTRUMENT_SAMPLES = {
             "triangulo-fechado": { file: "triangulo-fechado.wav", gain: 0.6 },
             "triangulo-aberto-curto": { file: "triangulo-aberto-curto.wav", gain: 0.6 },
             "triangulo-aberto-longo": { file: "triangulo-aberto-longo.wav", gain: 0.6 }
+        }
+    },
+    timbal: {
+        enabled: USE_TIMBAL_AMOSTRAS,
+        strokes: {
+            "timbal-open": { file: "timbal-open2.wav", gain: 0.8 },
+            "timbal-slap": { file: "timbal-slap2.wav", gain: 0.7 },
+            "timbal-bass": { file: "timbal-bass.wav", gain: 0.7 },
+            "timbal-fantasma": { file: "timbal-fantasma.wav", gain: 0.7 }
         }
     },
     tamborim: {
@@ -589,6 +599,7 @@ export const audioEngine = {
         }
 
         if (baseType === "timbal") {
+            loadInstrumentSamples("timbal");
             return {
                 main: new Tone.MembraneSynth({
                     pitchDecay: 0.03, octaves: 2.5, oscillator: { type: "sine" },
@@ -781,6 +792,7 @@ export const audioEngine = {
                 instSynths.longo.triggerAttackRelease("E7", "8n", this.startTime(instSynths.longo, execTime), 0.55);
             }
         } else if (baseType === "timbal") {
+            if (this.playInstrumentSample("timbal", stroke, this.channels[inst.id], execTime)) return;
             if (stroke === "timbal-open") {
                 instSynths.main.triggerAttackRelease("A3", "32n", this.startTime(instSynths.main, execTime), 0.85);
             } else if (stroke === "timbal-bass") {

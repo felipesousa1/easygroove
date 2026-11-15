@@ -156,9 +156,9 @@ iconHTML: `<span style="font-size: 1.1rem; line-height: 1; font-weight: bold; co
     },
     "triangulo-fechado": {
         label: "Triângulo Fechado",
-        iconHTML: `+`,
-        className: "chevron-accent",
-        renderHTML: `+`
+        iconHTML: `<span class="stroke-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#111827;"></span>`,
+        className: "small-dot",
+        renderHTML: ""
     },
     "triangulo-aberto-longo": {
         label: "Triângulo Aberto (Longo)",
@@ -180,9 +180,9 @@ iconHTML: `<span style="font-size: 1.1rem; line-height: 1; font-weight: bold; co
     },
     "timbal-slap": {
         label: "Timbal Slap",
-        iconHTML: `<img src="assets/icons/stroke-slap.svg" alt="Timbal Slap" class="ui-icon-stroke">`,
+        iconHTML: `<img src="assets/icons/stroke-rimshot.svg" alt="Timbal Slap" class="ui-icon-stroke">`,
         className: "custom-svg",
-        renderHTML: `<img src="assets/icons/stroke-slap.svg" alt="Timbal Slap">`
+        renderHTML: `<img src="assets/icons/stroke-rimshot.svg" alt="Timbal Slap">`
     },
     "timbal-bass": {
         label: "Timbal Bass",
@@ -208,7 +208,7 @@ export const INSTRUMENT_PRESETS = {
     tamborim: { name: "Tamborim", iconSvg: "assets/icons/inst-tamborim.svg", availableStrokes: ["tamborim-chapado", "tamborim-ponta", "volta", "abafado"] },
     agogo: { name: "Agogô", iconSvg: "assets/icons/inst-agogo.svg", availableStrokes: ["agogo-1", "agogo-2", "agogo-3", "agogo-4"] },
     xequere: { name: "Xequerê", iconSvg: "assets/icons/inst-xequere.svg", availableStrokes: ["xequere-baixo", "xequere-cima"] },
-    triangulo: { name: "Triângulo", iconSvg: "assets/icons/inst-triangulo.svg", availableStrokes: ["triangulo-fechado", "triangulo-aberto-longo", "triangulo-aberto-curto"] },
+    triangulo: { name: "Triângulo", iconSvg: "assets/icons/inst-triangulo.svg", availableStrokes: ["triangulo-aberto-longo", "triangulo-fechado", "triangulo-aberto-curto"] },
     timbal: { name: "Timbal", iconSvg: "assets/icons/inst-timbal.svg", availableStrokes: ["timbal-open", "timbal-slap", "timbal-bass", "timbal-fantasma"] }
 };
 
