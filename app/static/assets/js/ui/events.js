@@ -397,6 +397,18 @@ export function setupMainMenuEvents() {
         });
     }
 
+    const btnFeedback = document.getElementById("menu-opt-feedback");
+    const feedbackIcon = document.getElementById("feedback-status-icon");
+    if (feedbackIcon) feedbackIcon.textContent = scoreState.strokeFeedback ? "✓" : "";
+    btnFeedback?.addEventListener("click", () => {
+        scoreState.strokeFeedback = !scoreState.strokeFeedback;
+        try { localStorage.setItem("easygroove_feedback_sonoro", JSON.stringify(scoreState.strokeFeedback)); } catch (e) { }
+        if (feedbackIcon) feedbackIcon.textContent = scoreState.strokeFeedback ? "✓" : "";
+        if (typeof showToast === "function") {
+            showToast(`Som dos toques ${scoreState.strokeFeedback ? 'ativado' : 'desativado'}`);
+        }
+    });
+
     const btnToggleToolbar = document.getElementById("menu-opt-toolbar");
     const toolbarStatusIcon = document.getElementById("toolbar-status-icon");
     const floatingBar = document.querySelector(".floating-editor-bar");

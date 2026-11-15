@@ -61,7 +61,7 @@ export async function saveCurrentArrangement() {
     const saveBtn = document.getElementById("btn-save-project");
     if (saveBtn && saveBtn.disabled) return;
 
-    const { loopState, ...scoreDataToSave } = scoreState;
+    const { loopState, strokeFeedback, ...scoreDataToSave } = scoreState;
 
     const payload = {
         name: scoreState.title || "Sem Título",

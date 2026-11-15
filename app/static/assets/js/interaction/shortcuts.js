@@ -110,6 +110,10 @@ export function setupKeyboardShortcuts() {
                     e.preventDefault();
                     document.getElementById("menu-opt-autoscroll")?.click();
                     break;
+                case "o":
+                    e.preventDefault();
+                    document.getElementById("menu-opt-feedback")?.click();
+                    break;
                 case "t":
                     e.preventDefault();
                     document.getElementById("menu-opt-toolbar")?.click();

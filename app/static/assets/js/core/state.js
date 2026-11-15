@@ -36,6 +36,7 @@ export function isInstrumentHidden(inst) {
 }
 
 const savedAutoScroll = localStorage.getItem("easygroove_autoscroll");
+const savedFeedback = localStorage.getItem("easygroove_feedback_sonoro");
 const savedToolbar = localStorage.getItem("easygroove_toolbar");
 
 export const scoreState = {
@@ -45,6 +46,7 @@ export const scoreState = {
     measuresCount: 1,
     selectedSelection: [],
     autoScroll: savedAutoScroll !== null ? JSON.parse(savedAutoScroll) : false,
+    strokeFeedback: savedFeedback !== null ? JSON.parse(savedFeedback) : true,
     toolbarVisible: savedToolbar !== null ? JSON.parse(savedToolbar) : true,
     measuresConfig: [
         { timeSignature: "4/4" }

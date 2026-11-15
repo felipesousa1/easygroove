@@ -978,7 +978,7 @@ export const audioEngine = {
     },
 
     async previewStroke(instId, strokeType) {
-        if (this.isPlaying || !strokeType) return;
+        if (this.isPlaying || !strokeType || scoreState.strokeFeedback === false) return;
         if (!this.isInitialized) this.init();
         await Tone.start();
 

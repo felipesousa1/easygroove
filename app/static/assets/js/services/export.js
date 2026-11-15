@@ -4,7 +4,7 @@ import { showToast } from '../ui/toast.js';
 
 export function exportScoreToJSON() {
     try {
-        const { loopState, selectedSelection, ...cleanScoreData } = scoreState;
+        const { loopState, selectedSelection, strokeFeedback, ...cleanScoreData } = scoreState;
         const jsonString = JSON.stringify(cleanScoreData, null, 2);
         const blob = new Blob([jsonString], { type: "application/json" });
         const url = URL.createObjectURL(blob);
