@@ -59,6 +59,7 @@ let sampleBuffers = null;
 // enabled = false volta aos toques sintetizados daquele instrumento.
 const USE_CAIXA_AMOSTRAS = true;
 const USE_REPIQUE_AMOSTRAS = true;
+const USE_TAMBORIM_AMOSTRAS = true;
 const INSTRUMENT_SAMPLES = {
     caixa: {
         enabled: USE_CAIXA_AMOSTRAS,
@@ -82,6 +83,15 @@ const INSTRUMENT_SAMPLES = {
             rufo: { file: "repique-rufo2.wav", gain: 2 },
             aro: { file: "repique-aro2.wav", gain: 1.2 },
             corpo: { file: "repique-corpo2.wav", gain: 0.8 }
+        }
+    },
+    tamborim: {
+        enabled: USE_TAMBORIM_AMOSTRAS,
+        strokes: {
+            "tamborim-chapado": { file: "tamborim-chapado.wav", gain: 0.85 },
+            "tamborim-ponta": { file: "tamborim-ponta.wav", gain: 1.2 },
+            volta: { file: "tamborim-volta.wav", gain: 1 },
+            abafado: { file: "tamborim-abafado.wav", gain: 0.9 }
         }
     }
 };
@@ -127,7 +137,7 @@ function playSurdoSample(file, destination, time, gain) {
 
 // Afinação geral dos surdos: multiplica a fundamental, os parciais e o punch das tabelas acima (1,1 ≈ 1,6 semitom
 // mais agudo). Um único número para deixar todos mais ou menos graves.
-const SURDO_PITCH_SCALE = 1.1;
+const SURDO_PITCH_SCALE = 1.15;
 
 // Curva de volume dos surdos (ganho do canal, em dB): 50% = padrão e 100% = máximo sem distorção. Abaixo de 50% segue a
 // mesma inclinação dos outros instrumentos (0,48 dB por ponto); acima de 50% sobe devagar até o teto de 100%.
@@ -484,6 +494,7 @@ export const audioEngine = {
         }
 
         if (baseType === "tamborim") {
+            loadInstrumentSamples("tamborim");
             return {
                 main: new Tone.MembraneSynth({
                     pitchDecay: 0.02, octaves: 2.5, oscillator: { type: "triangle" },
@@ -694,6 +705,7 @@ export const audioEngine = {
                 instSynths.noise.triggerAttackRelease("32n", this.startTime(instSynths.noise, execTime), 0.45);
             }
         } else if (baseType === "tamborim") {
+            if (this.playInstrumentSample("tamborim", stroke, this.channels[inst.id], execTime)) return;
             if (stroke === "tamborim-chapado") {
                 instSynths.main.triggerAttackRelease("A3", "32n", this.startTime(instSynths.main, execTime), 0.9);
             } else if (stroke === "tamborim-ponta") {

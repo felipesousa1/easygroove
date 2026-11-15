@@ -278,6 +278,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             instSynths.noise?.triggerAttackRelease("32n", execTime, 0.5);
         }
     } else if (baseType === "tamborim") {
+        if (window.audioEngine.playInstrumentSample("tamborim", stroke, Tone.getDestination(), execTime)) return;
         if (stroke === "tamborim-chapado") {
             instSynths.main?.triggerAttackRelease("A3", "16n", execTime, 1.0);
         } else if (stroke === "tamborim-ponta") {
