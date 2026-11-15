@@ -224,20 +224,8 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
 
     if (instSynths.params) {
         window.audioEngine.triggerSurdoStroke(instSynths, stroke, execTime);
-    } else if (baseType.startsWith("surdo")) {
-        if (stroke === "pele-aberto") {
-            instSynths.main?.triggerAttackRelease(instSynths.defaultPitch || "C1", "4n", execTime, 1.0);
-        } else if (stroke === "abafado") {
-            instSynths.main?.triggerAttackRelease("D1", "16n", execTime, 0.5);
-        } else if (stroke === "mao") {
-            instSynths.main?.triggerAttackRelease("G1", "32n", execTime, 0.6);
-        } else if (stroke === "aro") {
-            instSynths.aro?.triggerAttackRelease("A4", "32n", execTime, 0.55);
-        } else if (stroke === "corpo") {
-            instSynths.corpo?.triggerAttackRelease("32n", execTime, 0.45);
-            instSynths.main?.triggerAttackRelease("C2", "32n", execTime, 0.25);
-        }
     } else if (baseType === "caixa") {
+        if (window.audioEngine.playCaixaSample(stroke, Tone.getDestination(), execTime)) return;
         if (stroke === "pele-aberto") {
             instSynths.pele?.triggerAttackRelease("F2", "16n", execTime, 0.9);
             instSynths.esteira?.triggerAttackRelease("16n", execTime, 0.6);
