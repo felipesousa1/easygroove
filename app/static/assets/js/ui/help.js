@@ -41,7 +41,7 @@ const TOUR_SLIDES = [
             {
                 selector: ".floating-editor-bar",
                 title: "Instrumento, Toques e Histórico",
-                text: "Escolha o instrumento ativo e o tipo de toque (pele, abafado, aro, rimshot...). Use desfazer e refazer para voltar atrás em qualquer edição.",
+                text: "Escolha o instrumento ativo e o tipo de toque (centro, abafado, aro, rimshot...). Use desfazer e refazer para voltar atrás em qualquer edição.",
                 tip: "Teclas 1 a 9 trocam o toque, 0 apaga a nota. Ctrl + Z desfaz e Ctrl + Y refaz."
             }
         ]

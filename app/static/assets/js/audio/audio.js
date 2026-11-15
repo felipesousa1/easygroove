@@ -55,22 +55,46 @@ const USE_SURDO_AMOSTRAS = true;
 const SAMPLES_URL = "assets/strokes/";
 let sampleBuffers = null;
 
-// Caixa: USE_CAIXA_AMOSTRAS = false volta aos toques sintetizados (o código deles continua em triggerStroke)
+// Toques gravados da caixa e do repique (o sintetizado continua em triggerStroke como reserva).
+// enabled = false volta aos toques sintetizados daquele instrumento.
 const USE_CAIXA_AMOSTRAS = true;
-const CAIXA_AMOSTRAS = {
-    "pele-aberto": { file: "caixa-aberto2.wav", gain: 0.8 },
-    fantasma: { file: "caixa-fantasma2.wav", gain: 1 },
-    aro: { file: "caixa-aro2.wav", gain: 0.9 },
-    "rimshot-forte": { file: "caixa-rimshot-forte2.wav", gain: 0.8 },
-    rimshot: { file: "caixa-rimshot-forte2.wav", gain: 0.8 },
-    "rimshot-fraco": { file: "caixa-rimshot-fraco2.wav", gain: 1 },
-    rufo: { file: "caixa-rufo2.wav", gain: 0.7 }
+const USE_REPIQUE_AMOSTRAS = true;
+const INSTRUMENT_SAMPLES = {
+    caixa: {
+        enabled: USE_CAIXA_AMOSTRAS,
+        strokes: {
+            "pele-aberto": { file: "caixa-aberto2.wav", gain: 0.8 },
+            fantasma: { file: "caixa-fantasma2.wav", gain: 1 },
+            aro: { file: "caixa-aro2.wav", gain: 0.9 },
+            "rimshot-forte": { file: "caixa-rimshot-forte2.wav", gain: 0.8 },
+            rimshot: { file: "caixa-rimshot-forte2.wav", gain: 0.8 },
+            "rimshot-fraco": { file: "caixa-rimshot-fraco2.wav", gain: 1 },
+            rufo: { file: "caixa-rufo2.wav", gain: 0.7 }
+        }
+    },
+    repique: {
+        enabled: USE_REPIQUE_AMOSTRAS,
+        strokes: {
+            "pele-aberto": { file: "repique-centro2.wav", gain: 1.5 },
+            borda: { file: "repique-borda2.wav", gain: 0.85 },
+            rimshot: { file: "repique-rimshot2.wav", gain: 1.5 },
+            slap: { file: "repique-slap2.wav", gain: 1.4 },
+            rufo: { file: "repique-rufo2.wav", gain: 2 },
+            aro: { file: "repique-aro2.wav", gain: 1.2 },
+            corpo: { file: "repique-corpo2.wav", gain: 0.8 }
+        }
+    }
 };
 
 function loadSamples(files) {
     if (!window.Tone) return;
     if (!sampleBuffers) sampleBuffers = new Tone.ToneAudioBuffers({ urls: {}, baseUrl: SAMPLES_URL });
     files.forEach((file) => { if (!sampleBuffers.has(file)) sampleBuffers.add(file, file); });
+}
+
+function loadInstrumentSamples(baseType) {
+    const cfg = INSTRUMENT_SAMPLES[baseType];
+    if (cfg?.enabled) loadSamples([...new Set(Object.values(cfg.strokes).map(a => a.file))]);
 }
 
 function loadSurdoSamples(amostras) {
@@ -403,7 +427,7 @@ export const audioEngine = {
         }
 
         if (baseType === "caixa") {
-            if (USE_CAIXA_AMOSTRAS) loadSamples([...new Set(Object.values(CAIXA_AMOSTRAS).map(a => a.file))]);
+            loadInstrumentSamples("caixa");
             const rimshotConfig = {
                 frequency: 320, envelope: { attack: 0.001, decay: 0.05, release: 0.04 },
                 harmonicity: 4.1, modulationIndex: 28, resonance: 2500, octaves: 1.2
@@ -428,6 +452,7 @@ export const audioEngine = {
         }
 
         if (baseType === "repique") {
+            loadInstrumentSamples("repique");
             const rimshotConfig = {
                 frequency: 320, envelope: { attack: 0.001, decay: 0.05, release: 0.04 },
                 harmonicity: 4.1, modulationIndex: 28, resonance: 2500, octaves: 1.2
@@ -597,9 +622,10 @@ export const audioEngine = {
         addSurdoPunch(synths, hit, { ...cfg.punch, freq: cfg.punch.freq * SURDO_PITCH_SCALE, level: cfg.punch.level * (open ? 1 : 0.6) });
     },
 
-    // Toca o .wav da caixa; false se desligado, sem amostra para o toque ou ainda não carregada (usa o sintetizado)
-    playCaixaSample(stroke, destination, time) {
-        const amostra = USE_CAIXA_AMOSTRAS && CAIXA_AMOSTRAS[stroke];
+    // Toca o .wav do toque; false se desligado, sem amostra para o toque ou ainda não carregada (usa o sintetizado)
+    playInstrumentSample(baseType, stroke, destination, time) {
+        const cfg = INSTRUMENT_SAMPLES[baseType];
+        const amostra = cfg?.enabled && cfg.strokes[stroke];
         return !!amostra && !!destination && playSample(amostra.file, destination, time, amostra.gain);
     },
 
@@ -615,7 +641,7 @@ export const audioEngine = {
         if (instSynths.params) {
             this.triggerSurdoStroke(instSynths, stroke, execTime);
         } else if (baseType === "caixa") {
-            if (this.playCaixaSample(stroke, this.channels[inst.id], execTime)) return;
+            if (this.playInstrumentSample("caixa", stroke, this.channels[inst.id], execTime)) return;
             if (stroke === "pele-aberto") {
                 instSynths.pele.triggerAttackRelease("F2", "32n", this.startTime(instSynths.pele, execTime), 0.85);
                 instSynths.esteira.triggerAttackRelease("32n", this.startTime(instSynths.esteira, execTime), 0.55);
@@ -637,6 +663,7 @@ export const audioEngine = {
                 }
             }
         } else if (baseType === "repique") {
+            if (this.playInstrumentSample("repique", stroke, this.channels[inst.id], execTime)) return;
             if (stroke === "pele-aberto") {
                 instSynths.main.triggerAttackRelease("D3", "32n", this.startTime(instSynths.main, execTime), 0.9);
             } else if (stroke === "rimshot") {

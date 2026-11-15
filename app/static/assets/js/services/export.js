@@ -225,7 +225,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
     if (instSynths.params) {
         window.audioEngine.triggerSurdoStroke(instSynths, stroke, execTime);
     } else if (baseType === "caixa") {
-        if (window.audioEngine.playCaixaSample(stroke, Tone.getDestination(), execTime)) return;
+        if (window.audioEngine.playInstrumentSample("caixa", stroke, Tone.getDestination(), execTime)) return;
         if (stroke === "pele-aberto") {
             instSynths.pele?.triggerAttackRelease("F2", "16n", execTime, 0.9);
             instSynths.esteira?.triggerAttackRelease("16n", execTime, 0.6);
@@ -247,6 +247,7 @@ function triggerOfflineSynthStroke(instSynths, instId, stroke, execTime) {
             }
         }
     } else if (baseType === "repique") {
+        if (window.audioEngine.playInstrumentSample("repique", stroke, Tone.getDestination(), execTime)) return;
         if (stroke === "pele-aberto") {
             instSynths.main?.triggerAttackRelease("D3", "16n", execTime, 0.95);
         } else if (stroke === "rimshot") {
