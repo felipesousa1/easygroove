@@ -30,3 +30,5 @@ app/static/uploads/
 .env
 *.db-wal
 *.db-shm
+.neon
+.env.local
