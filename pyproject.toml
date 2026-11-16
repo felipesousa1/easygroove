@@ -1,6 +1,10 @@
 [project]
 name = "easygroove"
 version = "0.1.0"
+description = "Plataforma web de código aberto para escrever, ouvir e organizar partituras em grade de percussão brasileira."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Felipe Sousa" }]
 requires-python = ">=3.10"
 # A Vercel instala a partir daqui (lê o pyproject antes do requirements.txt): mantenha as duas listas iguais
 dependencies = [
