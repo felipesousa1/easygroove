@@ -130,7 +130,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   padding: 0 16px;
   transition: all 0.15s ease;
 }
@@ -884,7 +884,13 @@
   pointer-events: none;
 }
 
-.lib-card:hover .lib-card-check,
+/* O hover só vale com mouse: no toque ele "gruda" no último card tocado */
+@media (hover: hover) {
+  .lib-card:hover .lib-card-check {
+    display: flex;
+  }
+}
+
 .lib-grid.is-selecting .lib-card-check {
   display: flex;
 }
@@ -1684,13 +1690,22 @@
 /* Em telas sem hover (celular/tablet) o que só aparecia ao passar o mouse precisa ficar visível.
    Fica no fim do arquivo para vencer o "display: none" da caixa de seleção. */
 @media (hover: none) {
+  /* Sem hover: a caixa só aparece depois do primeiro card selecionado (clicar e segurar) */
   .lib-card-check {
+    display: none;
+    width: 26px;
+    height: 26px;
+  }
+
+  .lib-grid.is-selecting .lib-card-check {
     display: flex;
   }
 
-  .lib-card-check {
-    width: 26px;
-    height: 26px;
+  /* O toque longo não pode abrir o menu do navegador nem selecionar texto */
+  .lib-card {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   .lib-card-checkbox {

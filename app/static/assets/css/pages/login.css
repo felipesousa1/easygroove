@@ -233,13 +233,19 @@
     align-items: flex-start;
   }
 
+  /* "Bem-vindo Groover!" numa linha só: sem a quebra, e a fonte acompanha a largura da tela */
   .login-heading {
-    font-size: 1.9rem;
+    font-size: clamp(1.2rem, 6.6vw, 1.9rem);
     margin-bottom: 10px;
+    white-space: nowrap;
+  }
+
+  .login-heading br {
+    display: none;
   }
 
   .drum-emoji {
-    font-size: 1.8rem;
+    font-size: 0.95em;
   }
 
   .login-subtitle {

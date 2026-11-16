@@ -378,7 +378,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ==========================================
     // SELEÇÃO EM LOTE
-    // Caixa no canto de cada card (aparece no hover); depois da primeira seleção ela persiste em todos.
+    // Caixa no canto de cada card (aparece no hover, ou no celular após clicar e segurar); depois da primeira seleção ela persiste em todos.
     // ==========================================
     const batchBar = document.getElementById("lib-batch-bar");
     const batchCount = document.getElementById("lib-batch-count");
@@ -432,6 +432,52 @@ document.addEventListener("DOMContentLoaded", () => {
         updateBatchUI();
     }
 
+
+    // Celular/tablet (sem hover): clicar e segurar num card seleciona o primeiro; depois a caixa aparece em todos
+    const LONG_PRESS_MS = 450;
+    const LONG_PRESS_MOVE = 10; // px: mover mais que isso é rolagem, não toque longo
+    let pressTimer = null;
+    let pressStart = null;
+    let suppressNextClick = false;
+
+    const cancelPress = () => {
+        clearTimeout(pressTimer);
+        pressTimer = null;
+        pressStart = null;
+    };
+
+    document.addEventListener("pointerdown", (e) => {
+        suppressNextClick = false;
+        if (e.pointerType === "mouse" || !e.isPrimary || isSelecting()) return;
+        const card = e.target.closest(".lib-card");
+        if (!card || e.target.closest(".lib-card-menu-wrapper, .lib-card-play, .lib-card-check")) return;
+
+        pressStart = { x: e.clientX, y: e.clientY };
+        pressTimer = setTimeout(() => {
+            pressTimer = null;
+            suppressNextClick = true; // o toque que termina o gesto não abre o arranjo
+            toggleCard(card);
+            if (navigator.vibrate) navigator.vibrate(15);
+        }, LONG_PRESS_MS);
+    });
+
+    document.addEventListener("pointermove", (e) => {
+        if (!pressStart) return;
+        if (Math.hypot(e.clientX - pressStart.x, e.clientY - pressStart.y) > LONG_PRESS_MOVE) cancelPress();
+    });
+    ["pointerup", "pointercancel", "scroll"].forEach(type => document.addEventListener(type, cancelPress, true));
+
+    // Menu de contexto do toque longo (Android) não deve abrir sobre o card
+    document.addEventListener("contextmenu", (e) => {
+        if (e.target.closest(".lib-card") && (pressTimer || suppressNextClick || isSelecting())) e.preventDefault();
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!suppressNextClick) return;
+        suppressNextClick = false;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+    }, true);
 
     // Caixa de seleção do card
     document.addEventListener("click", (e) => {
