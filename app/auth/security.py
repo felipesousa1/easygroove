@@ -1,10 +1,18 @@
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import bcrypt
 import jwt
 
+# Em produção (EASYGROOVE_ENV=production) a chave vem obrigatoriamente do ambiente
+IS_PRODUCTION = os.getenv("EASYGROOVE_ENV") == "production"
+
 # Configuração do Token JWT
-SECRET_KEY = "easygroove-super-secret-key-change-in-production"
+SECRET_KEY = os.getenv("EASYGROOVE_SECRET_KEY") or ""
+if not SECRET_KEY:
+    if IS_PRODUCTION:
+        raise RuntimeError("Defina EASYGROOVE_SECRET_KEY: em produção o app não inicia sem uma chave secreta.")
+    SECRET_KEY = "easygroove-dev-key-nao-usar-em-producao"  # apenas desenvolvimento local
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 dias
 

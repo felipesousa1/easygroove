@@ -1,10 +1,10 @@
 # EasyGroove
 
-Plataforma web para escrita, reprodução e organização de partituras simplificadas de percussão. Backend desenvolvido com FastAPI e SQLModel, frontend com Jinja2 e HTMX.
+Plataforma web para escrita, reprodução e organização de partituras simplificadas de percussão. Backend desenvolvido com FastAPI e SQLModel, frontend com Jinja2 e HTMX e um editor em JavaScript puro.
 
 ## Requisitos
 - Python 3.10+
-- SQLite (embutido)
+- SQLite (embutido, desenvolvimento) ou Postgres (produção)
 
 ## Instalação e Execução
 
@@ -31,4 +31,21 @@ Plataforma web para escrita, reprodução e organização de partituras simplifi
 
 ## Banco de Dados
 
-O banco de dados SQLite (`database.db`) é instanciado automaticamente na raiz do projeto na primeira inicialização. A estrutura das tabelas é gerenciada via SQLModel.
+Sem configuração, o app usa SQLite (`easygroove.db`, criado na raiz na primeira inicialização). Com `DATABASE_URL` definida, usa o Postgres indicado. As tabelas são criadas automaticamente (SQLModel, sem migrations). Para popular dados de exemplo: `python seed.py`.
+
+## Variáveis de ambiente
+
+Veja `.env.example`.
+
+| Variável | Uso |
+|---|---|
+| `DATABASE_URL` | Postgres de produção (Neon, Supabase...). Vazia = SQLite local |
+| `EASYGROOVE_SECRET_KEY` | Chave de assinatura do login. Obrigatória em produção |
+| `EASYGROOVE_ENV` | `production` ativa cookie Secure, cache longo dos estáticos e exige a chave |
+
+## Deploy na Vercel
+
+1. Crie um banco Postgres (Neon, ou pelo Marketplace da Vercel) e copie a `DATABASE_URL`.
+2. Importe o repositório na Vercel (o FastAPI é detectado em `app/main.py`; `pyproject.toml` manda os estáticos para o CDN).
+3. Em Settings > Environment Variables, defina `DATABASE_URL`, `EASYGROOVE_SECRET_KEY` (gere com `python -c "import secrets;print(secrets.token_urlsafe(48))"`) e `EASYGROOVE_ENV=production`.
+4. Faça o deploy. Opcional: `DATABASE_URL=... python seed.py` para dados de exemplo.

@@ -7,6 +7,7 @@ import jwt
 
 from app.auth.security import (
     ALGORITHM,
+    IS_PRODUCTION,
     SECRET_KEY,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
@@ -72,6 +73,7 @@ def login(
         httponly=True,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         samesite="lax",
+        secure=IS_PRODUCTION,  # HTTPS na Vercel
     )
 
     return {"message": "Login realizado com sucesso", "username": user.username}
@@ -99,7 +101,7 @@ def forgot_password(email: str = Body(..., embed=True), session: Session = Depen
     to_encode = {"sub": user.email, "type": "password_reset", "exp": expire}
     
     # ATENÇÃO: Use a mesma SECRET_KEY e ALGORITHM do seu login
-    token = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256") 
+    token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     
     # Simula o envio de email imprimindo no terminal
     reset_link = f"http://localhost:8000/login?reset_token={token}"
@@ -114,7 +116,7 @@ def forgot_password(email: str = Body(..., embed=True), session: Session = Depen
 def reset_password(payload: PasswordResetConfirm, session: Session = Depends(get_session)):
     try:
         # ATENÇÃO: Use a mesma SECRET_KEY e ALGORITHM do seu login
-        decoded_token = jwt.decode(payload.token, SECRET_KEY, algorithms=["HS256"])
+        decoded_token = jwt.decode(payload.token, SECRET_KEY, algorithms=[ALGORITHM])
         if decoded_token.get("type") != "password_reset":
             raise ValueError("Invalid token type")
         email = decoded_token.get("sub")

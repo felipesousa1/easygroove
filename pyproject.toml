@@ -1,0 +1,8 @@
+[project]
+name = "easygroove"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+# Serve /assets (JS, CSS, ícones e .wav) pelo CDN da Vercel, não pela função
+[tool.vercel.fastapi.static]
+cdn = true
