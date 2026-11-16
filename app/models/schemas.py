@@ -69,8 +69,3 @@ class CollectionRead(BaseModel):
 
     class Config:
         from_attributes = True
-        
-class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str

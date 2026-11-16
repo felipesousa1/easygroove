@@ -44,3 +44,11 @@ class Arrangement(SQLModel, table=True):
         back_populates="arrangements",
         link_model=ArrangementCollectionLink
     )
+
+class AttemptLog(SQLModel, table=True):
+    """Registro de tentativas (login falho, cadastro, recuperação de senha) para o limite de frequência.
+    Fica no banco porque na Vercel cada requisição pode cair numa instância diferente."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    kind: str = Field(index=True)
+    key: str = Field(index=True)
+    created_at: datetime = Field(index=True)  # UTC, sem fuso

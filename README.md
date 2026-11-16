@@ -41,6 +41,7 @@ Veja `.env.example`.
 |---|---|
 | `DATABASE_URL` | Postgres de produção (Neon, Supabase...). Vazia = SQLite local |
 | `EASYGROOVE_SECRET_KEY` | Chave de assinatura do login. Obrigatória em produção |
+| `EASYGROOVE_SMTP_USER`, `EASYGROOVE_SMTP_PASSWORD`, `EASYGROOVE_BASE_URL` | Envio do e-mail de recuperação de senha (Gmail com senha de app). Sem eles, "esqueci minha senha" não envia nada |
 | `EASYGROOVE_ENV` | `production` ativa cookie Secure, cache longo dos estáticos e exige a chave |
 
 ## Deploy na Vercel
